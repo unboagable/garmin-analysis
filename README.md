@@ -38,12 +38,21 @@ poetry lock
 poetry install
 ```
 
+### Getting the Garmin data
+
+[GarminDB](https://github.com/tcgoetz/GarminDB)
+
+```bash
+garmindb_cli.py --all --download --import --analyze --latest
+```
+copy over garmin.db file
+
 ### Running the Application
 
 Execute the application using Poetry:
 
 ```bash
-poetry run python src/main.py
+poetry run python src/preview.py
 ```
 
 ## Running Using Notebooks

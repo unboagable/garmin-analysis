@@ -1,32 +1,49 @@
 import sqlite3
 import pandas as pd
+import os
 
-# Connect to Garmin DB
-conn = sqlite3.connect("garmin.db")
+def audit_table_health(conn, tables_to_check):
+    results = []
+    for table in tables_to_check:
+        try:
+            df = pd.read_sql_query(f"SELECT * FROM {table} LIMIT 5", conn)
+            row_count = pd.read_sql_query(f"SELECT COUNT(*) as count FROM {table}", conn)["count"][0]
+            status = "all null/empty" if df.isnull().all(axis=None) else "OK"
+            results.append({"table": table, "rows": row_count, "status": status})
+        except Exception:
+            results.append({"table": table, "rows": 0, "status": "not found"})
+    return pd.DataFrame(results)
 
-# 1. File Types Present
-files = pd.read_sql_query("SELECT * FROM files", conn)
-file_types = files["type"].value_counts()
-print("📂 File types in DB:\n", file_types)
+def main(db_path="garmin.db", export_csv=True):
+    if not os.path.exists(db_path):
+        print(f"Database file '{db_path}' not found.")
+        return
 
-# 2. Tables to Audit
-tables_to_check = [
-    "daily_summary", "sleep", "stress", "resting_hr", "weight",
-    "attributes", "_attributes", "devices", "device_info"
-]
+    conn = sqlite3.connect(db_path)
 
-# 3. Table Status Summary
-print("\n📊 Table Status:")
-for table in tables_to_check:
+    # Check file types in DB
     try:
-        df = pd.read_sql_query(f"SELECT * FROM {table} LIMIT 5", conn)
-        row_count = pd.read_sql_query(f"SELECT COUNT(*) as count FROM {table}", conn)["count"][0]
-        if df.isnull().all(axis=None):
-            print(f"❗ {table:20} — {row_count} rows — all null/empty")
-        else:
-            print(f"✅ {table:20} — {row_count} rows — OK")
-    except Exception as e:
-        print(f"❌ {table:20} — not found")
+        files = pd.read_sql_query("SELECT * FROM files", conn)
+        file_types = files["type"].value_counts()
+        print("\n📂 File types in DB:\n", file_types)
+    except Exception:
+        print("\n⚠️  'files' table not found in the database.")
 
-# Close connection
-conn.close()
+    # Table Audit
+    print("\n📊 Table Status:")
+    tables_to_check = [
+        "daily_summary", "sleep", "stress", "resting_hr", "weight",
+        "attributes", "_attributes", "devices", "device_info"
+    ]
+    report = audit_table_health(conn, tables_to_check)
+    print(report.to_string(index=False))
+
+    if export_csv:
+        os.makedirs("data", exist_ok=True)
+        report.to_csv("data/missing_report.csv", index=False)
+        print("\n✅ Report saved to data/missing_report.csv")
+
+    conn.close()
+
+if __name__ == "__main__":
+    main()

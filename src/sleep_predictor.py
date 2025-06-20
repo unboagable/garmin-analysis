@@ -1,74 +1,73 @@
-import sqlite3
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
+from utils import load_garmin_tables, filter_by_date, normalize_dates
 
-# Connect to the Garmin DB
-conn = sqlite3.connect("garmin.db")
+def load_and_prepare_data(days_back=60):
+    tables = load_garmin_tables()
+    daily = filter_by_date(tables["daily"], days_back=days_back)
+    sleep = filter_by_date(tables["sleep"], days_back=days_back)
+    stress = filter_by_date(tables["stress"], date_col="timestamp", days_back=days_back)
+    rest_hr = filter_by_date(tables["rest_hr"], days_back=days_back)
 
-# Load relevant tables
-daily = pd.read_sql_query("SELECT * FROM daily_summary", conn, parse_dates=["day"])
-sleep = pd.read_sql_query("SELECT * FROM sleep", conn, parse_dates=["day"])
-stress = pd.read_sql_query("SELECT * FROM stress", conn, parse_dates=["timestamp"])
-rest_hr = pd.read_sql_query("SELECT * FROM resting_hr", conn, parse_dates=["day"])
+    # Preprocess
+    stress["day"] = pd.to_datetime(stress["timestamp"]).dt.normalize()
+    stress_daily = stress.groupby("day")["stress"].mean().reset_index()
 
-conn.close()
+    # Merge all on day
+    df = sleep[["day", "total_sleep"]].merge(
+        daily, on="day", how="left"
+    ).merge(
+        rest_hr, on="day", how="left"
+    ).merge(
+        stress_daily, on="day", how="left"
+    )
 
-# Preprocess
-stress["day"] = pd.to_datetime(stress["timestamp"]).dt.normalize()
-stress_daily = stress.groupby("day")["stress"].mean().reset_index()
+    # Clean and filter
+    df = df[df["total_sleep"].notnull()]
+    df = df.dropna(thresh=int(0.7 * df.shape[1]))
 
-# Merge all on day
-df = sleep[["day", "total_sleep"]].merge(
-    daily, on="day", how="left"
-).merge(
-    rest_hr, on="day", how="left"
-).merge(
-    stress_daily, on="day", how="left"
-)
+    if pd.api.types.is_timedelta64_dtype(df["total_sleep"]):
+        df["total_sleep"] = df["total_sleep"].dt.total_seconds() / 3600
+    else:
+        df["total_sleep"] = pd.to_timedelta(df["total_sleep"]).dt.total_seconds() / 3600
 
-# Drop rows with missing target or too many nulls
-df = df[df["total_sleep"].notnull()]
-df = df.dropna(thresh=int(0.7 * df.shape[1]))  # Keep rows with at least 70% data
+    drop_cols = ["day", "calendar_date", "user_profile_pk"]
+    X = df.drop(columns=[c for c in drop_cols if c in df.columns] + ["total_sleep"])
+    y = df["total_sleep"]
 
-# Convert total_sleep to hours if in timedelta or string format
-if pd.api.types.is_timedelta64_dtype(df["total_sleep"]):
-    df["total_sleep"] = df["total_sleep"].dt.total_seconds() / 3600
-else:
-    df["total_sleep"] = pd.to_timedelta(df["total_sleep"]).dt.total_seconds() / 3600
+    for col in X.select_dtypes(include=["timedelta64[ns]"]):
+        X[col] = X[col].dt.total_seconds()
 
-# Drop non-numeric or unhelpful columns
-drop_cols = ["day", "calendar_date", "user_profile_pk"]
-X = df.drop(columns=[c for c in drop_cols if c in df.columns] + ["total_sleep"])
-y = df["total_sleep"]
+    X = X.select_dtypes(include=["number"])
+    X = X.fillna(X.median(numeric_only=True))
 
-# Convert any remaining timedelta columns to seconds
-for col in X.select_dtypes(include=["timedelta64[ns]"]):
-    X[col] = X[col].dt.total_seconds()
+    return X, y
 
-# Drop non-numeric columns
-X = X.select_dtypes(include=["number"])
+def train_and_evaluate(X, y):
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
 
-# Fill remaining NaNs with median
-X = X.fillna(X.median(numeric_only=True))
+    print("R^2 Score:", r2_score(y_test, y_pred))
+    print("MSE:", mean_squared_error(y_test, y_pred))
+    return model
 
-# Train/Test Split
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+def plot_feature_importance(model, X):
+    importances = pd.Series(model.feature_importances_, index=X.columns)
+    importances.sort_values(ascending=True).plot(kind="barh", figsize=(10, 8), title="Feature Importance for Predicting Sleep")
+    plt.tight_layout()
+    plt.show()
 
-# Model Training
-model = RandomForestRegressor(n_estimators=100, random_state=42)
-model.fit(X_train, y_train)
+def main():
+    X, y = load_and_prepare_data(days_back=60)
+    model = train_and_evaluate(X, y)
+    plot_feature_importance(model, X)
 
-# Evaluation
-y_pred = model.predict(X_test)
-print("R^2 Score:", r2_score(y_test, y_pred))
-print("MSE:", mean_squared_error(y_test, y_pred))
+if __name__ == "__main__":
+    main()
 
-# Feature Importance
-importances = pd.Series(model.feature_importances_, index=X.columns)
-importances.sort_values(ascending=True).plot(kind="barh", figsize=(10, 8), title="Feature Importance for Predicting Sleep")
-plt.tight_layout()
-plt.show()
 

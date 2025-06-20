@@ -38,21 +38,56 @@ poetry lock
 poetry install
 ```
 
-### Getting the Garmin data
+### Getting the Garmin Data
 
-[GarminDB](https://github.com/tcgoetz/GarminDB)
+This project works with data extracted via [GarminDB by @tcgoetz](https://github.com/tcgoetz/GarminDB), a Python tool to download, import, and analyze data from Garmin Connect.
 
+#### 1. Install GarminDB
+
+Clone and install dependencies:
 ```bash
-garmindb_cli.py --all --download --import --analyze --latest
+git clone https://github.com/tcgoetz/GarminDB.git
+cd GarminDB
+pip install -r requirements.txt
 ```
-copy over garmin.db file
 
-### Running the Application
-
-Execute the application using Poetry:
+Create a `.netrc` file with your Garmin credentials:
 
 ```bash
-poetry run python src/preview.py
+machine connect.garmin.com
+login YOUR_USERNAME
+password YOUR_PASSWORD
+```
+
+#### 2. Download and Import Data
+
+Run the GarminDB CLI tool to pull and process your data:
+
+```bash
+python garmindb_cli.py --all --download --import --analyze --latest
+```
+
+This will create a `garmin.db` SQLite file in the working directory.
+
+#### 3. Move the Database
+
+Copy the generated database into your project root:
+
+```bash
+cp path/to/GarminDB/garmin.db ./garmin.db
+```
+
+You're now ready to run analysis and models using your scripts.
+
+## Running the Application
+
+Run the application using Poetry:
+
+```bash
+poetry run python src/plot_trends_range.py
+poetry run python src/sleep_predictor.py
+poetry run python src/check_missing_data.py
+poetry run python src/summary_stats.py
 ```
 
 ## Running Using Notebooks

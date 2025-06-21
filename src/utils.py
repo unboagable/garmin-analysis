@@ -58,3 +58,24 @@ def filter_by_date(df, date_col="day", from_date=None, to_date=None, days_back=N
                  date_col, from_date, to_date, len(df))
     return df
 
+def convert_time_to_minutes(time_str):
+    """Convert HH:MM:SS string to total minutes."""
+    try:
+        h, m, s = map(int, time_str.split(":"))
+        return h * 60 + m + s / 60
+    except:
+        return 0
+
+def aggregate_stress(stress_df):
+    """Aggregate minute-level stress data into daily stats."""
+    stress_df["timestamp"] = pd.to_datetime(stress_df["timestamp"])
+    stress_df["day"] = stress_df["timestamp"].dt.date
+    daily = stress_df.groupby("day").agg(
+        stress_avg=("stress", "mean"),
+        stress_max=("stress", "max"),
+        stress_duration=("stress", lambda x: (x > 0).sum())
+    ).reset_index()
+    daily["day"] = pd.to_datetime(daily["day"])
+    return daily
+
+

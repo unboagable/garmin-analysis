@@ -5,46 +5,24 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
-from utils import load_garmin_tables, filter_by_date, normalize_dates
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def load_and_prepare_data(days_back=60):
-    if not os.path.exists("garmin.db"):
-        logging.error("Missing garmin.db — please run garmindb_cli.py or place the database in the root directory.")
+DATA_PATH = "data/master_daily_summary.csv"
+
+def load_and_prepare_data():
+    if not os.path.exists(DATA_PATH):
+        logging.error("Missing master dataset — please run load_all_garmin_dbs.py first.")
         return None, None
 
-    try:
-        tables = load_garmin_tables()
-    except Exception as e:
-        logging.exception("Failed to load tables: %s", e)
-        return None, None
+    df = pd.read_csv(DATA_PATH, parse_dates=["day"])
+    df = df[df["score"].notnull()]
 
-    daily = filter_by_date(tables["daily"], days_back=days_back)
-    sleep = filter_by_date(tables["sleep"], days_back=days_back)
-    stress = filter_by_date(tables["stress"], date_col="timestamp", days_back=days_back)
-    rest_hr = filter_by_date(tables["rest_hr"], days_back=days_back)
+    drop_cols = ["day"]
+    target = "score"
 
-    if any(df.empty for df in [daily, sleep, stress, rest_hr]):
-        logging.warning("One or more tables returned empty after filtering. Check data coverage.")
-
-    stress["day"] = pd.to_datetime(stress["timestamp"]).dt.normalize()
-    stress_daily = stress.groupby("day")["stress"].mean().reset_index()
-
-    df = sleep[["day", "total_sleep"]].merge(daily, on="day", how="left")
-    df = df.merge(rest_hr, on="day", how="left").merge(stress_daily, on="day", how="left")
-
-    df = df[df["total_sleep"].notnull()]
-    df = df.dropna(thresh=int(0.7 * df.shape[1]))
-
-    if pd.api.types.is_timedelta64_dtype(df["total_sleep"]):
-        df["total_sleep"] = df["total_sleep"].dt.total_seconds() / 3600
-    else:
-        df["total_sleep"] = pd.to_timedelta(df["total_sleep"]).dt.total_seconds() / 3600
-
-    drop_cols = ["day", "calendar_date", "user_profile_pk"]
-    X = df.drop(columns=[c for c in drop_cols if c in df.columns] + ["total_sleep"])
-    y = df["total_sleep"]
+    X = df.drop(columns=[c for c in drop_cols if c in df.columns] + [target])
+    y = df[target]
 
     for col in X.select_dtypes(include=["timedelta64[ns]"]):
         X[col] = X[col].dt.total_seconds()
@@ -66,12 +44,12 @@ def train_and_evaluate(X, y):
 
 def plot_feature_importance(model, X):
     importances = pd.Series(model.feature_importances_, index=X.columns)
-    importances.sort_values(ascending=True).plot(kind="barh", figsize=(10, 8), title="Feature Importance for Predicting Sleep")
+    importances.sort_values(ascending=True).plot(kind="barh", figsize=(10, 8), title="Feature Importance for Predicting Sleep Score")
     plt.tight_layout()
     plt.show()
 
 def main():
-    X, y = load_and_prepare_data(days_back=60)
+    X, y = load_and_prepare_data()
     if X is None or y is None:
         return
     model = train_and_evaluate(X, y)
@@ -79,6 +57,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
 

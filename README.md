@@ -79,17 +79,49 @@ cp path/to/GarminDB/garmin.db ./garmin.db
 
 You're now ready to run analysis and models using your scripts.
 
+#### 4. Add Optional Garmin Databases
+
+To enrich your insights, copy additional `.db` files into the root directory:
+- `garmin_activities.db`
+- `garmin_monitoring.db`
+- `garmin_summary.db` or `summary.db`
+
+These will be used to generate an enhanced dataset.
+
 ## Running the Application
 
-Run the application using Poetry:
+### Generate Unified Dataset
+
+Use the master loader to combine all Garmin sources:
+
+```bash
+poetry run python src/load_all_garmin_dbs.py
+```
+
+This will create `data/master_daily_summary.csv` with sleep, stress, workouts, lagged features, and monitoring data.
+
+### Run Exploratory Analysis
 
 ```bash
 poetry run python src/plot_trends_range.py
+poetry run python src/activity_sleep_stress_analysis.py
+```
+
+### Run Predictive Model
+
+```bash
 poetry run python src/sleep_predictor.py
+```
+
+### Run Utility Checks
+
+```bash
 poetry run python src/check_missing_data.py
 poetry run python src/summary_stats.py
+poetry run python src/inspect_sqlite_schema.py garmin.db
 ```
 
 ## Running Using Notebooks
 
 In the `notebooks` directory, create `.ipynb` files that can utilize `requirements.txt` to install dependencies.
+

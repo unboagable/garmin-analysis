@@ -11,7 +11,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 MERGED_PATH = Path("data/master_daily_summary.csv")
 PLOTS_DIR = Path("plots")
 PLOTS_DIR.mkdir(exist_ok=True)
-timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 def load_data():
     if not MERGED_PATH.exists():
@@ -19,7 +18,7 @@ def load_data():
     df = pd.read_csv(MERGED_PATH, parse_dates=["day"])
     return df
 
-def plot_correlations(df):
+def plot_correlations(df, show=False):
     numeric = df.select_dtypes(include=["number"]).dropna()
     corr = numeric.corr(method="spearman")
 
@@ -27,12 +26,16 @@ def plot_correlations(df):
     sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm", square=True)
     plt.title("Spearman Correlation Matrix: Activity vs Sleep/Stress")
     plt.tight_layout()
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_path = PLOTS_DIR / f"{timestamp_str}_correlation_matrix.png"
     plt.savefig(out_path)
     logging.info(f"Saved heatmap to {out_path}")
-    plt.close()
+    if show:
+        plt.show()
+    else:
+        plt.close()
 
-def scatter_plot(df, x_col, y_col):
+def scatter_plot(df, x_col, y_col, show=False):
     df_clean = df[[x_col, y_col]].dropna().copy()
 
     def flatten(val):
@@ -60,21 +63,29 @@ def scatter_plot(df, x_col, y_col):
     sns.regplot(data=df_clean, x=x_col, y=y_col, scatter=False, color="red")
     plt.title(f"{x_col} vs {y_col}")
     plt.tight_layout()
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_path = PLOTS_DIR / f"{timestamp_str}_scatter_{x_col}_vs_{y_col}.png"
     plt.savefig(out_path)
     logging.info(f"Saved scatter plot to {out_path}")
-    plt.close()
+    if show:
+        plt.show()
+    else:
+        plt.close()
 
-def grouped_box_plot(df, activity_col, target_col):
+def grouped_box_plot(df, activity_col, target_col, show=False):
     df["activity_level"] = pd.qcut(df[activity_col], q=4, labels=["Low", "Med-Low", "Med-High", "High"])
     plt.figure(figsize=(8, 6))
     sns.boxplot(data=df, x="activity_level", y=target_col)
     plt.title(f"{target_col} by {activity_col} Quartiles")
     plt.tight_layout()
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_path = PLOTS_DIR / f"{timestamp_str}_box_{target_col}_by_{activity_col}_quartiles.png"
     plt.savefig(out_path)
     logging.info(f"Saved box plot to {out_path}")
-    plt.close()
+    if show:
+        plt.show()
+    else:
+        plt.close()
 
 def main():
     df = load_data()

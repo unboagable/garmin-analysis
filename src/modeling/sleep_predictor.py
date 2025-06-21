@@ -5,6 +5,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
+from pathlib import Path
+from datetime import datetime
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -42,11 +44,26 @@ def train_and_evaluate(X, y):
     logging.info("MSE: %.4f", mean_squared_error(y_test, y_pred))
     return model
 
-def plot_feature_importance(model, X):
+def plot_feature_importance(model, X, show=False):
     importances = pd.Series(model.feature_importances_, index=X.columns)
-    importances.sort_values(ascending=True).plot(kind="barh", figsize=(10, 8), title="Feature Importance for Predicting Sleep Score")
+    importances.sort_values(ascending=True).plot(
+        kind="barh",
+        figsize=(10, 8),
+        title="Feature Importance for Predicting Sleep Score"
+    )
     plt.tight_layout()
-    plt.show()
+
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    plots_dir = Path("plots")
+    plots_dir.mkdir(exist_ok=True)
+    out_path = plots_dir / f"feature_importance_{timestamp_str}.png"
+    plt.savefig(out_path)
+    logging.info(f"Saved feature importance plot to {out_path}")
+
+    if show:
+        plt.show()
+    else:
+        plt.close()
 
 def main():
     X, y = load_and_prepare_data()
@@ -57,4 +74,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

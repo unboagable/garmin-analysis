@@ -93,3 +93,34 @@ def test_merge_step_stats_merges_by_day(mock_tables):
     base_df = mock_tables["daily_summary"].copy()
     result = merge_all_daily_data.merge_step_stats(base_df, mock_tables["steps_activities"], mock_tables["activities"])
     assert "vo2_max" in result.columns
+
+def test_no_keyerror_on_optional_fields(mock_tables):
+    df = merge_all_daily_data.clean_and_merge(mock_tables)
+    try:
+        _ = df["training_effect"]
+        _ = df["score"]
+        _ = df["steps_avg_7d"]
+    except KeyError as e:
+        pytest.fail(f"Unexpected KeyError on optional column: {e}")
+
+def test_all_merged_dates_are_valid(mock_tables):
+    df = merge_all_daily_data.clean_and_merge(mock_tables)
+    assert pd.api.types.is_datetime64_any_dtype(df["day"]), "'day' column must be datetime"
+    assert df["day"].between("2024-01-01", "2024-12-31").all(), "dates must fall within 2024"
+
+def test_merged_shape_and_columns(mock_tables):
+    df = merge_all_daily_data.clean_and_merge(mock_tables)
+    expected_cols = {
+        "day", "steps", "calories_total", "score", "resting_heart_rate",
+        "training_effect", "anaerobic_training_effect", "calories_bmr_avg",
+        "steps_avg_7d", "missing_score", "missing_training_effect", "vo2_max"
+    }
+    assert set(expected_cols).issubset(df.columns), "Missing expected columns"
+    assert df.shape[0] == 2, "Expected 2 rows based on mock input"
+
+def test_column_dtypes_are_correct(mock_tables):
+    df = merge_all_daily_data.clean_and_merge(mock_tables)
+    assert pd.api.types.is_datetime64_any_dtype(df["day"])
+    assert pd.api.types.is_numeric_dtype(df["steps"])
+    assert pd.api.types.is_numeric_dtype(df["score"])
+    assert pd.api.types.is_bool_dtype(df["missing_score"])

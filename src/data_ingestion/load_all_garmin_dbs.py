@@ -29,6 +29,19 @@ def load_table(db_file, table_name, parse_dates=None):
             logging.warning(f"Failed to load {table_name} from {db_file}: {e}")
             return pd.DataFrame()
 
+def normalize_day_column(df: pd.DataFrame, source_name: str) -> pd.DataFrame:
+    if df is None or df.empty:
+        return df
+    if "day" in df.columns:
+        df["day"] = pd.to_datetime(df["day"])
+    elif "calendarDate" in df.columns:
+        df["day"] = pd.to_datetime(df["calendarDate"])
+    elif "timestamp" in df.columns:
+        df["day"] = pd.to_datetime(df["timestamp"]).dt.normalize()
+    else:
+        logging.warning(f"[{source_name}] could not normalize 'day' column (missing day/calendarDate/timestamp)")
+    return df
+
 def summarize_and_merge(return_df: bool = False):
     # Load from garmin.db
     daily = load_table("db/garmin.db", "daily_summary", parse_dates=["day"])
@@ -86,13 +99,31 @@ def summarize_and_merge(return_df: bool = False):
     else:
         week_summary_reduced = pd.DataFrame()
 
-    # Merge all into daily
-    df = daily.copy()
-    for df_extra in [sleep, rhr, stress_daily, activity_summary, mon_hr_daily, mon_ox_daily, week_summary_reduced]:
-        if not df_extra.empty:
+    # Normalize all by day
+    sources = [
+        ("sleep", sleep),
+        ("rhr", rhr),
+        ("stress_daily", stress_daily),
+        ("activity_summary", activity_summary),
+        ("mon_hr_daily", mon_hr_daily),
+        ("mon_ox_daily", mon_ox_daily),
+        ("week_summary_reduced", week_summary_reduced)
+    ]
+    
+    df = normalize_day_column(daily.copy(), "daily")
+
+    for name, df_extra in sources:
+        df_extra = normalize_day_column(df_extra, name)
+        if not df_extra.empty and "day" in df_extra.columns:
             df = pd.merge(df, df_extra, on="day", how="left")
 
-    # Add lag features: yesterday's activity → today
+    # Drop rows with missing day (edge case cleanup)
+    if "day" in df.columns:
+        df = df[df["day"].notna()]
+    else:
+        logging.warning("Merged DataFrame is missing 'day' column after merging.")
+
+    # Add lag features
     lag_cols = ["had_workout", "activity_minutes", "activity_calories", "training_effect", "anaerobic_te"]
     for col in lag_cols:
         if col in df.columns:

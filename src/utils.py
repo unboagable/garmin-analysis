@@ -4,11 +4,11 @@ import pandas as pd
 import logging
 from datetime import datetime, timedelta
 from pandas.tseries.offsets import DateOffset
+from sklearn.preprocessing import StandardScaler
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def load_garmin_tables(db_path="db/garmin.db"):
-    """Load key Garmin tables from SQLite into DataFrames."""
     if not os.path.exists(db_path):
         logging.error("Database file '%s' not found. Please run garmindb_cli.py or place it in the root directory.", db_path)
         return {}
@@ -29,12 +29,10 @@ def load_garmin_tables(db_path="db/garmin.db"):
         return {}
 
 def normalize_dates(df, col="day"):
-    """Normalize datetime column to remove time component."""
     df[col] = pd.to_datetime(df[col]).dt.normalize()
     return df
 
 def filter_by_date(df, date_col="day", from_date=None, to_date=None, days_back=None, weeks_back=None, months_back=None):
-    """Filter DataFrame by relative or absolute date range."""
     if df.empty:
         logging.warning("Received empty DataFrame to filter on column '%s'.", date_col)
         return df
@@ -59,7 +57,6 @@ def filter_by_date(df, date_col="day", from_date=None, to_date=None, days_back=N
     return df
 
 def convert_time_to_minutes(time_str):
-    """Convert HH:MM:SS string to total minutes."""
     try:
         h, m, s = map(int, time_str.split(":"))
         return h * 60 + m + s / 60
@@ -67,7 +64,6 @@ def convert_time_to_minutes(time_str):
         return 0
 
 def aggregate_stress(stress_df):
-    """Aggregate minute-level stress data into daily stats."""
     stress_df["timestamp"] = pd.to_datetime(stress_df["timestamp"])
     stress_df["day"] = stress_df["timestamp"].dt.date
     daily = stress_df.groupby("day").agg(
@@ -77,5 +73,19 @@ def aggregate_stress(stress_df):
     ).reset_index()
     daily["day"] = pd.to_datetime(daily["day"])
     return daily
+
+def load_master_dataframe():
+    tables = load_garmin_tables()
+    if "daily" not in tables:
+        raise ValueError("Missing 'daily_summary' table in Garmin DB")
+    return tables["daily"]
+
+def standardize_features(df, columns):
+    df = df.copy()
+    scaler = StandardScaler()
+    scaled = scaler.fit_transform(df[columns])
+    logging.info("Standardized features: %s", columns)
+    return scaled
+
 
 

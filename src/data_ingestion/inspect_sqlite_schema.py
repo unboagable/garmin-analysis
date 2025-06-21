@@ -6,13 +6,13 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 def inspect_sqlite_db(db_path):
     if not Path(db_path).exists():
-        raise FileNotFoundError(f"Database not found at {db_path}")
+        logging.warning(f"Database not found at {db_path}")
+        return
 
     logging.info(f"Inspecting database: {db_path}")
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
 
-        # Get all tables
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
         tables = [row[0] for row in cursor.fetchall()]
         logging.info(f"Found {len(tables)} tables.")
@@ -31,10 +31,18 @@ def inspect_sqlite_db(db_path):
             except Exception as e:
                 print(f"  ⚠️ Error retrieving columns for {table}: {e}")
 
+def inspect_all_dbs(directory="db"):
+    db_paths = sorted(Path(directory).glob("*.db"))
+    if not db_paths:
+        logging.warning(f"No .db files found in '{directory}'")
+    for db_path in db_paths:
+        inspect_sqlite_db(db_path)
+
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Inspect SQLite DB schema")
-    parser.add_argument("db_path", help="Path to the .db SQLite file")
+    parser = argparse.ArgumentParser(description="Inspect all SQLite DB schemas in a folder")
+    parser.add_argument("--dir", default="db", help="Directory containing .db SQLite files (default: db)")
     args = parser.parse_args()
 
-    inspect_sqlite_db(args.db_path)
+    inspect_all_dbs(args.dir)
+

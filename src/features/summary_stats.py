@@ -1,6 +1,6 @@
 import logging
 import pandas as pd
-from utils import load_garmin_tables
+from src.utils import load_garmin_tables
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 

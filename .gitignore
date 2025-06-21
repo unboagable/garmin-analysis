@@ -1,0 +1,29 @@
+# SQLite database files
+*.db
+
+# Data outputs and processed results
+data/
+!data/*.md  # allow markdown notes if needed
+plots/
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Python virtual environments and dependency tools
+.env
+.venv
+__pycache__/
+*.py[cod]
+
+# VSCode and IDE metadata
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Netrc and credentials
+.netrc
+
+# OS clutter
+.DS_Store

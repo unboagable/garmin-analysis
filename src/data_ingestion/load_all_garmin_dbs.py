@@ -7,15 +7,14 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 DB_PATHS = [
-    "garmin.db",
-    "garmin_activities.db",
-    "garmin_monitoring.db",
-    "garmin_summary.db",
-    "summary.db"
+    "db/garmin.db",
+    "db/garmin_activities.db",
+    "db/garmin_monitoring.db",
+    "db/garmin_summary.db",
+    "db/summary.db"
 ]
 
 OUTPUT_PATH = Path("data/master_daily_summary.csv")
-
 
 def load_table(db_file, table_name, parse_dates=None):
     if not Path(db_file).exists():
@@ -30,16 +29,15 @@ def load_table(db_file, table_name, parse_dates=None):
             logging.warning(f"Failed to load {table_name} from {db_file}: {e}")
             return pd.DataFrame()
 
-
-def summarize_and_merge():
+def summarize_and_merge(return_df: bool = False):
     # Load from garmin.db
-    daily = load_table("garmin.db", "daily_summary", parse_dates=["day"])
-    sleep = load_table("garmin.db", "sleep", parse_dates=["day"])
-    stress = load_table("garmin.db", "stress", parse_dates=["timestamp"])
-    rhr = load_table("garmin.db", "resting_hr", parse_dates=["day"])
+    daily = load_table("db/garmin.db", "daily_summary", parse_dates=["day"])
+    sleep = load_table("db/garmin.db", "sleep", parse_dates=["day"])
+    stress = load_table("db/garmin.db", "stress", parse_dates=["timestamp"])
+    rhr = load_table("db/garmin.db", "resting_hr", parse_dates=["day"])
 
     # Load activities
-    activities = load_table("garmin_activities.db", "activities", parse_dates=["start_time"])
+    activities = load_table("db/garmin_activities.db", "activities", parse_dates=["start_time"])
     if not activities.empty:
         activities["day"] = pd.to_datetime(activities["start_time"]).dt.normalize()
         activities["had_workout"] = 1
@@ -66,8 +64,8 @@ def summarize_and_merge():
         stress_daily = pd.DataFrame()
 
     # Load monitoring HR and pulse ox
-    mon_hr = load_table("garmin_monitoring.db", "monitoring_hr", parse_dates=["timestamp"])
-    mon_ox = load_table("garmin_monitoring.db", "monitoring_pulse_ox", parse_dates=["timestamp"])
+    mon_hr = load_table("db/garmin_monitoring.db", "monitoring_hr", parse_dates=["timestamp"])
+    mon_ox = load_table("db/garmin_monitoring.db", "monitoring_pulse_ox", parse_dates=["timestamp"])
     if not mon_hr.empty:
         mon_hr["day"] = pd.to_datetime(mon_hr["timestamp"]).dt.normalize()
         mon_hr_daily = mon_hr.groupby("day").agg(monitoring_hr_avg=("heart_rate", "mean")).reset_index()
@@ -80,7 +78,7 @@ def summarize_and_merge():
         mon_ox_daily = pd.DataFrame()
 
     # Load weekly summary data
-    weeks_summary = load_table("summary.db", "weeks_summary", parse_dates=["first_day"])
+    weeks_summary = load_table("db/summary.db", "weeks_summary", parse_dates=["first_day"])
     if not weeks_summary.empty:
         weeks_summary = weeks_summary.rename(columns={"first_day": "day"})
         summary_cols = ["day", "steps", "calories_avg", "stress_avg", "sleep_avg", "rem_sleep_avg"]
@@ -105,6 +103,8 @@ def summarize_and_merge():
     df.to_csv(OUTPUT_PATH, index=False)
     logging.info(f"Saved master dataset to {OUTPUT_PATH}")
 
+    if return_df:
+        return df
 
 if __name__ == "__main__":
     summarize_and_merge()

@@ -18,7 +18,7 @@ def audit_table_health(conn, tables_to_check):
             results.append({"table": table, "rows": 0, "status": "not found"})
     return pd.DataFrame(results)
 
-def main(db_path="garmin.db", export_csv=True):
+def main(db_path="db/garmin.db", export_csv=True):
     if not os.path.exists(db_path):
         logging.error("Database file '%s' not found. Please run garmindb_cli.py or ensure the DB is in the project root.", db_path)
         return

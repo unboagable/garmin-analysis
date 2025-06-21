@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
 import logging
-from utils import load_garmin_tables, convert_time_to_minutes, aggregate_stress, normalize_dates
+from src.utils import load_garmin_tables, convert_time_to_minutes, aggregate_stress, normalize_dates
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -49,6 +49,8 @@ def merge_garmin_data():
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     merged.to_csv(OUTPUT_PATH, index=False)
     logging.info(f"Saved merged dataset to {OUTPUT_PATH}")
+
+    return merged
 
 if __name__ == "__main__":
     merge_garmin_data()

@@ -7,7 +7,7 @@ from pandas.tseries.offsets import DateOffset
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def load_garmin_tables(db_path="garmin.db"):
+def load_garmin_tables(db_path="db/garmin.db"):
     """Load key Garmin tables from SQLite into DataFrames."""
     if not os.path.exists(db_path):
         logging.error("Database file '%s' not found. Please run garmindb_cli.py or place it in the root directory.", db_path)

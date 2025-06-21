@@ -9,6 +9,7 @@ packages = [{ include = "src/*.py" }]
 [tool.poetry.dependencies]
 python = "^3.12"
 pandas = "*"
+numpy = "*"
 notebook = "^7.4.3"
 ipykernel = "^6.29.5"
 matplotlib = "^3.10.3"

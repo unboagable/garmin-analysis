@@ -1,6 +1,5 @@
 import pandas as pd
 import pytest
-from unittest.mock import patch
 from src.data_ingestion import merge_all_daily_data
 
 @pytest.fixture
@@ -65,3 +64,32 @@ def test_merge_is_stable_with_partial_data(mock_tables):
     df = merge_all_daily_data.clean_and_merge(mock_tables)
     assert len(df) == 2
     assert "training_effect" in df.columns
+
+def test_merge_handles_empty_sleep_data(mock_tables):
+    mock_tables["sleep"] = pd.DataFrame()
+    df = merge_all_daily_data.clean_and_merge(mock_tables)
+    assert "score" not in df.columns or df["score"].isna().all()
+
+def test_preprocess_sleep_works():
+    sleep = pd.DataFrame({
+        "day": ["2024-01-01"],
+        "total_sleep": ["7:00:00"],
+        "deep_sleep": ["1:00:00"],
+        "rem_sleep": ["2:00:00"],
+        "score": [85]
+    })
+    result = merge_all_daily_data.preprocess_sleep(sleep.copy())
+    assert "total_sleep_min" in result.columns
+    assert "deep_sleep_min" in result.columns
+    assert result["total_sleep_min"].iloc[0] == 420
+
+def test_merge_activity_stats_merges_by_day(mock_tables):
+    base_df = mock_tables["daily_summary"].copy()
+    result = merge_all_daily_data.merge_activity_stats(base_df, mock_tables["activities"])
+    assert "training_effect" in result.columns
+    assert len(result) == 2
+
+def test_merge_step_stats_merges_by_day(mock_tables):
+    base_df = mock_tables["daily_summary"].copy()
+    result = merge_all_daily_data.merge_step_stats(base_df, mock_tables["steps_activities"], mock_tables["activities"])
+    assert "vo2_max" in result.columns

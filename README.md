@@ -71,17 +71,18 @@ This will create a `garmin.db` SQLite file in the working directory.
 
 #### 3. Move the Database
 
-Copy the generated database into your project root:
+Copy the generated database into your project db directory:
 
 ```bash
-cp path/to/GarminDB/garmin.db ./garmin.db
+mkdir -p db
+cp path/to/GarminDB/garmin.db ./db/garmin.db
 ```
 
 You're now ready to run analysis and models using your scripts.
 
 #### 4. Add Optional Garmin Databases
 
-To enrich your insights, copy additional `.db` files into the root directory:
+To enrich your insights, copy additional `.db` files into the `db/` directory:
 - `garmin_activities.db`
 - `garmin_monitoring.db`
 - `garmin_summary.db` or `summary.db`
@@ -95,7 +96,7 @@ These will be used to generate an enhanced dataset.
 Use the master loader to combine all Garmin sources:
 
 ```bash
-poetry run python src/load_all_garmin_dbs.py
+poetry run python src/data_ingestion/load_all_garmin_dbs.py
 ```
 
 This will create `data/master_daily_summary.csv` with sleep, stress, workouts, lagged features, and monitoring data.
@@ -103,25 +104,24 @@ This will create `data/master_daily_summary.csv` with sleep, stress, workouts, l
 ### Run Exploratory Analysis
 
 ```bash
-poetry run python src/plot_trends_range.py
-poetry run python src/activity_sleep_stress_analysis.py
+poetry run python src/viz/plot_trends_range.py
+poetry run python src/modeling/activity_sleep_stress_analysis.py
 ```
 
 ### Run Predictive Model
 
 ```bash
-poetry run python src/sleep_predictor.py
+poetry run python src/modeling/sleep_predictor.py
 ```
 
 ### Run Utility Checks
 
 ```bash
-poetry run python src/check_missing_data.py
-poetry run python src/summary_stats.py
-poetry run python src/inspect_sqlite_schema.py garmin.db
+poetry run python src/features/check_missing_data.py
+poetry run python src/features/summary_stats.py
+poetry run python src/data_ingestion/inspect_sqlite_schema.py db/garmin.db
 ```
 
 ## Running Using Notebooks
 
 In the `notebooks` directory, create `.ipynb` files that can utilize `requirements.txt` to install dependencies.
-

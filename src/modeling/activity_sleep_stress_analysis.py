@@ -73,7 +73,16 @@ def scatter_plot(df, x_col, y_col, show=False):
         plt.close()
 
 def grouped_box_plot(df, activity_col, target_col, show=False):
-    df["activity_level"] = pd.qcut(df[activity_col], q=4, labels=["Low", "Med-Low", "Med-High", "High"])
+    col_data = df[activity_col].dropna()
+    if col_data.nunique() < 4:
+        logging.warning(f"Not enough unique values to create quartiles for {activity_col}")
+        return
+    try:
+        df["activity_level"] = pd.qcut(df[activity_col], q=4, labels=["Low", "Med-Low", "Med-High", "High"], duplicates='drop')
+    except ValueError as e:
+        logging.warning(f"Failed to compute quartiles for {activity_col}: {e}")
+        return
+
     plt.figure(figsize=(8, 6))
     sns.boxplot(data=df, x="activity_level", y=target_col)
     plt.title(f"{target_col} by {activity_col} Quartiles")
@@ -93,8 +102,15 @@ def main():
     logging.info(f"Available columns: {df.columns.tolist()}")
     df = df.rename(columns={"stress_avg_y": "stress_avg"})
 
+    # Warn early if all-NaN in key features
+    for col in ["steps", "yesterday_activity_minutes", "yesterday_training_effect"]:
+        if col in df.columns and df[col].isna().all():
+            logging.warning(f"Column '{col}' contains only NaNs")
+
+    # Heatmap
     plot_correlations(df)
 
+    # Scatter plots
     scatter_pairs = [
         ("steps", "score"),
         ("yesterday_activity_minutes", "score"),
@@ -108,6 +124,7 @@ def main():
         else:
             logging.warning(f"Skipping scatter plot: '{x_col}' or '{y_col}' not in data")
 
+    # Box plots
     activity_cols = ["steps", "yesterday_activity_minutes", "yesterday_training_effect"]
     for activity_col in activity_cols:
         if activity_col in df.columns and "score" in df.columns:

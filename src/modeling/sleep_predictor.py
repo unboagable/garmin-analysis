@@ -32,6 +32,9 @@ def load_and_prepare_data():
     X = X.select_dtypes(include=["number"])
     X = X.fillna(X.median(numeric_only=True))
 
+    if X.empty or X.shape[1] < 5:
+        logging.warning(f"Too few usable features for training ({X.shape[1]} columns). Check input data.")
+    
     return X, y
 
 def train_and_evaluate(X, y):

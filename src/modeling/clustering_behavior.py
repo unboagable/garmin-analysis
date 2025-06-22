@@ -18,7 +18,7 @@ timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 FEATURE_COLS = [
     "steps", "activity_minutes", "training_effect",
-    "total_sleep", "rem_sleep", "deep_sleep", "awake",
+    "total_sleep_min", "rem_sleep_min", "deep_sleep_min", "awake",
     "stress_avg", "stress_max", "stress_duration"
 ]
 
@@ -32,7 +32,7 @@ def plot_clusters(X_scaled, labels):
     X_pca = pca.fit_transform(X_scaled)
 
     plt.figure(figsize=(8, 6))
-    sns.scatterplot(x=X_pca[:,0], y=X_pca[:,1], hue=labels, palette="Set2")
+    sns.scatterplot(x=X_pca[:, 0], y=X_pca[:, 1], hue=labels, palette="Set2")
     plt.title("Clustered Days by Behavior Archetype (PCA)")
     plt.xlabel("PCA 1")
     plt.ylabel("PCA 2")
@@ -56,9 +56,14 @@ if __name__ == "__main__":
         logging.warning(f"Skipping missing columns: {missing}")
 
     df = df.dropna(subset=available_cols)
+    if df.empty:
+        logging.warning("No usable data available for clustering after dropping NaNs. Exiting.")
+        exit()
+
     features = df[available_cols].copy()
     X_scaled = standardize_features(df, available_cols)
 
     model, labels = cluster_days(X_scaled, n_clusters=3)
     summary = summarize_clusters(features, labels)
     plot_clusters(X_scaled, labels)
+

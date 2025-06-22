@@ -16,7 +16,7 @@ timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 FEATURE_COLS = [
     "steps", "activity_minutes", "training_effect",
-    "total_sleep", "rem_sleep", "deep_sleep", "awake",
+    "total_sleep_min", "rem_sleep_min", "deep_sleep_min", "awake",
     "stress_avg", "stress_max", "stress_duration"
 ]
 
@@ -57,6 +57,10 @@ if __name__ == "__main__":
         logging.warning(f"Skipping missing columns: {missing}")
 
     df = df.dropna(subset=available_cols)
+    if df.empty:
+        logging.warning("No usable data available after dropping rows with NaNs. Exiting.")
+        exit()
+
     feature_cols_available = [col for col in FEATURE_COLS if col in df.columns]
     features = df[feature_cols_available].copy()
     X_scaled = standardize_features(df, feature_cols_available)

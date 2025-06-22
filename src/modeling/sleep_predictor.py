@@ -108,10 +108,22 @@ def plot_feature_importance(model, X, lagged=False, show=False):
 
     return str(out_path)
 
-def run_sleep_model(df):
-    X, y, lagged = load_and_prepare_data(lagged=False)
+def run_sleep_model(df=None):
+    if df is None:
+        X, y, lagged = load_and_prepare_data(lagged=False)
+    else:
+        df = convert_time_columns(df)
+        df = df[df["score"].notnull()]
+        target = "score"
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        features = [col for col in numeric_cols if col != target]
+        X = df[features]
+        y = df[target]
+        lagged = False
+
     if X is None or y is None:
         return {"r2": None, "mse": None, "plot_path": None}
+
     model, feature_X, r2, mse = train_and_evaluate(X, y, lagged)
     plot_path = plot_feature_importance(model, feature_X, lagged)
     return {"r2": r2, "mse": mse, "plot_path": plot_path}

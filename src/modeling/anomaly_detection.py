@@ -25,10 +25,13 @@ def run_anomaly_detection(df):
         "stress_avg", "stress_max", "stress_duration"
     ]
 
-    X_scaled = standardize_features(df, features)
-    if X_scaled.size == 0:
-        logging.warning("No data left after dropping NaNs in columns: %s", features)
+    # Drop rows with too many missing values in critical features
+    df_clean = df.dropna(subset=features, how='any')
+    if df_clean.empty or len(df_clean) < 10:
+        logging.warning("Not enough complete rows for anomaly detection. Skipping.")
         return pd.DataFrame(), None
+
+    X_scaled = standardize_features(df_clean, features)
 
     anomaly_labels, model = detect_anomalies(X_scaled)
 
@@ -47,7 +50,7 @@ def run_anomaly_detection(df):
     logging.info(f"Saved anomaly plot to {out_path}")
     plt.close()
 
-    df_result = df.copy()
+    df_result = df_clean.copy()
     df_result["anomaly_label"] = anomaly_labels
     anomalies_df = df_result[df_result["anomaly_label"] == -1]
     return anomalies_df, str(out_path)

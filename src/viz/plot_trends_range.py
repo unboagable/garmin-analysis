@@ -2,8 +2,14 @@ import os
 import logging
 import pandas as pd
 import matplotlib.pyplot as plt
+from pathlib import Path
+from datetime import datetime
+from src.utils import filter_required_columns
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+PLOTS_DIR = Path("plots")
+PLOTS_DIR.mkdir(exist_ok=True)
 
 def plot_columns(df, columns, title):
     available = [col for col in columns if col in df.columns]
@@ -11,9 +17,14 @@ def plot_columns(df, columns, title):
     if missing:
         logging.warning(f"Skipping missing columns: {missing}")
     if available:
-        df.set_index("day")[available].plot(subplots=True, figsize=(12, 6), title=title)
+        ax = df.set_index("day")[available].plot(subplots=True, figsize=(12, 6), title=title)
         plt.tight_layout()
-        plt.show()
+        timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{timestamp_str}_" + title.lower().replace(" ", "_") + ".png"
+        out_path = PLOTS_DIR / filename
+        plt.savefig(out_path)
+        logging.info(f"Saved plot to {out_path}")
+        plt.close()
     else:
         logging.warning(f"No valid columns available for: {title}")
 
@@ -31,6 +42,9 @@ def main():
     if "steps_y" in df.columns:
         df = df.rename(columns={"steps_y": "steps"})
 
+    # Filter out rows missing key predictors
+    df = filter_required_columns(df, ["yesterday_activity_minutes", "stress_avg"])
+
     # --- Trend Plots ---
     logging.info("Generating trend plots...")
     plot_columns(df, ["steps", "calories_total", "hr_min", "hr_max", "distance"], "Daily Activity Trends")
@@ -40,4 +54,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    

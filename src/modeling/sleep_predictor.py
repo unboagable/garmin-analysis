@@ -7,6 +7,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 from pathlib import Path
 from datetime import datetime
+from src.utils import filter_required_columns
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -18,7 +19,10 @@ def load_and_prepare_data():
         return None, None
 
     df = pd.read_csv(DATA_PATH, parse_dates=["day"])
-    df = df[df["score"].notnull()]
+    df = df[df["score"].notnull()]  # Only include rows with a sleep score
+
+    # Filter out days missing essential predictors
+    df = filter_required_columns(df, ["yesterday_activity_minutes", "stress_avg"])
 
     drop_cols = ["day"]
     target = "score"
@@ -26,15 +30,15 @@ def load_and_prepare_data():
     X = df.drop(columns=[c for c in drop_cols if c in df.columns] + [target])
     y = df[target]
 
+    # Handle timedelta conversion and filter only numeric columns
     for col in X.select_dtypes(include=["timedelta64[ns]"]):
         X[col] = X[col].dt.total_seconds()
-
     X = X.select_dtypes(include=["number"])
     X = X.fillna(X.median(numeric_only=True))
 
     if X.empty or X.shape[1] < 5:
         logging.warning(f"Too few usable features for training ({X.shape[1]} columns). Check input data.")
-    
+
     return X, y
 
 def train_and_evaluate(X, y):

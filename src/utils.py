@@ -98,7 +98,21 @@ def load_master_dataframe():
 
 def standardize_features(df, columns):
     df = df.copy()
+    df = df.dropna(subset=columns)
+    if df.empty:
+        logging.warning("No data left after dropping NaNs in columns: %s", columns)
+        return np.array([])
     scaler = StandardScaler()
     scaled = scaler.fit_transform(df[columns])
     logging.info("Standardized features: %s", columns)
     return scaled
+
+def filter_required_columns(df, required_cols):
+    missing_req = [col for col in required_cols if col not in df.columns]
+    if missing_req:
+        logging.warning(f"Missing required columns for analysis: {missing_req}")
+        return df
+    before = len(df)
+    df = df.dropna(subset=required_cols)
+    logging.info(f"Filtered rows missing {required_cols}. Kept {len(df)} of {before} rows.")
+    return df

@@ -5,6 +5,7 @@ import seaborn as sns
 from pathlib import Path
 from datetime import datetime
 import logging
+from src.utils import filter_required_columns
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -101,6 +102,9 @@ def main():
 
     logging.info(f"Available columns: {df.columns.tolist()}")
     df = df.rename(columns={"stress_avg_y": "stress_avg"})
+
+    # Filter out rows missing key predictors
+    df = filter_required_columns(df, ["yesterday_activity_minutes", "stress_avg"])
 
     # Warn early if all-NaN in key features
     for col in ["steps", "yesterday_activity_minutes", "yesterday_training_effect"]:

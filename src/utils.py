@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import pandas as pd
+import numpy as np
 import logging
 from datetime import datetime, timedelta
 from pandas.tseries.offsets import DateOffset
@@ -63,6 +64,19 @@ def convert_time_to_minutes(time_str):
     except:
         return 0
 
+def convert_time_columns(df, columns):
+    def time_to_minutes(val):
+        try:
+            h, m, s = map(int, val.split(":"))
+            return h * 60 + m + s / 60
+        except:
+            return np.nan
+
+    for col in columns:
+        if col in df.columns and df[col].dtype == object:
+            df[col] = df[col].apply(time_to_minutes)
+    return df
+
 def aggregate_stress(stress_df):
     stress_df["timestamp"] = pd.to_datetime(stress_df["timestamp"])
     stress_df["day"] = stress_df["timestamp"].dt.date
@@ -75,10 +89,12 @@ def aggregate_stress(stress_df):
     return daily
 
 def load_master_dataframe():
-    tables = load_garmin_tables()
-    if "daily" not in tables:
-        raise ValueError("Missing 'daily_summary' table in Garmin DB")
-    return tables["daily"]
+    df_path = "data/master_daily_summary.csv"
+    if not os.path.exists(df_path):
+        raise FileNotFoundError(f"{df_path} not found. Please run the ingestion script first.")
+    df = pd.read_csv(df_path, parse_dates=["day"])
+    logging.info("Loaded master dataset with %d rows and %d columns", len(df), df.shape[1])
+    return df
 
 def standardize_features(df, columns):
     df = df.copy()
@@ -86,6 +102,3 @@ def standardize_features(df, columns):
     scaled = scaler.fit_transform(df[columns])
     logging.info("Standardized features: %s", columns)
     return scaled
-
-
-

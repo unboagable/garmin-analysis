@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from datetime import datetime
 import logging
-from src.utils import load_master_dataframe, standardize_features
+from src.utils import load_master_dataframe, standardize_features, convert_time_columns
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -26,11 +26,16 @@ def detect_anomalies(X_scaled):
     return preds, model
 
 def plot_anomalies(df, anomaly_labels):
+    df = df.copy()
     df["anomaly"] = anomaly_labels
     df["anomaly"] = df["anomaly"].map({1: "Normal", -1: "Anomaly"})
 
     if "score" not in df.columns:
         logging.warning("'score' column missing — skipping anomaly plot.")
+        return
+
+    if df["score"].dropna().empty:
+        logging.warning("'score' column exists but contains only NaNs — skipping anomaly plot.")
         return
 
     plt.figure(figsize=(12, 6))
@@ -56,14 +61,22 @@ if __name__ == "__main__":
         missing = set(required_cols) - set(available_cols)
         logging.warning(f"Skipping missing columns: {missing}")
 
-    df = df.dropna(subset=available_cols)
-    if df.empty:
-        logging.warning("No usable data available after dropping rows with NaNs. Exiting.")
+    feature_cols_available = [col for col in FEATURE_COLS if col in df.columns]
+
+    # Keep rows with at least 70% non-null feature columns
+    row_valid_threshold = int(0.7 * len(feature_cols_available))
+    df_features = df[df[feature_cols_available].notna().sum(axis=1) >= row_valid_threshold]
+
+    if df_features.empty:
+        logging.warning("No usable data available after filtering rows by non-null threshold. Exiting.")
         exit()
 
-    feature_cols_available = [col for col in FEATURE_COLS if col in df.columns]
-    features = df[feature_cols_available].copy()
-    X_scaled = standardize_features(df, feature_cols_available)
+    # Convert time columns to numeric minutes where necessary
+    df_features = convert_time_columns(df_features, feature_cols_available)
 
+    X_scaled = standardize_features(df_features, feature_cols_available)
     anomaly_labels, model = detect_anomalies(X_scaled)
-    plot_anomalies(df, anomaly_labels)
+
+    # Attach anomaly labels back to the original DataFrame
+    df.loc[df_features.index, "anomaly_label"] = anomaly_labels
+    plot_anomalies(df, df.get("anomaly_label", pd.Series(dtype=object)))

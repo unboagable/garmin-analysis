@@ -4,6 +4,7 @@
 # Data outputs and processed results
 data/
 !data/*.md  # allow markdown notes if needed
+reports/
 plots/
 
 # Jupyter notebook checkpoints

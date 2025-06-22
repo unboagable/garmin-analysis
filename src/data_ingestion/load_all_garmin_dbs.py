@@ -90,9 +90,13 @@ def summarize_and_merge(return_df: bool = False):
 
     if "steps" not in daily.columns:
         logging.warning("Column 'steps' not found in daily_summary — will affect downstream features")
-    
+
     daily = normalize_day_column(daily, "daily")
-    daily = daily.dropna(subset=["steps", "calories_total"])
+    if "steps" in daily.columns:
+        before = len(daily)
+        daily = daily[daily["steps"].notnull()]
+        logging.info(f"Dropped {before - len(daily)} rows with null 'steps'")
+
     merged = daily.copy()
 
     if sleep is not None and not sleep.empty:
@@ -129,6 +133,7 @@ def summarize_and_merge(return_df: bool = False):
         steps["day"] = pd.to_datetime(steps["start_time"]).dt.normalize()
         steps_day = steps.drop(columns=["activity_id", "start_time"], errors="ignore")
         steps_day = steps_day.groupby("day").mean(numeric_only=True).reset_index()
+        steps_day = steps_day.rename(columns={"steps": "steps_from_steps_activity"})
         merged = merged.merge(steps_day, on="day", how="left")
 
     # Lag and rolling features
@@ -144,14 +149,20 @@ def summarize_and_merge(return_df: bool = False):
 
     if merged["steps"].isna().all():
         logging.warning("Column 'steps' has no valid data — will result in null steps_avg_7d")
-
-    merged["steps_avg_7d"] = merged["steps"].rolling(window=7, min_periods=1).mean()
+        merged["steps_avg_7d"] = None
+    else:
+        merged["steps_avg_7d"] = merged["steps"].rolling(window=7, min_periods=1).mean()
 
     # Flag missing values
     if "score" in merged.columns:
         merged["missing_score"] = merged["score"].isna()
+    else:
+        merged["missing_score"] = True
+
     if "training_effect" in merged.columns:
         merged["missing_training_effect"] = merged["training_effect"].isna()
+    else:
+        merged["missing_training_effect"] = True
 
     # Save output
     logging.info(f"Final merged shape: {merged.shape}")

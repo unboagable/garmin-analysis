@@ -10,6 +10,8 @@ packages = [{ include = "src/*.py" }]
 python = "^3.12"
 pandas = "*"
 numpy = "*"
+seaborn = "*"
+tabulate = "*"
 notebook = "^7.4.3"
 ipykernel = "^6.29.5"
 matplotlib = "^3.10.3"

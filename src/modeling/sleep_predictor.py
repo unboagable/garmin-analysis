@@ -9,41 +9,57 @@ from datetime import datetime
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_squared_error
-from src.utils import filter_required_columns
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-data_path = "data/master_daily_summary.csv"
+data_path = "data/modeling_ready_dataset.csv"
+
+def convert_time_columns(df):
+    def to_minutes(x):
+        try:
+            parts = x.split(":")
+            if len(parts) == 3:
+                h, m, s = map(float, parts)
+                return h * 60 + m + s / 60
+        except:
+            return np.nan
+        return np.nan
+
+    time_cols = [col for col in df.columns if df[col].dtype == "object" and df[col].str.contains(":", na=False).any()]
+    for col in time_cols:
+        df[col] = df[col].apply(to_minutes)
+        logging.info(f"Converted time column to minutes: {col}")
+    return df
 
 def load_and_prepare_data(lagged=False):
     if not os.path.exists(data_path):
-        logging.error("Missing master dataset — please run load_all_garmin_dbs.py first.")
-        return None, None, None
+        fallback_path = "data/master_daily_summary.csv"
+        if not os.path.exists(fallback_path):
+            logging.error("Missing both modeling-ready and master datasets.")
+            return None, None, None
+        logging.warning("Modeling-ready dataset not found — falling back to master_daily_summary.csv")
+        df = pd.read_csv(fallback_path, parse_dates=["day"])
+        df = df[df["score"].notnull()]
+        df = convert_time_columns(df)
 
-    df = pd.read_csv(data_path, parse_dates=["day"])
-    df = df[df["score"].notnull()]
-
-    # Add missing value indicators
-    df["missing_yesterday_activity_minutes"] = df["yesterday_activity_minutes"].isna()
-    df["missing_stress_avg"] = df["stress_avg"].isna()
-
-    # Impute missing values
-    df["yesterday_activity_minutes"] = df["yesterday_activity_minutes"].fillna(0)
-    df["stress_avg"] = df["stress_avg"].fillna(df["stress_avg"].median())
+        df["missing_yesterday_activity_minutes"] = df["yesterday_activity_minutes"].isna()
+        df["missing_stress_avg"] = df["stress_avg"].isna()
+        df["yesterday_activity_minutes"] = df["yesterday_activity_minutes"].fillna(0)
+        df["stress_avg"] = df["stress_avg"].fillna(df["stress_avg"].median())
+    else:
+        df = pd.read_csv(data_path, parse_dates=["day"])
+        df = convert_time_columns(df)
 
     if lagged:
         df["score_tomorrow"] = df["score"].shift(-1)
         df = df.dropna(subset=["score_tomorrow"])
         target = "score_tomorrow"
     else:
-        df = filter_required_columns(df, ["yesterday_activity_minutes", "stress_avg"])
         target = "score"
 
     drop_cols = ["day"]
-    features = [
-        "yesterday_activity_minutes", "stress_avg",
-        "missing_yesterday_activity_minutes", "missing_stress_avg"
-    ]
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    features = [col for col in numeric_cols if col not in [target]]
 
     X = df[features]
     y = df[target]

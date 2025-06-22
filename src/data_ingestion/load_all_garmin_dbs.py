@@ -35,7 +35,7 @@ def normalize_day_column(df: pd.DataFrame, source_name: str = "unknown") -> pd.D
     if df is None or df.empty:
         return df
     if "day" in df.columns:
-        df["day"] = pd.to_datetime(df["day"])
+        df.loc[:, "day"] = pd.to_datetime(df["day"])
     elif "calendarDate" in df.columns:
         df["day"] = pd.to_datetime(df["calendarDate"])
     elif "timestamp" in df.columns:
@@ -68,14 +68,36 @@ def aggregate_stress(stress: pd.DataFrame) -> pd.DataFrame:
     ).reset_index()
 
 def preprocess_sleep(sleep: pd.DataFrame) -> pd.DataFrame:
+    if sleep.empty:
+        logging.warning("Sleep dataframe is empty.")
+        return sleep
+
+    original_rows = len(sleep)
+
     for col in ["total_sleep", "deep_sleep", "rem_sleep"]:
         if col in sleep.columns:
             sleep[col + "_min"] = sleep[col].apply(convert_time_to_minutes)
-    sleep = sleep.drop(columns=["total_sleep", "deep_sleep", "rem_sleep"], errors="ignore")
-    sleep = sleep[pd.to_numeric(sleep.get("score", pd.Series()), errors="coerce") > 0]
+        else:
+            logging.warning("Missing sleep column: %s", col)
+
+    sleep.drop(columns=["total_sleep", "deep_sleep", "rem_sleep"], inplace=True, errors="ignore")
+
+    if "score" in sleep.columns:
+        sleep["score"] = pd.to_numeric(sleep["score"], errors="coerce")
+        before_filter = len(sleep)
+        sleep = sleep[sleep["score"] > 0]
+        after_filter = len(sleep)
+        dropped = before_filter - after_filter
+        logging.info("Dropped %d rows from sleep data where score was missing or ≤ 0 (%d → %d)", dropped, before_filter, after_filter)
+    else:
+        logging.warning("No 'score' column found in sleep data.")
+
+    final_rows = len(sleep)
+    total_dropped = original_rows - final_rows
+    logging.info("Total dropped rows during sleep preprocessing: %d of %d (%.1f%%)", total_dropped, original_rows, 100 * total_dropped / original_rows if original_rows > 0 else 0)
+
     return sleep
 
-# --- Main Merge Function ---
 def summarize_and_merge(return_df: bool = False):
     daily = load_table(DB_PATHS["garmin"], "daily_summary", parse_dates=["day"])
     sleep = load_table(DB_PATHS["garmin"], "sleep", parse_dates=["day"])
@@ -88,15 +110,13 @@ def summarize_and_merge(return_df: bool = False):
     if daily is None or daily.empty:
         raise RuntimeError("Missing daily_summary table")
 
-    if "steps" not in daily.columns:
+    if "steps" in daily.columns:
+        null_steps_count = daily["steps"].isnull().sum()
+        logging.info(f"{null_steps_count} rows in daily_summary have null 'steps' — keeping for continuity")
+    else:
         logging.warning("Column 'steps' not found in daily_summary — will affect downstream features")
 
     daily = normalize_day_column(daily, "daily")
-    if "steps" in daily.columns:
-        before = len(daily)
-        daily = daily[daily["steps"].notnull()]
-        logging.info(f"Dropped {before - len(daily)} rows with null 'steps'")
-
     merged = daily.copy()
 
     if sleep is not None and not sleep.empty:
@@ -136,13 +156,11 @@ def summarize_and_merge(return_df: bool = False):
         steps_day = steps_day.rename(columns={"steps": "steps_from_steps_activity"})
         merged = merged.merge(steps_day, on="day", how="left")
 
-    # Lag and rolling features
     lag_cols = ["had_workout", "activity_minutes", "activity_calories", "training_effect", "anaerobic_te"]
     for col in lag_cols:
         if col in merged.columns:
             merged[f"yesterday_{col}"] = merged[col].shift(1)
 
-    # Ensure 'steps' is numeric and compute rolling avg
     if "steps" not in merged.columns:
         logging.warning("Column 'steps' missing after all merges — injecting placeholder")
         merged["steps"] = pd.Series(dtype="float")
@@ -153,7 +171,6 @@ def summarize_and_merge(return_df: bool = False):
     else:
         merged["steps_avg_7d"] = merged["steps"].rolling(window=7, min_periods=1).mean()
 
-    # Flag missing values
     if "score" in merged.columns:
         merged["missing_score"] = merged["score"].isna()
     else:
@@ -164,7 +181,6 @@ def summarize_and_merge(return_df: bool = False):
     else:
         merged["missing_training_effect"] = True
 
-    # Save output
     logging.info(f"Final merged shape: {merged.shape}")
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     merged.to_csv(OUTPUT_PATH, index=False)
@@ -173,6 +189,5 @@ def summarize_and_merge(return_df: bool = False):
     if return_df:
         return merged
 
-# --- Entry Point ---
 if __name__ == "__main__":
     summarize_and_merge()

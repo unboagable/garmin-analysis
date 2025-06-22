@@ -72,14 +72,17 @@ def train_and_evaluate(X, y, lagged=False):
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
 
-    if lagged:
-        logging.info("R^2 Score (Lagged): %.4f", r2_score(y_test, y_pred))
-        logging.info("MSE (Lagged): %.4f", mean_squared_error(y_test, y_pred))
-    else:
-        logging.info("R^2 Score: %.4f", r2_score(y_test, y_pred))
-        logging.info("MSE: %.4f", mean_squared_error(y_test, y_pred))
+    r2 = r2_score(y_test, y_pred)
+    mse = mean_squared_error(y_test, y_pred)
 
-    return model, X
+    if lagged:
+        logging.info("R^2 Score (Lagged): %.4f", r2)
+        logging.info("MSE (Lagged): %.4f", mse)
+    else:
+        logging.info("R^2 Score: %.4f", r2)
+        logging.info("MSE: %.4f", mse)
+
+    return model, X, r2, mse
 
 def plot_feature_importance(model, X, lagged=False, show=False):
     importances = pd.Series(model.feature_importances_, index=X.columns)
@@ -103,12 +106,22 @@ def plot_feature_importance(model, X, lagged=False, show=False):
     else:
         plt.close()
 
+    return str(out_path)
+
+def run_sleep_model(df):
+    X, y, lagged = load_and_prepare_data(lagged=False)
+    if X is None or y is None:
+        return {"r2": None, "mse": None, "plot_path": None}
+    model, feature_X, r2, mse = train_and_evaluate(X, y, lagged)
+    plot_path = plot_feature_importance(model, feature_X, lagged)
+    return {"r2": r2, "mse": mse, "plot_path": plot_path}
+
 def main():
     for lagged_mode in [False, True]:
         X, y, lagged = load_and_prepare_data(lagged=lagged_mode)
         if X is None or y is None:
             continue
-        model, feature_X = train_and_evaluate(X, y, lagged)
+        model, feature_X, r2, mse = train_and_evaluate(X, y, lagged)
         plot_feature_importance(model, feature_X, lagged)
 
 if __name__ == "__main__":

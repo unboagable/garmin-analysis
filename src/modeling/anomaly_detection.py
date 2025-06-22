@@ -4,8 +4,9 @@ import numpy as np
 from sklearn.ensemble import IsolationForest
 import matplotlib.pyplot as plt
 from pathlib import Path
+from sklearn.decomposition import PCA
 from src.utils import load_master_dataframe, standardize_features
-import sys
+from datetime import datetime
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -17,9 +18,7 @@ def detect_anomalies(X):
     preds = model.fit_predict(X)
     return preds, model
 
-def main():
-    df = load_master_dataframe()
-
+def run_anomaly_detection(df):
     features = [
         "steps", "activity_minutes", "training_effect",
         "total_sleep_min", "rem_sleep_min", "deep_sleep_min", "awake",
@@ -29,14 +28,12 @@ def main():
     X_scaled = standardize_features(df, features)
     if X_scaled.size == 0:
         logging.warning("No data left after dropping NaNs in columns: %s", features)
-        sys.exit(0)
+        return pd.DataFrame(), None
 
     anomaly_labels, model = detect_anomalies(X_scaled)
 
-    # Plot anomalies in 2D PCA space for simplicity
-    from sklearn.decomposition import PCA
+    # PCA plot
     X_pca = PCA(n_components=2).fit_transform(X_scaled)
-
     plt.figure(figsize=(8, 6))
     plt.scatter(X_pca[:, 0], X_pca[:, 1], c=anomaly_labels, cmap="coolwarm", alpha=0.7)
     plt.title("Anomaly Detection via Isolation Forest")
@@ -44,10 +41,24 @@ def main():
     plt.ylabel("PCA Component 2")
     plt.tight_layout()
 
-    out_path = PLOTS_DIR / "20250621_233652_anomaly_detection_plot.png"
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    out_path = PLOTS_DIR / f"anomaly_detection_{timestamp_str}.png"
     plt.savefig(out_path)
     logging.info(f"Saved anomaly plot to {out_path}")
     plt.close()
+
+    df_result = df.copy()
+    df_result["anomaly_label"] = anomaly_labels
+    anomalies_df = df_result[df_result["anomaly_label"] == -1]
+    return anomalies_df, str(out_path)
+
+def main():
+    df = load_master_dataframe()
+    anomalies_df, plot_path = run_anomaly_detection(df)
+    if not anomalies_df.empty:
+        logging.info(f"Detected {len(anomalies_df)} anomalies. Plot saved to {plot_path}")
+    else:
+        logging.info("No anomalies detected.")
 
 if __name__ == "__main__":
     main()

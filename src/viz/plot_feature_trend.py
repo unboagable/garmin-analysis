@@ -6,9 +6,10 @@ from datetime import datetime
 def plot_feature_trend(df: pd.DataFrame, feature: str,
                         date_col: str = None,
                         rolling_days: int = 7,
-                        output_dir: str = "plots"):
+                        output_dir: str = "plots",
+                        anomalies: pd.DataFrame = None):
     """
-    Plots a single feature over time with an optional rolling average.
+    Plots a single feature over time with an optional rolling average and anomaly highlights.
 
     Args:
         df (pd.DataFrame): Input DataFrame with date and feature columns.
@@ -16,6 +17,7 @@ def plot_feature_trend(df: pd.DataFrame, feature: str,
         date_col (str or None): Name of the datetime column. If None, attempts auto-detection.
         rolling_days (int): Window for the rolling average.
         output_dir (str): Directory to save the plot.
+        anomalies (pd.DataFrame or None): DataFrame with anomalies to highlight.
     """
     if feature not in df.columns:
         raise ValueError(f"Feature column '{feature}' not found in DataFrame.")
@@ -41,6 +43,13 @@ def plot_feature_trend(df: pd.DataFrame, feature: str,
         df_rolling[feature] = df_rolling[feature].rolling(rolling_days).mean()
         plt.plot(df_rolling[date_col], df_rolling[feature], label=f"{feature} (Rolling {rolling_days}d)", linewidth=2)
 
+    # Highlight anomalies
+    if anomalies is not None and date_col in anomalies.columns:
+        anomalies[date_col] = pd.to_datetime(anomalies[date_col])
+        anomaly_dates = anomalies[date_col].tolist()
+        anomaly_values = df[df[date_col].isin(anomaly_dates)][feature]
+        plt.scatter(anomaly_dates, anomaly_values, color='red', label="Anomalies", zorder=5)
+
     plt.title(f"{feature} Trend Over Time")
     plt.xlabel("Date")
     plt.ylabel(feature)
@@ -59,4 +68,5 @@ def plot_feature_trend(df: pd.DataFrame, feature: str,
 # Example usage:
 if __name__ == "__main__":
     df = pd.read_csv("data/master_daily_summary.csv")
-    plot_feature_trend(df, feature="stress_avg")
+    anomalies = pd.read_csv("data/anomalies.csv") if os.path.exists("data/anomalies.csv") else None
+    plot_feature_trend(df, feature="stress_avg", anomalies=anomalies)

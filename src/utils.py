@@ -33,6 +33,33 @@ def normalize_dates(df, col="day"):
     df[col] = pd.to_datetime(df[col]).dt.normalize()
     return df
 
+def convert_time_to_minutes(time_str):
+    try:
+        parts = time_str.split(":")
+        if len(parts) == 3:
+            h, m, s = map(int, parts)
+            return h * 60 + m + s / 60
+        elif len(parts) == 2:
+            m, s = map(int, parts)
+            return m + s / 60
+        else:
+            return float(time_str)
+    except Exception:
+        return None
+
+def normalize_day_column(df: pd.DataFrame, source_name: str = "unknown") -> pd.DataFrame:
+    if df is None or df.empty:
+        return df
+    if "day" in df.columns:
+        df["day"] = pd.to_datetime(df["day"])
+    elif "calendarDate" in df.columns:
+        df["day"] = pd.to_datetime(df["calendarDate"])
+    elif "timestamp" in df.columns:
+        df["day"] = pd.to_datetime(df["timestamp"]).dt.normalize()
+    else:
+        logging.warning(f"[{source_name}] could not normalize 'day' column (missing day/calendarDate/timestamp)")
+    return df
+
 def filter_by_date(df, date_col="day", from_date=None, to_date=None, days_back=None, weeks_back=None, months_back=None):
     if df.empty:
         logging.warning("Received empty DataFrame to filter on column '%s'.", date_col)
@@ -56,13 +83,6 @@ def filter_by_date(df, date_col="day", from_date=None, to_date=None, days_back=N
     logging.info("Filtered data on column '%s' between %s and %s — %d rows returned.",
                  date_col, from_date, to_date, len(df))
     return df
-
-def convert_time_to_minutes(time_str):
-    try:
-        h, m, s = map(int, time_str.split(":"))
-        return h * 60 + m + s / 60
-    except:
-        return 0
 
 def convert_time_columns(df, columns):
     def time_to_minutes(val):

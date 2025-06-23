@@ -3,6 +3,7 @@ import pandas as pd
 import logging
 from pathlib import Path
 from datetime import datetime
+from src.utils import normalize_day_column, convert_time_to_minutes
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -30,32 +31,6 @@ def load_table(db_path: Path, table_name: str, parse_dates=None) -> pd.DataFrame
         except Exception as e:
             logging.warning(f"Failed to load {table_name} from {db_path.name}: {e}")
             return pd.DataFrame()
-
-def normalize_day_column(df: pd.DataFrame, source_name: str = "unknown") -> pd.DataFrame:
-    if df is None or df.empty:
-        return df
-    if "day" in df.columns:
-        df.loc[:, "day"] = pd.to_datetime(df["day"])
-    elif "calendarDate" in df.columns:
-        df["day"] = pd.to_datetime(df["calendarDate"])
-    elif "timestamp" in df.columns:
-        df["day"] = pd.to_datetime(df["timestamp"]).dt.normalize()
-    else:
-        logging.warning(f"[{source_name}] could not normalize 'day' column (missing day/calendarDate/timestamp)")
-    return df
-
-def convert_time_to_minutes(time_str: str) -> float:
-    try:
-        parts = time_str.split(":")
-        if len(parts) == 3:
-            hours, minutes, seconds = map(int, parts)
-            return hours * 60 + minutes + seconds / 60
-        elif len(parts) == 2:
-            minutes, seconds = map(int, parts)
-            return minutes + seconds / 60
-        return float(time_str)
-    except Exception:
-        return None
 
 def aggregate_stress(stress: pd.DataFrame) -> pd.DataFrame:
     if stress.empty or "timestamp" not in stress.columns:

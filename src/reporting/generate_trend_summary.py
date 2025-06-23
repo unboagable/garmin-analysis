@@ -1,73 +1,64 @@
 import pandas as pd
-import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
-from datetime import datetime
-import os
 import logging
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-def generate_trend_summary(df: pd.DataFrame, date_col='day', exclude_cols=None, output_dir='reports'):
-    """
-    Generate a trend summary report:
-    - Top correlations
-    - Most volatile features (std deviation)
-    - Date ranges with missing data
+def log_top_correlations(corr_df, threshold=0.5, max_pairs=20):
+    seen = set()
+    top_corrs = []
 
-    Saves a markdown and notebook-compatible output.
-    """
-    os.makedirs(output_dir, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    md_path = os.path.join(output_dir, f"trend_summary_{timestamp}.md")
+    for col in corr_df.columns:
+        for idx in corr_df.index:
+            if col == idx:
+                continue
+            pair = tuple(sorted((col, idx)))
+            if pair in seen:
+                continue
+            seen.add(pair)
+            value = corr_df.loc[idx, col]
+            if abs(value) >= threshold:
+                top_corrs.append((pair[0], pair[1], value))
 
-    if exclude_cols is None:
-        exclude_cols = []
+    top_corrs.sort(key=lambda x: abs(x[2]), reverse=True)
 
-    df = df.copy()
-    if date_col not in df.columns:
-        raise ValueError(f"Date column '{date_col}' not found.")
-    df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
-    df = df.sort_values(date_col)
+    logging.info(f"Top {min(max_pairs, len(top_corrs))} correlated pairs with |r| ≥ {threshold}:")
+    for x, y, r in top_corrs[:max_pairs]:
+        logging.info(f"  • {x} ↔ {y}: {r:.2f}")
 
-    logging.info("Calculating top correlated feature pairs...")
-    corr_matrix = df.select_dtypes(include='number').drop(columns=exclude_cols, errors='ignore').corr()
-    corr_pairs = (
-        corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
-        .stack()
-        .reset_index()
-        .rename(columns={0: 'correlation', 'level_0': 'feature_1', 'level_1': 'feature_2'})
-        .sort_values(by='correlation', key=abs, ascending=False)
-    )
+def generate_trend_summary():
+    from src.utils import load_master_dataframe
 
-    logging.info("Computing most volatile features...")
-    volatility = df.select_dtypes(include='number').std().sort_values(ascending=False)
+    df = load_master_dataframe()
+    numeric_df = df.select_dtypes(include="number").dropna(axis=1, how="all")
+    corr_matrix = numeric_df.corr(method="pearson")
 
-    logging.info("Identifying dates with missing data...")
-    missing_by_date = df.set_index(date_col).isna().sum(axis=1)
-    missing_ranges = missing_by_date[missing_by_date > 0]
+    # ✅ Log top correlation pairs
+    log_top_correlations(corr_matrix, threshold=0.5)
 
-    logging.info("Writing trend summary markdown report...")
-    with open(md_path, 'w') as f:
-        f.write(f"# Trend Summary Report\n\nGenerated on {timestamp}\n\n")
+    # Identify top volatile features
+    std_dev = numeric_df.std().sort_values(ascending=False)
+    top_volatile = std_dev.head(10)
 
-        f.write("## Top Correlated Feature Pairs\n\n")
-        f.write(corr_pairs.head(10).to_markdown(index=False))
+    # Missing data summary
+    missing_pct = df.isnull().mean().sort_values(ascending=False)
+    top_missing = missing_pct[missing_pct > 0].head(10)
+
+    output_path = Path("reports") / f"trend_summary_{pd.Timestamp.now():%Y%m%d_%H%M%S}.md"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, "w") as f:
+        f.write("# 📈 Garmin Data Trend Summary\n\n")
+
+        f.write("## 🔗 Top Volatile Features (Std Dev)\n")
+        f.write(top_volatile.to_string())
         f.write("\n\n")
 
-        f.write("## Most Volatile Features (Standard Deviation)\n\n")
-        f.write(volatility.head(10).to_frame(name='std_dev').to_markdown())
+        f.write("## ❗ Features with Missing Data\n")
+        f.write(top_missing.to_string())
         f.write("\n\n")
 
-        f.write("## Dates with Missing Data\n\n")
-        if missing_ranges.empty:
-            f.write("No missing values by date.\n")
-        else:
-            f.write(missing_ranges.to_frame(name='missing_count').to_markdown())
+    logging.info(f"Saved trend summary markdown to {output_path}")
 
-    logging.info(f"Saved trend summary markdown to {md_path}")
-
-# Example usage
 if __name__ == "__main__":
-    df = pd.read_csv("data/master_daily_summary.csv")
-    generate_trend_summary(df, date_col="day", exclude_cols=["timestamp"])
+    generate_trend_summary()

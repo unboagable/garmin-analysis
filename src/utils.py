@@ -51,11 +51,11 @@ def normalize_day_column(df: pd.DataFrame, source_name: str = "unknown") -> pd.D
     if df is None or df.empty:
         return df
     if "day" in df.columns:
-        df["day"] = pd.to_datetime(df["day"])
+        df = df.assign(day=pd.to_datetime(df["day"]))
     elif "calendarDate" in df.columns:
-        df["day"] = pd.to_datetime(df["calendarDate"])
+        df = df.assign(day=pd.to_datetime(df["calendarDate"]))
     elif "timestamp" in df.columns:
-        df["day"] = pd.to_datetime(df["timestamp"]).dt.normalize()
+        df = df.assign(day=pd.to_datetime(df["timestamp"]).dt.normalize())
     else:
         logging.warning(f"[{source_name}] could not normalize 'day' column (missing day/calendarDate/timestamp)")
     return df

@@ -2,6 +2,8 @@ import os
 import logging
 import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
@@ -86,7 +88,7 @@ def train_and_evaluate(X, y, lagged=False):
 
     return model, X, r2, mse
 
-def plot_feature_importance(model, X, lagged=False, show=False):
+def plot_feature_importance(model, X, lagged=False):
     importances = pd.Series(model.feature_importances_, index=X.columns)
     top_importances = importances.sort_values(ascending=False).head(20)
     top_importances.plot(
@@ -105,10 +107,7 @@ def plot_feature_importance(model, X, lagged=False, show=False):
     plt.savefig(out_path)
     logging.info(f"Saved feature importance plot to {out_path}")
 
-    if show:
-        plt.show()
-    else:
-        plt.close()
+    plt.close()
 
     return str(out_path)
 

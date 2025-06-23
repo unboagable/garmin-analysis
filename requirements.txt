@@ -4,3 +4,5 @@ matplotlib
 seaborn
 scikit-learn
 tabulate
+dash
+plotly

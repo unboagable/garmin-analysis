@@ -65,7 +65,7 @@ app.layout = html.Div([
     Input('date-picker', 'end_date')
 )
 def update_plot(metric, start, end):
-    filtered = df[(df['day'] >= start) & (df['day'] <= end)]
+    filtered = df[(df['day'] >= start) & (df['day'] <= end)].sort_values(by="day")
     fig = px.line(filtered, x="day", y=metric, title=f"{metric} over Time")
     return fig
 

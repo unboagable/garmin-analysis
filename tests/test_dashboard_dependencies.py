@@ -2,7 +2,6 @@ import pytest
 import pandas as pd
 import numpy as np
 from src.utils import load_master_dataframe
-from src.modeling.sleep_predictor import run_sleep_model
 from dash import Dash
 from src.dashboard import app as dashboard_app
 
@@ -11,17 +10,6 @@ def test_load_master_dataframe():
     assert isinstance(df, pd.DataFrame)
     assert not df.empty
     assert "day" in df.columns
-
-def test_run_sleep_model_keys():
-    result = run_sleep_model()
-    assert isinstance(result, dict)
-    assert set(result.keys()) == {"r2", "mse", "plot_path"}
-
-def test_run_sleep_model_outputs():
-    result = run_sleep_model()
-    assert isinstance(result["r2"], (float, type(None)))
-    assert isinstance(result["mse"], (float, type(None)))
-    assert isinstance(result["plot_path"], (str, type(None)))
 
 def test_correlation_matrix_valid():
     df = load_master_dataframe()

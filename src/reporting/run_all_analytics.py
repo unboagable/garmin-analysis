@@ -3,7 +3,6 @@ import os
 from datetime import datetime
 import logging
 from src.reporting.generate_trend_summary import generate_trend_summary
-from src.modeling.sleep_predictor import run_sleep_model
 from src.modeling.anomaly_detection import run_anomaly_detection
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -27,11 +26,7 @@ def run_all_analytics(df: pd.DataFrame, date_col='day', output_dir='reports', as
     trend_path = os.path.join(output_dir, f"trend_summary_{timestamp}.{ext}")
     generate_trend_summary(df, date_col=date_col, output_dir=output_dir)
 
-    # Step 2: Sleep Model
-    logging.info("Running sleep predictor model...")
-    model_results = run_sleep_model(df)
-
-    # Step 3: Anomaly Detection
+    # Step 2: Anomaly Detection
     logging.info("Running anomaly detection...")
     anomalies_df, anomaly_plot_path = run_anomaly_detection(df)
 
@@ -39,15 +34,10 @@ def run_all_analytics(df: pd.DataFrame, date_col='day', output_dir='reports', as
     with open(report_path, 'w') as f:
         f.write(f"# {'Monthly' if monthly else 'Full'} Health Report\n\nGenerated: {timestamp}\n\n")
 
-        f.write("## 📊 Trend Summary\n")
+        f.write("## \U0001F4CA Trend Summary\n")
         f.write(f"See: `{os.path.basename(trend_path)}`\n\n")
 
-        f.write("## 🧠 Sleep Predictor\n")
-        f.write(f"- R² Score: {model_results['r2']:.4f}\n")
-        f.write(f"- MSE: {model_results['mse']:.4f}\n")
-        f.write(f"- Feature importance plot: `{model_results['plot_path']}`\n\n")
-
-        f.write("## 🚨 Anomaly Detection\n")
+        f.write("## \U0001F6A8 Anomaly Detection\n")
         if anomalies_df.empty:
             f.write("No anomalies detected.\n")
         else:

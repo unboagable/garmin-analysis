@@ -9,6 +9,7 @@ from datetime import datetime
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_squared_error
+from src.utils_cleaning import clean_data
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -39,16 +40,13 @@ def load_and_prepare_data(lagged=False):
             return None, None, None
         logging.warning("Modeling-ready dataset not found — falling back to master_daily_summary.csv")
         df = pd.read_csv(fallback_path, parse_dates=["day"])
-        df = df[df["score"].notnull()]
         df = convert_time_columns(df)
-
-        df["missing_yesterday_activity_minutes"] = df["yesterday_activity_minutes"].isna()
-        df["missing_stress_avg"] = df["stress_avg"].isna()
-        df["yesterday_activity_minutes"] = df["yesterday_activity_minutes"].fillna(0)
-        df["stress_avg"] = df["stress_avg"].fillna(df["stress_avg"].median())
+        df = clean_data(df)
+        df = df[df["score"].notnull()]
     else:
         df = pd.read_csv(data_path, parse_dates=["day"])
         df = convert_time_columns(df)
+        df = clean_data(df)
 
     if lagged:
         df["score_tomorrow"] = df["score"].shift(-1)
@@ -67,6 +65,10 @@ def load_and_prepare_data(lagged=False):
     return X, y, lagged
 
 def train_and_evaluate(X, y, lagged=False):
+    if len(X) < 2:
+        logging.warning("Not enough samples to split data for training.")
+        return None, X, float('nan'), float('nan')
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     model = RandomForestRegressor(n_estimators=100, random_state=42)
     model.fit(X_train, y_train)
@@ -86,11 +88,13 @@ def train_and_evaluate(X, y, lagged=False):
 
 def plot_feature_importance(model, X, lagged=False, show=False):
     importances = pd.Series(model.feature_importances_, index=X.columns)
-    importances.sort_values(ascending=True).plot(
+    top_importances = importances.sort_values(ascending=False).head(20)
+    top_importances.plot(
         kind="barh",
         figsize=(10, 8),
-        title="Feature Importance for Predicting {} Sleep Score".format("Next Day" if lagged else "Sleep")
+        title="Top Feature Importances for Predicting {} Sleep Score".format("Next Day" if lagged else "Sleep")
     )
+    plt.gca().invert_yaxis()
     plt.tight_layout()
 
     timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -113,6 +117,7 @@ def run_sleep_model(df=None):
         X, y, lagged = load_and_prepare_data(lagged=False)
     else:
         df = convert_time_columns(df)
+        df = clean_data(df)
         df = df[df["score"].notnull()]
         target = "score"
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
@@ -125,7 +130,11 @@ def run_sleep_model(df=None):
         return {"r2": None, "mse": None, "plot_path": None}
 
     model, feature_X, r2, mse = train_and_evaluate(X, y, lagged)
-    plot_path = plot_feature_importance(model, feature_X, lagged)
+    if model is not None:
+        plot_path = plot_feature_importance(model, feature_X, lagged)
+    else:
+        plot_path = None
+
     return {"r2": r2, "mse": mse, "plot_path": plot_path}
 
 def main():
@@ -134,7 +143,8 @@ def main():
         if X is None or y is None:
             continue
         model, feature_X, r2, mse = train_and_evaluate(X, y, lagged)
-        plot_feature_importance(model, feature_X, lagged)
+        if model is not None:
+            plot_feature_importance(model, feature_X, lagged)
 
 if __name__ == "__main__":
     main()

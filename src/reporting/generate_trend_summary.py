@@ -1,6 +1,8 @@
 import pandas as pd
 import logging
 from pathlib import Path
+from src.utils import load_master_dataframe
+from src.utils_cleaning import clean_data
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -26,10 +28,8 @@ def log_top_correlations(corr_df, threshold=0.5, max_pairs=20):
     for x, y, r in top_corrs[:max_pairs]:
         logging.info(f"  • {x} ↔ {y}: {r:.2f}")
 
-def generate_trend_summary():
-    from src.utils import load_master_dataframe
-
-    df = load_master_dataframe()
+def generate_trend_summary(df, date_col='day', output_dir='reports'):
+    df = clean_data(df)
     numeric_df = df.select_dtypes(include="number").dropna(axis=1, how="all")
     corr_matrix = numeric_df.corr(method="pearson")
 
@@ -44,7 +44,7 @@ def generate_trend_summary():
     missing_pct = df.isnull().mean().sort_values(ascending=False)
     top_missing = missing_pct[missing_pct > 0].head(10)
 
-    output_path = Path("reports") / f"trend_summary_{pd.Timestamp.now():%Y%m%d_%H%M%S}.md"
+    output_path = Path(output_dir) / f"trend_summary_{pd.Timestamp.now():%Y%m%d_%H%M%S}.md"
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_path, "w") as f:
@@ -61,4 +61,5 @@ def generate_trend_summary():
     logging.info(f"Saved trend summary markdown to {output_path}")
 
 if __name__ == "__main__":
-    generate_trend_summary()
+    df = load_master_dataframe()
+    generate_trend_summary(df)

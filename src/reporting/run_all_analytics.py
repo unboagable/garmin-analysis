@@ -2,8 +2,6 @@ import pandas as pd
 import os
 from datetime import datetime
 import logging
-
-# Use relative imports appropriate to your project structure
 from src.reporting.generate_trend_summary import generate_trend_summary
 from src.modeling.sleep_predictor import run_sleep_model
 from src.modeling.anomaly_detection import run_anomaly_detection

@@ -2,30 +2,26 @@ import logging
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import IsolationForest
+from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 from pathlib import Path
-from sklearn.decomposition import PCA
 from src.utils import load_master_dataframe, standardize_features
-from datetime import datetime
+from src.utils_cleaning import clean_data
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 PLOTS_DIR = Path("plots")
 PLOTS_DIR.mkdir(exist_ok=True)
 
-def detect_anomalies(X):
-    model = IsolationForest(n_estimators=100, contamination=0.05, random_state=42)
-    preds = model.fit_predict(X)
-    return preds, model
-
 def run_anomaly_detection(df):
+    df = clean_data(df)
+
     features = [
         "steps", "activity_minutes", "training_effect",
         "total_sleep_min", "rem_sleep_min", "deep_sleep_min", "awake",
         "stress_avg", "stress_max", "stress_duration"
     ]
 
-    # Drop rows with too many missing values in critical features
     df_clean = df.dropna(subset=features, how='any')
     if df_clean.empty or len(df_clean) < 10:
         logging.warning("Not enough complete rows for anomaly detection. Skipping.")
@@ -33,10 +29,13 @@ def run_anomaly_detection(df):
 
     X_scaled = standardize_features(df_clean, features)
 
-    anomaly_labels, model = detect_anomalies(X_scaled)
+    # Use IsolationForest for anomaly detection
+    model = IsolationForest(n_estimators=100, contamination=0.05, random_state=42)
+    anomaly_labels = model.fit_predict(X_scaled)
 
     # PCA plot
-    X_pca = PCA(n_components=2).fit_transform(X_scaled)
+    pca = PCA(n_components=2)
+    X_pca = pca.fit_transform(X_scaled)
     plt.figure(figsize=(8, 6))
     plt.scatter(X_pca[:, 0], X_pca[:, 1], c=anomaly_labels, cmap="coolwarm", alpha=0.7)
     plt.title("Anomaly Detection via Isolation Forest")
@@ -44,8 +43,7 @@ def run_anomaly_detection(df):
     plt.ylabel("PCA Component 2")
     plt.tight_layout()
 
-    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-    out_path = PLOTS_DIR / f"anomaly_detection_{timestamp_str}.png"
+    out_path = PLOTS_DIR / "anomaly_detection.png"
     plt.savefig(out_path)
     logging.info(f"Saved anomaly plot to {out_path}")
     plt.close()

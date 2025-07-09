@@ -10,9 +10,9 @@ def preview_table(df, name, cols=None, max_rows=3):
         return
     logging.info("\n📌 %s — %d rows", name, len(df))
     if cols:
-        print(df[cols].head(max_rows))
+        logging.info(f"\n{df[cols].head(max_rows)}")
     else:
-        print(df.head(max_rows))
+        logging.info(f"\n{df.head(max_rows)}")
 
 def main():
     tables = load_garmin_tables()

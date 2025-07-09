@@ -1,5 +1,8 @@
 import pandas as pd
 import numpy as np
+import logging
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 def clean_data(df: pd.DataFrame, remove_outliers: bool = True) -> pd.DataFrame:
     """
@@ -61,5 +64,5 @@ if __name__ == "__main__":
     df_raw = load_modeling_dataset()
     df_clean = clean_data(df_raw)
 
-    print("Cleaned DataFrame shape:", df_clean.shape)
-    print("Columns:", df_clean.columns.tolist())
+    logging.info(f"Cleaned DataFrame shape: {df_clean.shape}")
+    logging.info(f"Columns: {df_clean.columns.tolist()}")

@@ -18,18 +18,18 @@ def inspect_sqlite_db(db_path):
         logging.info(f"Found {len(tables)} tables.")
 
         for table in tables:
-            print(f"\n📦 Table: {table}")
+            logging.info(f"Table: {table}")
             try:
                 cursor.execute(f"PRAGMA table_info({table});")
                 columns = cursor.fetchall()
                 if columns:
                     for col in columns:
                         cid, name, dtype, notnull, dflt, pk = col
-                        print(f"  - {name} ({dtype})")
+                        logging.info(f"  - {name} ({dtype})")
                 else:
-                    print("  (No columns found)")
+                    logging.warning("  (No columns found)")
             except Exception as e:
-                print(f"  ⚠️ Error retrieving columns for {table}: {e}")
+                logging.error(f"Error retrieving columns for {table}: {e}")
 
 def inspect_all_dbs(directory="db"):
     db_paths = sorted(Path(directory).glob("*.db"))

@@ -1,7 +1,10 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+import logging
 from datetime import datetime
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 def plot_feature_trend(df: pd.DataFrame, feature: str,
                         date_col: str = None,
@@ -30,7 +33,7 @@ def plot_feature_trend(df: pd.DataFrame, feature: str,
         if not candidate_cols:
             raise ValueError("Could not auto-detect a date column. Please specify 'date_col'.")
         date_col = candidate_cols[0]  # choose the first candidate
-        print(f"Auto-detected date column: '{date_col}'")
+        logging.info(f"Auto-detected date column: '{date_col}'")
 
     df[date_col] = pd.to_datetime(df[date_col])
     df = df.sort_values(date_col)
@@ -63,7 +66,7 @@ def plot_feature_trend(df: pd.DataFrame, feature: str,
     plt.savefig(out_path)
     plt.close()
 
-    print(f"Saved trend plot to {out_path}")
+    logging.info(f"Saved trend plot to {out_path}")
 
 # Example usage:
 if __name__ == "__main__":

@@ -38,7 +38,7 @@ def main(db_path="db/garmin.db", export_csv=True):
         "attributes", "_attributes", "devices", "device_info"
     ]
     report = audit_table_health(conn, tables_to_check)
-    print(report.to_string(index=False))
+    logging.info(f"\n{report.to_string(index=False)}")
 
     if export_csv:
         os.makedirs("data", exist_ok=True)

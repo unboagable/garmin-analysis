@@ -2,7 +2,10 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import os
+import logging
 from datetime import datetime
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 def plot_feature_correlation(df: pd.DataFrame, output_path: str = None,
                               method: str = "pearson", figsize=(18, 14),
@@ -45,7 +48,7 @@ def plot_feature_correlation(df: pd.DataFrame, output_path: str = None,
     plt.savefig(output_path)
     plt.close()
 
-    print(f"Saved correlation matrix to {output_path}")
+    logging.info(f"Saved correlation matrix to {output_path}")
 
 # Example usage:
 if __name__ == "__main__":

@@ -173,7 +173,21 @@ poetry run python src/features/summary_stats.py
 
 **Database Schema Inspection**: Examine database structure
 ```bash
+# Inspect a single DB file
 poetry run python src/data_ingestion/inspect_sqlite_schema.py db/garmin.db
+
+# Inspect all .db files in a directory (default: db)
+poetry run python src/data_ingestion/inspect_sqlite_schema.py --dir db
+```
+
+**Schema Drift (Export/Compare)**: Export the expected schema and compare live DBs
+```bash
+# Export schema from a DB to JSON
+poetry run python src/data_ingestion/inspect_sqlite_schema.py export db/garmin.db reports/expected_schema.json
+
+# Compare a live DB against the expected schema
+# Exit non-zero if drift is detected (for CI guards)
+poetry run python src/data_ingestion/inspect_sqlite_schema.py compare db/garmin.db reports/expected_schema.json --fail-on-drift
 ```
 
 ### Advanced Visualization
@@ -193,6 +207,17 @@ poetry run python src/viz/plot_feature_trend.py
 **Prepare Modeling Dataset**: Clean and prepare data for ML models
 ```bash
 poetry run python src/data_ingestion/prepare_modeling_dataset.py
+```
+
+### Testing
+
+Run the test suite (uses a non-interactive matplotlib backend and logging capture):
+```bash
+# Via Poetry
+poetry run pytest -q
+
+# Or with the system interpreter
+python3 -m pytest -q
 ```
 
 ## Running Using Notebooks

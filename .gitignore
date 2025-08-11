@@ -1,8 +1,12 @@
 # SQLite database files
 *.db
+db/*.db
+*.sqlite
+*.sqlite3
 
 # Data outputs and processed results
 data/
+data/*
 !data/*.md  # allow markdown notes if needed
 reports/
 plots/

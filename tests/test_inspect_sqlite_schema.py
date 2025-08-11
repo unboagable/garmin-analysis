@@ -1,8 +1,7 @@
 import sqlite3
 import tempfile
 import os
-from io import StringIO
-import sys
+import logging
 import pytest
 from src.data_ingestion.inspect_sqlite_schema import inspect_sqlite_db
 
@@ -24,19 +23,18 @@ def temp_db():
     # Clean up
     os.remove(db_path)
 
-def test_inspect_sqlite_db_output(temp_db, capsys):
+def test_inspect_sqlite_db_output(temp_db, caplog):
+    caplog.set_level(logging.INFO)
+
     # Run the inspection
     inspect_sqlite_db(temp_db)
 
-    # Capture output
-    captured = capsys.readouterr()
-    out = captured.out
-
-    # Assertions
-    assert "📦 Table: users" in out
-    assert "  - id (INTEGER)" in out
-    assert "  - name (TEXT)" in out
-    assert "  - email (TEXT)" in out
-    assert "📦 Table: logs" in out
-    assert "  - message (TEXT)" in out
-    assert "  - created_at (DATETIME)" in out
+    # Assertions against logging output
+    text = caplog.text
+    assert "Table: users" in text
+    assert "  - id (INTEGER)" in text
+    assert "  - name (TEXT)" in text
+    assert "  - email (TEXT)" in text
+    assert "Table: logs" in text
+    assert "  - message (TEXT)" in text
+    assert "  - created_at (DATETIME)" in text

@@ -108,12 +108,6 @@ poetry run python src/viz/plot_trends_range.py
 poetry run python src/modeling/activity_sleep_stress_analysis.py
 ```
 
-### Run Predictive Model
-
-```bash
-poetry run python src/modeling/sleep_predictor.py
-```
-
 ### Run Utility Checks
 
 ```bash

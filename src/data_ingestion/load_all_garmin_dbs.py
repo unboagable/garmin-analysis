@@ -1,9 +1,10 @@
 import sqlite3
 import pandas as pd
+import numpy as np
 import logging
 from pathlib import Path
 from datetime import datetime
-from src.utils import normalize_day_column, convert_time_to_minutes
+from src.utils import normalize_day_column, convert_time_to_minutes, ensure_datetime_sorted
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -19,6 +20,33 @@ DB_PATHS = {
 OUTPUT_PATH = Path("data/master_daily_summary.csv")
 
 # --- Utility Functions ---
+def _coalesce(df, out_col, *cands):
+    """Write-first coalesce of multiple aliases into one canonical column, then drop extras."""
+    if out_col not in df.columns:
+        df[out_col] = np.nan
+    for c in cands:
+        if c in df.columns:
+            df[out_col] = df[out_col].combine_first(df[c])
+    for c in cands:
+        if c in df.columns and c != out_col:
+            df.drop(columns=c, inplace=True, errors="ignore")
+    return df
+
+def to_naive_day(s: pd.Series) -> pd.Series:
+    """
+    Convert a timestamp series to a tz-naive midnight 'day' (datetime64[ns]).
+    Safe for tz-aware or tz-naive inputs.
+    """
+    s = pd.to_datetime(s, errors="coerce")  # preserves tz if present
+    # strip timezone if tz-aware
+    try:
+        s = s.dt.tz_localize(None)
+    except (TypeError, AttributeError):
+        # already tz-naive or not datetime-like; ignore
+        pass
+    # normalize to midnight and ensure dtype is datetime64[ns]
+    return pd.to_datetime(s.dt.date)
+
 def load_table(db_path: Path, table_name: str, parse_dates=None) -> pd.DataFrame:
     if not db_path.exists():
         logging.warning(f"Database not found: {db_path}")
@@ -35,11 +63,15 @@ def load_table(db_path: Path, table_name: str, parse_dates=None) -> pd.DataFrame
 def aggregate_stress(stress: pd.DataFrame) -> pd.DataFrame:
     if stress.empty or "timestamp" not in stress.columns:
         return pd.DataFrame()
-    stress["day"] = pd.to_datetime(stress["timestamp"]).dt.normalize()
+
+    # Build tz-naive day
+    day = to_naive_day(stress["timestamp"])
+    stress = stress.assign(day=day)
+
     return stress.groupby("day").agg(
         stress_avg=("stress", "mean"),
         stress_max=("stress", "max"),
-        stress_duration=("stress", lambda x: (x > 0).sum())
+        stress_duration=("stress", lambda x: (x > 0).sum()),
     ).reset_index()
 
 def preprocess_sleep(sleep: pd.DataFrame) -> pd.DataFrame:
@@ -74,13 +106,13 @@ def preprocess_sleep(sleep: pd.DataFrame) -> pd.DataFrame:
     return sleep
 
 def summarize_and_merge(return_df: bool = False):
-    daily = load_table(DB_PATHS["garmin"], "daily_summary", parse_dates=["day"])
-    sleep = load_table(DB_PATHS["garmin"], "sleep", parse_dates=["day"])
-    stress = load_table(DB_PATHS["garmin"], "stress", parse_dates=["timestamp"])
-    rhr = load_table(DB_PATHS["garmin"], "resting_hr", parse_dates=["day"])
-    days_summary = load_table(DB_PATHS["summary"], "days_summary", parse_dates=["day"])
-    activities = load_table(DB_PATHS["activities"], "activities", parse_dates=["start_time"])
-    steps_activities = load_table(DB_PATHS["activities"], "steps_activities")
+    daily = ensure_datetime_sorted(load_table(DB_PATHS["garmin"], "daily_summary", parse_dates=["day"]), ("day",))
+    sleep = ensure_datetime_sorted(load_table(DB_PATHS["garmin"], "sleep", parse_dates=["day"]), ("day",))
+    stress = ensure_datetime_sorted(load_table(DB_PATHS["garmin"], "stress", parse_dates=["timestamp"]), ("timestamp",))
+    rhr = ensure_datetime_sorted(load_table(DB_PATHS["garmin"], "resting_hr", parse_dates=["day"]), ("day",))
+    days_summary = ensure_datetime_sorted(load_table(DB_PATHS["summary"], "days_summary", parse_dates=["day"]), ("day",))
+    activities = ensure_datetime_sorted(load_table(DB_PATHS["activities"], "activities", parse_dates=["start_time"]), ("start_time",))
+    steps_activities = ensure_datetime_sorted(load_table(DB_PATHS["activities"], "steps_activities"), ("timestamp", "start_time", "day"))
 
     if daily is None or daily.empty:
         raise RuntimeError("Missing daily_summary table")
@@ -92,26 +124,32 @@ def summarize_and_merge(return_df: bool = False):
         logging.warning("Column 'steps' not found in daily_summary — will affect downstream features")
 
     daily = normalize_day_column(daily, "daily")
+    daily["day"] = to_naive_day(daily["day"])
     merged = daily.copy()
 
     if sleep is not None and not sleep.empty:
         sleep = normalize_day_column(preprocess_sleep(sleep), "sleep")
+        sleep["day"] = to_naive_day(sleep["day"])
         merged = merged.merge(sleep, on="day", how="left")
 
     if stress is not None and not stress.empty:
         stress_daily = aggregate_stress(stress)
+        stress_daily["day"] = to_naive_day(stress_daily["day"])  # no-op if already naive
         merged = merged.merge(stress_daily, on="day", how="left")
 
     if rhr is not None and not rhr.empty:
         rhr = normalize_day_column(rhr, "resting_hr")
+        rhr["day"] = to_naive_day(rhr["day"])
         merged = merged.merge(rhr, on="day", how="left")
 
     if days_summary is not None and not days_summary.empty:
         days_summary = normalize_day_column(days_summary, "days_summary")
+        days_summary["day"] = to_naive_day(days_summary["day"])
         merged = merged.merge(days_summary, on="day", how="left", suffixes=("", "_summary"))
 
+
     if activities is not None and not activities.empty:
-        activities["day"] = pd.to_datetime(activities["start_time"]).dt.normalize()
+        activities["day"] = to_naive_day(activities["start_time"])
         activities["had_workout"] = 1
         activity_summary = activities.groupby("day").agg(
             had_workout=("had_workout", "max"),
@@ -125,7 +163,7 @@ def summarize_and_merge(return_df: bool = False):
 
     if steps_activities is not None and not steps_activities.empty and activities is not None:
         steps = steps_activities.merge(activities[["activity_id", "start_time"]], on="activity_id", how="left")
-        steps["day"] = pd.to_datetime(steps["start_time"]).dt.normalize()
+        steps["day"] = to_naive_day(steps["start_time"])
         steps_day = steps.drop(columns=["activity_id", "start_time"], errors="ignore")
         steps_day = steps_day.groupby("day").mean(numeric_only=True).reset_index()
         steps_day = steps_day.rename(columns={"steps": "steps_from_steps_activity"})
@@ -155,6 +193,8 @@ def summarize_and_merge(return_df: bool = False):
         merged["missing_training_effect"] = merged["training_effect"].isna()
     else:
         merged["missing_training_effect"] = True
+
+    merged = ensure_datetime_sorted(merged, ("day",))
 
     logging.info(f"Final merged shape: {merged.shape}")
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)

@@ -16,7 +16,8 @@ def run_all_analytics(df: pd.DataFrame, date_col='day', output_dir='reports', as
 
     if monthly:
         # Filter to only the most recent full calendar month
-        df[date_col] = pd.to_datetime(df[date_col])
+        df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+        df = df.sort_values(date_col)
         last_month = (df[date_col].max().replace(day=1) - pd.Timedelta(days=1)).replace(day=1)
         this_month = last_month + pd.DateOffset(months=1)
         df = df[(df[date_col] >= last_month) & (df[date_col] < this_month)]
@@ -50,4 +51,6 @@ def run_all_analytics(df: pd.DataFrame, date_col='day', output_dir='reports', as
 # Example usage:
 if __name__ == "__main__":
     df = pd.read_csv("data/master_daily_summary.csv")
+    df["day"] = pd.to_datetime(df["day"], errors="coerce")
+    df = df.sort_values("day")
     run_all_analytics(df)  # full report by default

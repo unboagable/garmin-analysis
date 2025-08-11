@@ -3,6 +3,7 @@ import sqlite3
 import pandas as pd
 import numpy as np
 import logging
+from typing import Iterable, Optional
 from datetime import datetime, timedelta
 from pandas.tseries.offsets import DateOffset
 from sklearn.preprocessing import StandardScaler
@@ -95,6 +96,52 @@ def convert_time_columns(df, columns):
     for col in columns:
         if col in df.columns and df[col].dtype == object:
             df[col] = df[col].apply(time_to_minutes)
+    return df
+
+def ensure_datetime_sorted(
+    df: pd.DataFrame,
+    date_candidates: Iterable[str] = ("date", "day", "start_time", "timestamp"),
+    tz: Optional[str] = None,
+    drop_dupes: bool = True,
+) -> pd.DataFrame:
+    """
+    - Finds the first present date-like column and converts to pandas datetime.
+    - Normalizes to date (YYYY-MM-DD) if column looks daily (name 'date' or 'day').
+    - Sorts ascending by that column.
+    - Optionally drops duplicate dates, keeping first (stable).
+    """
+    if df is None or df.empty:
+        return df
+
+    # Pick the first date column that exists
+    date_col = next((c for c in date_candidates if c in df.columns), None)
+    if date_col is None:
+        return df  # nothing to do
+
+    # Parse to datetime
+    df = df.copy()
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce", utc=True)
+
+    # Optionally localize/convert timezone if provided
+    if tz:
+        df[date_col] = df[date_col].dt.tz_convert(tz)
+
+    # If it's a daily table, normalize to date
+    if date_col in ("date", "day"):
+        df[date_col] = df[date_col].dt.date
+        # back to datetime64[ns] (naive) to keep Pandas happy and sortable
+        df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+
+    # Drop rows with unparseable dates
+    df = df[df[date_col].notna()]
+
+    # Sort ascending
+    df = df.sort_values(by=date_col, kind="mergesort")  # stable
+
+    # Deduplicate on daily date if requested
+    if drop_dupes and date_col in ("date", "day"):
+        df = df.drop_duplicates(subset=[date_col], keep="first")
+
     return df
 
 def aggregate_stress(stress_df):

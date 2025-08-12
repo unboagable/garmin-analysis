@@ -158,7 +158,22 @@ def aggregate_stress(stress_df):
 def load_master_dataframe():
     df_path = "data/master_daily_summary.csv"
     if not os.path.exists(df_path):
-        raise FileNotFoundError(f"{df_path} not found. Please run the ingestion script first.")
+        logging.warning("%s not found. Attempting to build it via summarize_and_merge().", df_path)
+        try:
+            # Lazy import to avoid circulars at module import time
+            from garmin_analysis.data_ingestion.load_all_garmin_dbs import summarize_and_merge, USING_SYNTHETIC_DATA
+            df = summarize_and_merge(return_df=True)
+            # Ensure the file is saved for subsequent calls
+            os.makedirs(os.path.dirname(df_path), exist_ok=True)
+            df.to_csv(df_path, index=False)
+            if 'USING_SYNTHETIC_DATA' in globals() and USING_SYNTHETIC_DATA:
+                logging.warning("Master dataset built from SYNTHETIC data due to missing DBs. File: %s", df_path)
+                logging.warning("Do not rely on this dataset for real analysis. Place real DBs under `db/` and rebuild.")
+            logging.info("Built and saved master dataset to %s (%d rows, %d cols)", df_path, len(df), df.shape[1])
+            return df
+        except Exception as e:
+            logging.error("Failed to build master dataset automatically: %s", e)
+            raise FileNotFoundError(f"{df_path} not found and auto-build failed: {e}")
     df = pd.read_csv(df_path, parse_dates=["day"])
     logging.info("Loaded master dataset with %d rows and %d columns", len(df), df.shape[1])
     return df

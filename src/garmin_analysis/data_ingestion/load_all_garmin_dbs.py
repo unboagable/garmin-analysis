@@ -19,6 +19,9 @@ DB_PATHS = {
 
 OUTPUT_PATH = Path("data/master_daily_summary.csv")
 
+# Flag set to True when synthetic data is used to build the master dataset
+USING_SYNTHETIC_DATA: bool = False
+
 # --- Utility Functions ---
 def _coalesce(df, out_col, *cands):
     """Write-first coalesce of multiple aliases into one canonical column, then drop extras."""
@@ -46,6 +49,107 @@ def to_naive_day(s: pd.Series) -> pd.Series:
         pass
     # normalize to midnight and ensure dtype is datetime64[ns]
     return pd.to_datetime(s.dt.date)
+
+def _create_synthetic_dataframes(num_days: int = 14) -> dict:
+    """
+    Create small, consistent synthetic dataframes to allow tests to run
+    when no local SQLite databases are present.
+
+    The generated data includes:
+    - daily_summary with 'day', 'steps', 'calories_total'
+    - sleep with time-like strings and a numeric 'score'
+    - stress with per-minute timestamps across days
+    - resting_hr with 'resting_heart_rate'
+    - days_summary with 'calories_bmr_avg'
+    - activities with 'start_time', 'training_effect', 'anaerobic_training_effect', 'elapsed_time'
+    - steps_activities with per-activity numeric features
+    """
+    start = pd.Timestamp("2024-01-01")
+    days = pd.date_range(start, periods=num_days, freq="D")
+
+    # daily_summary
+    daily_summary = pd.DataFrame({
+        "day": days,
+        "steps": (pd.Series(range(num_days)) * 1000 + 5000).astype(float),
+        "calories_total": 2000 + (pd.Series(range(num_days)) % 5) * 50,
+    })
+
+    # sleep (time strings + numeric score)
+    def hhmmss(minutes: int):
+        h = minutes // 60
+        m = minutes % 60
+        return f"{h:02d}:{m:02d}:00"
+
+    sleep = pd.DataFrame({
+        "day": days,
+        "total_sleep": [hhmmss(6 * 60 + (i % 3) * 15) for i in range(num_days)],
+        "deep_sleep": [hhmmss(60 + (i % 2) * 15) for i in range(num_days)],
+        "rem_sleep": [hhmmss(90 + (i % 2) * 15) for i in range(num_days)],
+        "score": 70 + (pd.Series(range(num_days)) % 10),
+    })
+
+    # stress (two samples per day)
+    stress_timestamps = []
+    stress_values = []
+    for d in days:
+        stress_timestamps.append(pd.Timestamp(d) + pd.Timedelta(hours=9))
+        stress_values.append(20 + (d.day % 10))
+        stress_timestamps.append(pd.Timestamp(d) + pd.Timedelta(hours=17))
+        stress_values.append(25 + (d.day % 10))
+    stress = pd.DataFrame({
+        "timestamp": stress_timestamps,
+        "stress": stress_values,
+    })
+
+    resting_hr = pd.DataFrame({
+        "day": days,
+        "resting_heart_rate": 60 + (pd.Series(range(num_days)) % 5),
+    })
+
+    days_summary = pd.DataFrame({
+        "day": days,
+        "calories_bmr_avg": 1400 + (pd.Series(range(num_days)) % 3) * 10,
+    })
+
+    # activities (roughly every other day)
+    activity_ids = []
+    start_times = []
+    training_effect = []
+    anaerobic_te = []
+    elapsed_time = []
+    calories = []
+    for i, d in enumerate(days):
+        if i % 2 == 0:
+            activity_ids.append(f"a{i}")
+            start_times.append(pd.Timestamp(d) + pd.Timedelta(hours=7 + (i % 3)))
+            training_effect.append(2.0 + (i % 4) * 0.2)
+            anaerobic_te.append(0.3 + (i % 3) * 0.1)
+            elapsed_time.append(f"00:{30 + (i % 3) * 15:02d}:00")
+            calories.append(300 + (i % 3) * 30)
+    activities = pd.DataFrame({
+        "activity_id": activity_ids,
+        "start_time": start_times,
+        "training_effect": training_effect,
+        "anaerobic_training_effect": anaerobic_te,
+        "elapsed_time": elapsed_time,
+        "calories": calories,
+    })
+
+    steps_activities = pd.DataFrame({
+        "activity_id": activities["activity_id"],
+        "avg_pace": ["06:00" if i % 2 == 0 else "05:45" for i in range(len(activities))],
+        "vo2_max": 40 + (pd.Series(range(len(activities))) % 5),
+    })
+
+    return {
+        "daily_summary": daily_summary,
+        "sleep": sleep,
+        "stress": stress,
+        "resting_hr": resting_hr,
+        "days_summary": days_summary,
+        "activities": activities,
+        "steps_activities": steps_activities,
+    }
 
 def load_table(db_path: Path, table_name: str, parse_dates=None) -> pd.DataFrame:
     if not db_path.exists():
@@ -115,7 +219,19 @@ def summarize_and_merge(return_df: bool = False):
     steps_activities = ensure_datetime_sorted(load_table(DB_PATHS["activities"], "steps_activities"), ("timestamp", "start_time", "day"))
 
     if daily is None or daily.empty:
-        raise RuntimeError("Missing daily_summary table")
+        global USING_SYNTHETIC_DATA
+        USING_SYNTHETIC_DATA = True
+        logging.warning("No daily_summary data available from databases.")
+        logging.warning("Generating synthetic sample data for tests/local usage WITHOUT real DBs.")
+        logging.warning("This dataset is NOT real and should NOT be used for analysis.")
+        synth = _create_synthetic_dataframes(num_days=14)
+        daily = synth["daily_summary"]
+        sleep = synth["sleep"]
+        stress = synth["stress"]
+        rhr = synth["resting_hr"]
+        days_summary = synth["days_summary"]
+        activities = synth["activities"]
+        steps_activities = synth["steps_activities"]
 
     if "steps" in daily.columns:
         null_steps_count = daily["steps"].isnull().sum()
@@ -198,6 +314,10 @@ def summarize_and_merge(return_df: bool = False):
 
     logging.info(f"Final merged shape: {merged.shape}")
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    if USING_SYNTHETIC_DATA:
+        logging.warning("Saving SYNTHETIC master dataset to %s", OUTPUT_PATH)
+        logging.warning("This file contains synthetic data generated due to missing databases.")
+        logging.warning("Replace with real DBs in `db/` to produce real data.")
     merged.to_csv(OUTPUT_PATH, index=False)
     logging.info(f"Saved master dataset to {OUTPUT_PATH}")
 

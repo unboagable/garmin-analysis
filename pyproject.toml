@@ -1,31 +1,31 @@
-[tool.poetry]
+[project]
 name = "garmin_analysis"
 version = "0.1.0"
-description = "python projects, practice, and study."
-authors = ["Chang-Hyun Mungai <changhyunmungai@gmail.com>"]
+description = "A comprehensive Garmin health data analysis platform with interactive dashboard, machine learning capabilities, and automated reporting."
 readme = "README.md"
-packages = [{ include = "src/*.py" }]
+authors = [{ name = "Chang-Hyun Mungai", email = "changhyunmungai@gmail.com" }]
+requires-python = ">=3.11,<3.12"
 
-[tool.poetry.dependencies]
-python = "^3.11"
-pandas = "*"
-numpy = "*"
-seaborn = "*"
-tabulate = "*"
-dash = "*"
-plotly = "*"
-notebook = "^7.4.3"
-ipykernel = "^6.29.5"
-matplotlib = "^3.10.3"
-scikit-learn = "^1.4.2"
-tsfresh = "*"
-statsmodels = "*"
-prophet = "*"
+dependencies = [
+  # pin to wheel-friendly versions to avoid numba/llvmlite compiles
+  "numpy>=1.24,<1.27",
+  "pandas",
+  "seaborn",
+  "tabulate",
+  "dash",
+  "plotly",
+  "notebook>=7.4.3",
+  "ipykernel>=6.29.5",
+  "matplotlib>=3.10.3",
+  "scikit-learn>=1.4.2",
+  "tsfresh",
+  "statsmodels",
+  "prophet",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.3.5"
+[project.optional-dependencies]
+dev = ["pytest>=8.3.5"]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.8.0"]
 build-backend = "poetry.core.masonry.api"
-

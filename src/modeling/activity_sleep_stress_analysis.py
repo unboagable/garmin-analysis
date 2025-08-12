@@ -7,7 +7,7 @@ from datetime import datetime
 import logging
 from src.utils import filter_required_columns
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Logging is configured at package level
 
 MERGED_PATH = Path("data/master_daily_summary.csv")
 PLOTS_DIR = Path("plots")

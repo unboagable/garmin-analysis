@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import logging
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Logging is configured at package level
 
 def audit_table_health(conn, tables_to_check):
     results = []

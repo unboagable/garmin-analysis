@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from pandas.tseries.offsets import DateOffset
 from sklearn.preprocessing import StandardScaler
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Remove logging.basicConfig - should be configured at application level
 
 def load_garmin_tables(db_path="db/garmin.db"):
     if not os.path.exists(db_path):
@@ -90,7 +90,7 @@ def convert_time_columns(df, columns):
         try:
             h, m, s = map(int, val.split(":"))
             return h * 60 + m + s / 60
-        except:
+        except (ValueError, AttributeError, TypeError):
             return np.nan
 
     for col in columns:

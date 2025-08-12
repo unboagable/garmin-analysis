@@ -4,7 +4,7 @@ from pathlib import Path
 from src.utils import load_master_dataframe
 from src.utils_cleaning import clean_data
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+# Logging is configured at package level
 
 def log_top_correlations(corr_df, threshold=0.5, max_pairs=20):
     seen = set()

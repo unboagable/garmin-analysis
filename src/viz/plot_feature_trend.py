@@ -4,7 +4,7 @@ import os
 import logging
 from datetime import datetime
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+# Logging is configured at package level
 
 def plot_feature_trend(df: pd.DataFrame, feature: str,
                         date_col: str = None,

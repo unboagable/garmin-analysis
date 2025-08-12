@@ -2,7 +2,7 @@ import pandas as pd
 import logging
 from pathlib import Path
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+# Logging is configured at package level
 
 def prepare_modeling_dataset(
     input_path: str = "data/master_daily_summary.csv",

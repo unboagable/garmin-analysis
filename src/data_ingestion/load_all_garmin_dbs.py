@@ -6,7 +6,7 @@ from pathlib import Path
 from datetime import datetime
 from src.utils import normalize_day_column, convert_time_to_minutes, ensure_datetime_sorted
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+# Logging is configured at package level
 
 # --- Paths ---
 DB_PATHS = {

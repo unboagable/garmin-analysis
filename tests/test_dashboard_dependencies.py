@@ -20,7 +20,8 @@ def test_correlation_matrix_valid():
     assert np.all(corr.columns == corr.index)
 
 def test_dash_app_layout_smoke():
-    # Ensure the app layout compiles
-    app = Dash(__name__)
-    app.layout = dashboard_app.app.layout
-    assert app.layout is not None
+    # Ensure the app can be created and has the expected structure
+    assert dashboard_app.app is not None
+    assert hasattr(dashboard_app.app, 'layout')
+    assert hasattr(dashboard_app.app, 'title')
+    assert dashboard_app.app.title == "Garmin Health Dashboard"

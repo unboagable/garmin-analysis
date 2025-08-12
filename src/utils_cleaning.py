@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import logging
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+# Logging is configured at package level
 
 def clean_data(df: pd.DataFrame, remove_outliers: bool = True) -> pd.DataFrame:
     """

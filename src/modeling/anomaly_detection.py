@@ -8,7 +8,7 @@ from pathlib import Path
 from src.utils import load_master_dataframe, standardize_features
 from src.utils_cleaning import clean_data
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Logging is configured at package level
 
 PLOTS_DIR = Path("plots")
 PLOTS_DIR.mkdir(exist_ok=True)

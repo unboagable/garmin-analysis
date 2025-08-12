@@ -2,7 +2,7 @@ import logging
 import pandas as pd
 from src.utils import load_garmin_tables
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Logging is configured at package level
 
 def preview_table(df, name, cols=None, max_rows=3):
     if df.empty:

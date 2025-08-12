@@ -6,3 +6,6 @@ scikit-learn
 tabulate
 dash
 plotly
+tsfresh
+statsmodels
+prophet

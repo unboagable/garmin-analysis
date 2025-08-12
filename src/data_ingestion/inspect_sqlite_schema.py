@@ -3,7 +3,7 @@ from pathlib import Path
 import logging
 from typing import Dict, List, Tuple
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+# Logging is configured at package level
 
 def inspect_sqlite_db(db_path):
     if not Path(db_path).exists():

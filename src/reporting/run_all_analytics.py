@@ -5,7 +5,7 @@ import logging
 from src.reporting.generate_trend_summary import generate_trend_summary
 from src.modeling.anomaly_detection import run_anomaly_detection
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+# Logging is configured at package level
 
 def run_all_analytics(df: pd.DataFrame, date_col='day', output_dir='reports', as_html=False, monthly=False):
     os.makedirs(output_dir, exist_ok=True)

@@ -27,8 +27,8 @@ from typing import Dict, List, Tuple, Optional, Union
 import warnings
 warnings.filterwarnings('ignore')
 
-from src.utils import load_master_dataframe, standardize_features
-from src.utils_cleaning import clean_data
+from garmin_analysis.utils import load_master_dataframe, standardize_features
+from garmin_analysis.utils_cleaning import clean_data
 
 logger = logging.getLogger(__name__)
 

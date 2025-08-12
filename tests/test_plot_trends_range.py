@@ -1,7 +1,8 @@
 import pandas as pd
 import pytest
 from unittest import mock
-from src.viz.plot_trends_range import plot_columns
+from garmin_analysis.viz.plot_trends_range import plot_columns
+
 
 @pytest.fixture
 def sample_df():
@@ -12,11 +13,13 @@ def sample_df():
         "hr_min": [50, 55, 52],
     })
 
+
 def test_plot_columns_with_all_present(sample_df):
     with mock.patch("pandas.DataFrame.plot"), \
          mock.patch("matplotlib.pyplot.tight_layout"), \
          mock.patch("matplotlib.pyplot.show"):
         plot_columns(sample_df, ["steps", "calories_total"], "Test Plot")
+
 
 def test_plot_columns_with_some_missing(sample_df, caplog):
     with mock.patch("pandas.DataFrame.plot"), \
@@ -24,6 +27,7 @@ def test_plot_columns_with_some_missing(sample_df, caplog):
          mock.patch("matplotlib.pyplot.show"):
         plot_columns(sample_df, ["steps", "missing_col"], "Test Missing")
         assert "Skipping missing columns" in caplog.text
+
 
 def test_plot_columns_all_missing(sample_df, caplog):
     with mock.patch("pandas.DataFrame.plot"), \

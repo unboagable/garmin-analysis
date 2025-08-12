@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.figure_factory as ff
-from src.utils import load_master_dataframe
+from garmin_analysis.utils import load_master_dataframe
 import logging
 
 # Configure logging

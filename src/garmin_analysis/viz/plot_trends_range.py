@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 from datetime import datetime
-from src.utils import filter_required_columns
+from garmin_analysis.utils import filter_required_columns
 
 # Logging is configured at package level
 

@@ -5,8 +5,8 @@ from sklearn.ensemble import IsolationForest
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 from pathlib import Path
-from src.utils import load_master_dataframe, standardize_features
-from src.utils_cleaning import clean_data
+from garmin_analysis.utils import load_master_dataframe, standardize_features
+from garmin_analysis.utils_cleaning import clean_data
 
 # Logging is configured at package level
 

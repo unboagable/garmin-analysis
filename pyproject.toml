@@ -2,8 +2,10 @@
 name = "garmin_analysis"
 version = "0.1.0"
 description = "A comprehensive Garmin health data analysis platform with interactive dashboard, machine learning capabilities, and automated reporting."
+authors = [
+    { name = "Chang-Hyun Mungai", email = "changhyunmungai@gmail.com" }
+]
 readme = "README.md"
-authors = [{ name = "Chang-Hyun Mungai", email = "changhyunmungai@gmail.com" }]
 requires-python = ">=3.11,<3.12"
 
 dependencies = [
@@ -27,5 +29,5 @@ dependencies = [
 dev = ["pytest>=8.3.5"]
 
 [build-system]
-requires = ["poetry-core>=1.8.0"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"

@@ -5,7 +5,7 @@ import logging
 
 import pytest
 
-from src.data_ingestion.inspect_sqlite_schema import extract_schema, detect_schema_drift
+from garmin_analysis.data_ingestion.inspect_sqlite_schema import extract_schema, detect_schema_drift
 
 
 @pytest.fixture

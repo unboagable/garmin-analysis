@@ -2,8 +2,8 @@ import pandas as pd
 import os
 from datetime import datetime
 import logging
-from src.reporting.generate_trend_summary import generate_trend_summary
-from src.modeling.anomaly_detection import run_anomaly_detection
+from garmin_analysis.reporting.generate_trend_summary import generate_trend_summary
+from garmin_analysis.modeling.anomaly_detection import run_anomaly_detection
 
 # Logging is configured at package level
 

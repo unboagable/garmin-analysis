@@ -5,7 +5,7 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 from pathlib import Path
-from src.utils import load_master_dataframe, standardize_features
+from garmin_analysis.utils import load_master_dataframe, standardize_features
 
 # Logging is configured at package level
 

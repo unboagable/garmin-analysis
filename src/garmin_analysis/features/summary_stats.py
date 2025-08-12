@@ -1,6 +1,6 @@
 import logging
 import pandas as pd
-from src.utils import load_garmin_tables
+from garmin_analysis.utils import load_garmin_tables
 
 # Logging is configured at package level
 

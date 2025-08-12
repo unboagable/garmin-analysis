@@ -1,8 +1,8 @@
 import pandas as pd
 import logging
 from pathlib import Path
-from src.utils import load_master_dataframe
-from src.utils_cleaning import clean_data
+from garmin_analysis.utils import load_master_dataframe
+from garmin_analysis.utils_cleaning import clean_data
 
 # Logging is configured at package level
 

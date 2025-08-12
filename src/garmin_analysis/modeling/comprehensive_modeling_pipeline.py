@@ -16,11 +16,11 @@ from datetime import datetime
 from typing import Dict, List, Optional
 import json
 
-from src.utils import load_master_dataframe
-from src.utils_cleaning import clean_data
-from src.modeling.enhanced_anomaly_detection import EnhancedAnomalyDetector
-from src.modeling.enhanced_clustering import EnhancedClusterer
-from src.modeling.predictive_modeling import HealthPredictor
+from garmin_analysis.utils import load_master_dataframe
+from garmin_analysis.utils_cleaning import clean_data
+from garmin_analysis.modeling.enhanced_anomaly_detection import EnhancedAnomalyDetector
+from garmin_analysis.modeling.enhanced_clustering import EnhancedClusterer
+from garmin_analysis.modeling.predictive_modeling import HealthPredictor
 
 logger = logging.getLogger(__name__)
 

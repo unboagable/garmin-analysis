@@ -3,7 +3,8 @@ import tempfile
 import os
 import logging
 import pytest
-from src.data_ingestion.inspect_sqlite_schema import inspect_sqlite_db
+from garmin_analysis.data_ingestion.inspect_sqlite_schema import inspect_sqlite_db
+
 
 @pytest.fixture
 def temp_db():
@@ -22,6 +23,7 @@ def temp_db():
 
     # Clean up
     os.remove(db_path)
+
 
 def test_inspect_sqlite_db_output(temp_db, caplog):
     caplog.set_level(logging.INFO)

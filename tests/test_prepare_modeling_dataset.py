@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 from pathlib import Path
-from src.data_ingestion.prepare_modeling_dataset import prepare_modeling_dataset
+from garmin_analysis.data_ingestion.prepare_modeling_dataset import prepare_modeling_dataset
 
 TEST_INPUT_PATH = "tests/mock_master_daily_summary.csv"
 TEST_OUTPUT_PATH = "tests/mock_modeling_ready_dataset.csv"

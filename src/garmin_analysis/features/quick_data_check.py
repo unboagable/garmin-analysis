@@ -19,7 +19,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.features.data_quality_analysis import GarminDataQualityAnalyzer
+from garmin_analysis.features.data_quality_analysis import GarminDataQualityAnalyzer
 
 
 def quick_completeness_check(df):
@@ -155,7 +155,7 @@ def main():
     
     try:
         # Import and load data
-        from src.utils import load_master_dataframe
+        from garmin_analysis.utils import load_master_dataframe
         
         print("📥 Loading Garmin data...")
         df = load_master_dataframe()

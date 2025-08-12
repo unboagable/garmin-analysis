@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import pytest
-from src.data_ingestion.load_all_garmin_dbs import (
+from garmin_analysis.data_ingestion.load_all_garmin_dbs import (
     summarize_and_merge,
     preprocess_sleep,
     convert_time_to_minutes,
@@ -16,6 +16,7 @@ def test_merge_output_non_empty():
     df = summarize_and_merge(return_df=True)
     assert not df.empty, "The merged DataFrame should not be empty"
 
+
 def test_key_columns_present():
     df = summarize_and_merge(return_df=True)
     expected_columns = [
@@ -24,6 +25,7 @@ def test_key_columns_present():
     ]
     for col in expected_columns:
         assert col in df.columns, f"{col} should be in the output"
+
 
 def test_lag_feature_shift_logic():
     df = summarize_and_merge(return_df=True)
@@ -38,6 +40,7 @@ def test_lag_feature_shift_logic():
 # --------------------------
 # Unit Tests with Mock Data
 # --------------------------
+
 
 @pytest.fixture
 def mock_tables():
@@ -85,6 +88,7 @@ def mock_tables():
         "steps_activities": steps_activities
     }
 
+
 def test_preprocess_sleep_works():
     sleep = pd.DataFrame({
         "day": ["2024-01-01"],
@@ -98,10 +102,12 @@ def test_preprocess_sleep_works():
     assert "deep_sleep_min" in result.columns
     assert result["total_sleep_min"].iloc[0] == 420
 
+
 def test_convert_time_to_minutes():
     assert convert_time_to_minutes("1:30:00") == 90
     assert convert_time_to_minutes("45:00") == 45
     assert convert_time_to_minutes("bad") is None
+
 
 def test_aggregate_stress_output():
     df = pd.DataFrame({
@@ -112,6 +118,7 @@ def test_aggregate_stress_output():
     assert "stress_avg" in result.columns
     assert result["stress_avg"].iloc[0] == 15
 
+
 def test_column_dtypes_are_correct():
     df = summarize_and_merge(return_df=True)
     assert pd.api.types.is_datetime64_any_dtype(df["day"])
@@ -121,9 +128,11 @@ def test_column_dtypes_are_correct():
     if "missing_score" in df.columns:
         assert pd.api.types.is_bool_dtype(df["missing_score"])
 
+
 def test_merged_dates_are_valid():
     df = summarize_and_merge(return_df=True)
     assert df["day"].between("2010-01-01", "2100-01-01").all(), "Dates should be valid and normalized"
+
 
 def test_expected_merged_columns_exist():
     df = summarize_and_merge(return_df=True)

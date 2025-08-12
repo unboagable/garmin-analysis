@@ -93,11 +93,28 @@ poetry run python -m garmin_analysis.data_ingestion.inspect_sqlite_schema compar
 ```
 
 ### Testing
+Run unit tests (no I/O, uses in-memory DB fixtures):
+```bash
+poetry run pytest -q -m "not integration"
+```
+
+Run integration tests (file-backed temp DBs; exercises real I/O paths):
+```bash
+poetry run pytest -q -m integration
+```
+
+Run everything:
 ```bash
 poetry run pytest -q
-# or
-python3 -m pytest -q
 ```
+
+Test fixtures:
+- `mem_db` (unit): In-memory SQLite with minimal schema and seed data for pure SQL/transform functions.
+- `tmp_db` (integration): Temp file-backed SQLite DBs with realistic seeds; test code patches `garmin_analysis.data_ingestion.load_all_garmin_dbs.DB_PATHS` to point to these files.
+
+Notes on data sources:
+- If real Garmin DBs are available, place them under `db/` (e.g., `db/garmin.db`, `db/garmin_summary.db`, `db/garmin_activities.db`).
+- When DBs are missing outside of tests, some commands may generate a synthetic dataset for convenience and log clear WARNINGS. This synthetic data is only for smoke testing and should not be used for real analysis.
 
 ## Project Structure
 ```

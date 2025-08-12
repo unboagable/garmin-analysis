@@ -4,12 +4,16 @@ db/*.db
 *.sqlite
 *.sqlite3
 
-# Data outputs and processed results
+# Data outputs
 data/
 data/*
 !data/*.md  # allow markdown notes if needed
+
+# Processed results
 reports/
 plots/
+modeling_results/
+data_quality_reports/
 
 # Jupyter notebook checkpoints
 .ipynb_checkpoints/

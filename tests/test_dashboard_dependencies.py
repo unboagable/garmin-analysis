@@ -6,14 +6,16 @@ from dash import Dash
 from garmin_analysis.dashboard import app as dashboard_app
 
 
-def test_load_master_dataframe():
+@pytest.mark.integration
+def test_load_master_dataframe(tmp_db):
     df = load_master_dataframe()
     assert isinstance(df, pd.DataFrame)
     assert not df.empty
     assert "day" in df.columns
 
 
-def test_correlation_matrix_valid():
+@pytest.mark.integration
+def test_correlation_matrix_valid(tmp_db):
     df = load_master_dataframe()
     numeric_df = df.select_dtypes(include=np.number).dropna(axis=1, how='any')
     corr = numeric_df.corr()

@@ -31,7 +31,12 @@ jobs:
       - name: Install dependencies
         run: pip install pytest -r requirements.txt
 
-      - name: Run tests
+      - name: Run unit tests (excluding integration)
         env:
           MPLBACKEND: Agg
-        run: pytest -q
+        run: pytest -q -m "not integration"
+
+      - name: Run integration tests
+        env:
+          MPLBACKEND: Agg
+        run: pytest -q -m integration

@@ -9,15 +9,17 @@ from garmin_analysis.data_ingestion.load_all_garmin_dbs import (
 )
 
 # --------------------------
-# High-Level Functional Tests
+# High-Level Functional (Integration) Tests
 # --------------------------
 
-def test_merge_output_non_empty():
+@pytest.mark.integration
+def test_merge_output_non_empty(tmp_db):
     df = summarize_and_merge(return_df=True)
     assert not df.empty, "The merged DataFrame should not be empty"
 
 
-def test_key_columns_present():
+@pytest.mark.integration
+def test_key_columns_present(tmp_db):
     df = summarize_and_merge(return_df=True)
     expected_columns = [
         "yesterday_activity_minutes",
@@ -27,7 +29,8 @@ def test_key_columns_present():
         assert col in df.columns, f"{col} should be in the output"
 
 
-def test_lag_feature_shift_logic():
+@pytest.mark.integration
+def test_lag_feature_shift_logic(tmp_db):
     df = summarize_and_merge(return_df=True)
     if "activity_minutes" in df.columns and "yesterday_activity_minutes" in df.columns:
         actual = df["yesterday_activity_minutes"]
@@ -119,7 +122,8 @@ def test_aggregate_stress_output():
     assert result["stress_avg"].iloc[0] == 15
 
 
-def test_column_dtypes_are_correct():
+@pytest.mark.integration
+def test_column_dtypes_are_correct(tmp_db):
     df = summarize_and_merge(return_df=True)
     assert pd.api.types.is_datetime64_any_dtype(df["day"])
     assert pd.api.types.is_numeric_dtype(df["steps"])
@@ -129,12 +133,14 @@ def test_column_dtypes_are_correct():
         assert pd.api.types.is_bool_dtype(df["missing_score"])
 
 
-def test_merged_dates_are_valid():
+@pytest.mark.integration
+def test_merged_dates_are_valid(tmp_db):
     df = summarize_and_merge(return_df=True)
     assert df["day"].between("2010-01-01", "2100-01-01").all(), "Dates should be valid and normalized"
 
 
-def test_expected_merged_columns_exist():
+@pytest.mark.integration
+def test_expected_merged_columns_exist(tmp_db):
     df = summarize_and_merge(return_df=True)
     expected_cols = {
         "day", "steps", "calories_total", "score", "resting_heart_rate",

@@ -101,7 +101,7 @@ class DataQualityChecker:
                 'dtype': str(dtype),
                 'is_numeric': pd.api.types.is_numeric_dtype(df[col]),
                 'is_datetime': pd.api.types.is_datetime64_any_dtype(df[col]),
-                'is_categorical': pd.api.types.is_categorical_dtype(df[col]),
+                'is_categorical': isinstance(df[col].dtype, pd.CategoricalDtype),
                 'sample_values': sample_values,
                 'unique_count': df[col].nunique(),
                 'potential_issues': self._identify_potential_issues(df[col])
@@ -346,7 +346,7 @@ def test_data_quality_checker():
     assert len(suitable_features) >= 1  # At least good_feature should be suitable
     
     print("✅ DataQualityChecker tests passed!")
-    return checker
+    
 
 
 @pytest.mark.integration
@@ -382,7 +382,7 @@ def test_real_data_quality(tmp_db):
         assert len(clustering_features) >= 3, f"Need at least 3 features for clustering, got {len(clustering_features)}"
         
         print("✅ Real data quality analysis completed successfully!")
-        return checker
+        
         
     except ImportError:
         pytest.skip("Cannot import Garmin data modules")

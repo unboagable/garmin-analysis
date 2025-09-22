@@ -87,6 +87,23 @@ class GarminDataQualityAnalyzer:
             logger.info("Analyzing modeling suitability...")
             self.analysis_results['modeling_suitability'] = self._analyze_modeling_suitability(df)
             
+            # 24h continuous coverage (based on stress timeseries if available)
+            try:
+                from garmin_analysis.data_ingestion.load_all_garmin_dbs import load_table, DB_PATHS
+                from garmin_analysis.features.coverage import days_with_continuous_coverage
+                stress = load_table(DB_PATHS["garmin"], "stress", parse_dates=["timestamp"])
+                if stress is not None and not stress.empty:
+                    full_days = days_with_continuous_coverage(stress, timestamp_col="timestamp")
+                    self.analysis_results['continuous_24h_days'] = [str(d.date()) for d in full_days]
+                    self.analysis_results['continuous_24h_days_count'] = len(full_days)
+                else:
+                    self.analysis_results['continuous_24h_days'] = []
+                    self.analysis_results['continuous_24h_days_count'] = 0
+            except Exception as e:
+                logger.warning(f"Could not compute 24h coverage days: {e}")
+                self.analysis_results['continuous_24h_days'] = []
+                self.analysis_results['continuous_24h_days_count'] = 0
+
             # Recommendations
             logger.info("Generating recommendations...")
             self.analysis_results['recommendations'] = self._generate_recommendations()
@@ -515,6 +532,15 @@ class GarminDataQualityAnalyzer:
         md_content.append(f"- **Clustering:** {len(suitability['clustering'])} features")
         md_content.append(f"- **Predictive Modeling:** {len(suitability['predictive_modeling'])} features")
         md_content.append(f"- **Time Series:** {len(suitability['time_series'])} features")
+        md_content.append("")
+
+        # Continuous 24h coverage summary
+        md_content.append("## 🕒 Continuous 24h Coverage")
+        count = self.analysis_results.get('continuous_24h_days_count', 0)
+        md_content.append(f"- **Days with 24h continuous coverage:** {count}")
+        days_list = self.analysis_results.get('continuous_24h_days', [])
+        if days_list:
+            md_content.append(f"- Sample days: {', '.join(days_list[:10])}")
         md_content.append("")
         
         # Recommendations

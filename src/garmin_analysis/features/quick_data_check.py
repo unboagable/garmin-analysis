@@ -150,6 +150,7 @@ def main():
     parser.add_argument('--features', action='store_true', help='Show only feature suitability analysis')
     parser.add_argument('--summary', action='store_true', help='Show only dataset summary')
     parser.add_argument('--full', action='store_true', help='Run full analysis (default)')
+    parser.add_argument('--continuous-24h', action='store_true', help='List days with 24h continuous timeseries coverage (based on stress table)')
     
     args = parser.parse_args()
     
@@ -162,7 +163,22 @@ def main():
         print(f"✅ Loaded {len(df):,} rows × {len(df.columns)} columns\n")
         
         # Run requested analysis
-        if args.completeness:
+        if args.continuous_24h:
+            # Load raw stress table to assess coverage
+            from garmin_analysis.data_ingestion.load_all_garmin_dbs import load_table, DB_PATHS
+            from garmin_analysis.features.coverage import days_with_continuous_coverage
+
+            stress = load_table(DB_PATHS["garmin"], "stress", parse_dates=["timestamp"])
+            if stress is None or stress.empty:
+                print("❌ No stress timeseries available to compute coverage.")
+                sys.exit(2)
+
+            days = days_with_continuous_coverage(stress, timestamp_col="timestamp")
+            print("📅 Days with 24h continuous coverage (no gap >2min):")
+            for d in days:
+                print(f"  - {d.date()}")
+            print(f"Total: {len(days)} days")
+        elif args.completeness:
             quick_completeness_check(df)
         elif args.features:
             quick_feature_check(df)

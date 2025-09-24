@@ -1,8 +1,10 @@
 import pandas as pd
 import logging
 from pathlib import Path
+import argparse
 from garmin_analysis.utils import load_master_dataframe
 from garmin_analysis.utils_cleaning import clean_data
+from garmin_analysis.features.coverage import filter_by_24h_coverage
 
 # Logging is configured at package level
 
@@ -28,7 +30,15 @@ def log_top_correlations(corr_df, threshold=0.5, max_pairs=20):
     for x, y, r in top_corrs[:max_pairs]:
         logging.info(f"  • {x} ↔ {y}: {r:.2f}")
 
-def generate_trend_summary(df, date_col='day', output_dir='reports'):
+def generate_trend_summary(df, date_col='day', output_dir='reports', filter_24h_coverage=False, max_gap_minutes=2, day_edge_tolerance_minutes=2, timestamp=None):
+    # Apply 24-hour coverage filtering if requested
+    if filter_24h_coverage:
+        logging.info("Filtering to days with 24-hour continuous coverage...")
+        max_gap = pd.Timedelta(minutes=max_gap_minutes)
+        day_edge_tolerance = pd.Timedelta(minutes=day_edge_tolerance_minutes)
+        df = filter_by_24h_coverage(df, max_gap=max_gap, day_edge_tolerance=day_edge_tolerance)
+        logging.info(f"After 24h coverage filtering: {len(df)} days remaining")
+    
     df = clean_data(df)
     numeric_df = df.select_dtypes(include="number").dropna(axis=1, how="all")
     corr_matrix = numeric_df.corr(method="pearson")
@@ -44,11 +54,18 @@ def generate_trend_summary(df, date_col='day', output_dir='reports'):
     missing_pct = df.isnull().mean().sort_values(ascending=False)
     top_missing = missing_pct[missing_pct > 0].head(10)
 
-    output_path = Path(output_dir) / f"trend_summary_{pd.Timestamp.now():%Y%m%d_%H%M%S}.md"
+    # Use provided timestamp or generate new one
+    if timestamp is None:
+        timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+    
+    output_path = Path(output_dir) / f"trend_summary_{timestamp}.md"
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_path, "w") as f:
         f.write("# 📈 Garmin Data Trend Summary\n\n")
+        
+        if filter_24h_coverage:
+            f.write("**Note:** This analysis is filtered to days with 24-hour continuous coverage.\n\n")
 
         f.write("## 🔗 Top Volatile Features (Std Dev)\n")
         f.write(top_volatile.to_string())
@@ -59,7 +76,20 @@ def generate_trend_summary(df, date_col='day', output_dir='reports'):
         f.write("\n\n")
 
     logging.info(f"Saved trend summary markdown to {output_path}")
+    return str(output_path)
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Generate trend summary from Garmin data')
+    parser.add_argument('--filter-24h-coverage', action='store_true', 
+                       help='Filter to only days with 24-hour continuous coverage')
+    parser.add_argument('--max-gap', type=int, default=2,
+                       help='Maximum gap in minutes for continuous coverage (default: 2)')
+    parser.add_argument('--day-edge-tolerance', type=int, default=2,
+                       help='Day edge tolerance in minutes for continuous coverage (default: 2)')
+    
+    args = parser.parse_args()
+    
     df = load_master_dataframe()
-    generate_trend_summary(df)
+    generate_trend_summary(df, filter_24h_coverage=args.filter_24h_coverage, 
+                         max_gap_minutes=args.max_gap, 
+                         day_edge_tolerance_minutes=args.day_edge_tolerance)

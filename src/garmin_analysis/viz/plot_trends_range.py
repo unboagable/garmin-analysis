@@ -4,7 +4,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 from datetime import datetime
+import argparse
 from garmin_analysis.utils import filter_required_columns
+from garmin_analysis.features.coverage import filter_by_24h_coverage
 
 # Logging is configured at package level
 
@@ -29,6 +31,16 @@ def plot_columns(df, columns, title):
         logging.warning(f"No valid columns available for: {title}")
 
 def main():
+    parser = argparse.ArgumentParser(description='Generate trend plots from Garmin data')
+    parser.add_argument('--filter-24h-coverage', action='store_true', 
+                       help='Filter to only days with 24-hour continuous coverage')
+    parser.add_argument('--max-gap', type=int, default=2,
+                       help='Maximum gap in minutes for continuous coverage (default: 2)')
+    parser.add_argument('--day-edge-tolerance', type=int, default=2,
+                       help='Day edge tolerance in minutes for continuous coverage (default: 2)')
+    
+    args = parser.parse_args()
+    
     merged_path = "data/master_daily_summary.csv"
     if not os.path.exists(merged_path):
         logging.error("Missing master_daily_summary.csv — please run load_all_garmin_dbs.py first.")
@@ -44,6 +56,14 @@ def main():
 
     # Filter out rows missing key predictors
     df = filter_required_columns(df, ["yesterday_activity_minutes", "stress_avg"])
+    
+    # Apply 24-hour coverage filtering if requested
+    if args.filter_24h_coverage:
+        logging.info("Filtering to days with 24-hour continuous coverage...")
+        max_gap = pd.Timedelta(minutes=args.max_gap)
+        day_edge_tolerance = pd.Timedelta(minutes=args.day_edge_tolerance)
+        df = filter_by_24h_coverage(df, max_gap=max_gap, day_edge_tolerance=day_edge_tolerance)
+        logging.info(f"After 24h coverage filtering: {len(df)} days remaining")
 
     # --- Trend Plots ---
     logging.info("Generating trend plots...")

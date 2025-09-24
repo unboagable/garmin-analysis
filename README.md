@@ -15,6 +15,8 @@ A comprehensive Garmin health data analysis platform with interactive dashboard,
 ## Features
 
 - **⏰ 24-Hour Coverage Filtering**: **NEW!** Filter analysis to only days with complete 24-hour continuous data coverage for more reliable results
+- **📅 Activity Calendar**: **NEW!** Visualize activity patterns with color-coded calendar showing different activity types
+- **🏷️ Activity Type Mappings**: **NEW!** Customize display names and colors for unknown or poorly named activity types
 - **📊 Interactive Dashboard**: Real-time metric trends and correlation analysis with filtering options
 - **🤖 Machine Learning**: Comprehensive ML pipeline with anomaly detection, clustering, and predictive modeling
 - **📈 Visualization**: Multiple plotting tools for trends, correlations, and feature analysis
@@ -130,9 +132,113 @@ poetry run python -m garmin_analysis.viz.plot_feature_correlation
 # Generate individual feature trend plots
 poetry run python -m garmin_analysis.viz.plot_feature_trend
 
+# Generate activity calendar (NEW!)
+poetry run python -m garmin_analysis.viz.cli_activity_calendar
+poetry run python -m garmin_analysis.viz.cli_activity_calendar --months 6
+poetry run python -m garmin_analysis.viz.cli_activity_calendar --start-date 2024-01-01 --end-date 2024-12-31
+
 # Generate summary statistics
 poetry run python -m garmin_analysis.features.summary_stats
 ```
+
+## 📅 Activity Calendar & Type Mappings
+
+**NEW FEATURES!** Visualize your activity patterns with a beautiful calendar view and customize how unknown activity types are displayed.
+
+### Activity Calendar
+
+Create calendar-style visualizations showing your daily activities with different colors for each activity type:
+
+```bash
+# Create calendar for all available data
+poetry run python -m garmin_analysis.viz.cli_activity_calendar
+
+# Create calendar for last 6 months
+poetry run python -m garmin_analysis.viz.cli_activity_calendar --months 6
+
+# Create calendar for specific date range
+poetry run python -m garmin_analysis.viz.cli_activity_calendar --start-date 2024-01-01 --end-date 2024-12-31
+
+# Create calendar with custom figure size
+poetry run python -m garmin_analysis.viz.cli_activity_calendar --figsize 20 15
+
+# Create calendar without activity type mappings (raw names)
+poetry run python -m garmin_analysis.viz.cli_activity_calendar --no-mappings
+```
+
+### Activity Type Mappings
+
+Customize how unknown or poorly named activity types are displayed:
+
+```bash
+# Check for unmapped activity types
+poetry run python -m garmin_analysis.viz.cli_activity_calendar --suggest-mappings
+
+# Use custom mappings configuration file
+poetry run python -m garmin_analysis.viz.cli_activity_calendar --mappings-config my_mappings.json
+```
+
+### Key Features
+
+- **🎨 Color-coded activities**: Each activity type gets a distinct color
+- **📅 Calendar grid layout**: Shows days in a proper weekly calendar format
+- **🔍 Multiple activities handling**: Darker colors for days with multiple activities
+- **📊 Activity statistics**: Summary of activity patterns and frequencies
+- **🏷️ Custom mappings**: Map unknown activity types to meaningful names
+- **⚙️ Configurable**: Customize colors, date ranges, and display options
+
+### Activity Type Mapping System
+
+The system automatically maps unknown activity types to more meaningful names. For example:
+- `UnknownEnumValue_67` → `"Training Assessment"` (automatic fitness assessments)
+- `generic` → `"General Activity"` (unspecified activities)
+
+#### Managing Mappings
+
+Edit `config/activity_type_mappings.json` to customize mappings:
+
+```json
+{
+  "unknown_activity_mappings": {
+    "UnknownEnumValue_67": {
+      "display_name": "Training Assessment",
+      "description": "Automatic fitness assessments and recovery measurements",
+      "category": "assessment",
+      "color": "#9B59B6"
+    }
+  }
+}
+```
+
+#### Adding New Mappings Programmatically
+
+```python
+from garmin_analysis.utils.activity_mappings import add_activity_mapping
+
+add_activity_mapping(
+    activity_type="UnknownEnumValue_68",
+    display_name="Recovery Check",
+    description="Automatic recovery measurements",
+    category="assessment",
+    color="#3498DB"
+)
+```
+
+### Example Output
+
+The activity calendar generates:
+- **Calendar grid** with days colored by activity type
+- **Legend** showing all activity types with their colors
+- **Summary statistics** in logs showing activity frequency
+- **High-resolution PNG** saved to the `plots/` directory
+
+### Use Cases
+
+- **🏃‍♂️ Activity Pattern Analysis**: See when you're most active throughout the year
+- **🎯 Goal Tracking**: Visualize consistency in your workout routines
+- **📊 Trend Identification**: Spot seasonal patterns in your activities
+- **🔍 Data Quality**: Identify gaps in your activity data
+- **📈 Progress Monitoring**: Track improvement in activity consistency
 
 ### Modeling
 - **Full pipeline (recommended):**
@@ -227,6 +333,8 @@ This platform is designed for comprehensive Garmin health data analysis:
 - **📈 Time Series Analysis**: Comprehensive trend analysis with configurable time windows
 - **🤖 Machine Learning**: Multiple algorithms for anomaly detection, clustering, and prediction
 - **📊 Interactive Visualization**: Real-time dashboard with filtering capabilities
+- **📅 Activity Calendar**: Calendar-style visualization of activity patterns with color coding
+- **🏷️ Activity Type Mapping**: Customize display names and colors for unknown activity types
 - **🔍 Data Quality Assurance**: Advanced tools for data validation and quality assessment
 - **📋 Automated Reporting**: Generate comprehensive health reports automatically
 - **⚡ Performance Optimization**: 24-hour coverage filtering for faster, more reliable analysis
@@ -268,6 +376,7 @@ The system analyzes the stress timeseries data to identify days where:
 | **Visualization** | Trend Plots | `plot_trends_range` | Generate comprehensive trend visualizations |
 | | Correlation Matrix | `plot_feature_correlation` | Create feature correlation heatmaps |
 | | Feature Trends | `plot_feature_trend` | Plot individual feature trends over time |
+| | Activity Calendar | `cli_activity_calendar` | **NEW!** Create calendar view of activity patterns |
 | | Summary Stats | `summary_stats` | Generate statistical summaries |
 | **Modeling** | Full Pipeline | `comprehensive_modeling_pipeline` | Complete ML analysis pipeline |
 | | Anomaly Detection | `enhanced_anomaly_detection` | Advanced anomaly detection algorithms |
@@ -420,8 +529,15 @@ garmin-analysis/
 │   ├── features/                 # Data quality and feature analysis
 │   ├── modeling/                 # Machine learning algorithms
 │   ├── reporting/                # Automated report generation
+│   ├── utils/                    # Utility modules (activity mappings, etc.)
 │   ├── viz/                      # Visualization tools
 │   └── utils.py                  # Utility functions
+├── config/                       # Configuration files
+│   └── activity_type_mappings.json # Activity type mappings
+├── docs/                         # Documentation
+│   └── activity_type_mappings.md # Activity mapping documentation
+├── examples/                     # Example scripts
+│   └── activity_calendar_example.py # Activity calendar example
 ├── tests/                        # Test suite
 ├── notebooks/                    # Jupyter notebooks
 ├── data/                         # Generated datasets

@@ -1,0 +1,43 @@
+{
+  "unknown_activity_mappings": {
+    "UnknownEnumValue_67": {
+      "display_name": "Training Assessment",
+      "description": "Automatic fitness assessments, recovery measurements, or VO2 Max estimations",
+      "category": "assessment",
+      "color": "#9B59B6"
+    }
+  },
+  "activity_categories": {
+    "cardio": {
+      "description": "Cardiovascular activities",
+      "color_scheme": "warm"
+    },
+    "strength": {
+      "description": "Strength and resistance training",
+      "color_scheme": "cool"
+    },
+    "assessment": {
+      "description": "Fitness assessments and measurements",
+      "color_scheme": "purple"
+    },
+    "sports": {
+      "description": "Team and competitive sports",
+      "color_scheme": "bright"
+    },
+    "outdoor": {
+      "description": "Outdoor recreational activities",
+      "color_scheme": "earth"
+    }
+  },
+  "notes": {
+    "usage": "This file maps unknown or poorly named activity types to more meaningful display names",
+    "maintenance": "Add new mappings as you encounter unknown activity types in your Garmin data",
+    "color_schemes": {
+      "warm": "Reds, oranges, yellows",
+      "cool": "Blues, teals, greens", 
+      "purple": "Purples, violets, magentas",
+      "bright": "High contrast, vibrant colors",
+      "earth": "Browns, greens, natural tones"
+    }
+  }
+}

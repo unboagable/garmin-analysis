@@ -22,16 +22,37 @@ def test_filter_by_24h_coverage_no_stress_data():
         'steps': [1000, 2000, 3000, 4000, 5000]
     })
     
-    # Mock the load_table function to return None (no stress data)
-    from unittest.mock import patch
+    # Test with empty stress DataFrame
+    empty_stress_df = pd.DataFrame()
+    result = filter_by_24h_coverage(df, stress_df=empty_stress_df)
+    # Should return original dataframe when no stress data
+    assert len(result) == len(df)
+    assert result.equals(df)
+
+
+def test_filter_by_24h_coverage_with_stress_data():
+    """Test filtering with pre-loaded stress data"""
+    # Create master dataframe
+    master_df = pd.DataFrame({
+        'day': pd.date_range('2024-01-01', periods=3),
+        'steps': [1000, 2000, 3000]
+    })
     
-    with patch('garmin_analysis.data_ingestion.load_all_garmin_dbs.load_table') as mock_load_table:
-        mock_load_table.return_value = None
-        
-        result = filter_by_24h_coverage(df)
-        # Should return original dataframe when no stress data
-        assert len(result) == len(df)
-        assert result.equals(df)
+    # Create stress data with continuous coverage for first day only
+    start_time = pd.Timestamp('2024-01-01 00:00:00')
+    timestamps = [start_time + timedelta(minutes=i) for i in range(1440)]  # 24 hours of 1-minute intervals
+    
+    stress_df = pd.DataFrame({
+        'timestamp': timestamps,
+        'stress_level': [50] * len(timestamps)
+    })
+    
+    result = filter_by_24h_coverage(master_df, stress_df=stress_df)
+    
+    # Should only include the first day (2024-01-01) which has continuous coverage
+    assert len(result) == 1
+    assert result['day'].iloc[0] == pd.Timestamp('2024-01-01')
+    assert result['steps'].iloc[0] == 1000
 
 
 def test_days_with_continuous_coverage_basic():

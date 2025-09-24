@@ -21,7 +21,11 @@ def create_layout(df):
     
     # Prepare numeric subset for correlation
     numeric_df = df.select_dtypes(include=np.number).dropna(axis=1, how='any')
-    corr = numeric_df.corr().round(2)
+    if numeric_df.shape[1] == 0:
+        # Handle case where no numeric columns remain after dropping NA
+        corr = pd.DataFrame([[0]], columns=['No numeric data'], index=['No numeric data'])
+    else:
+        corr = numeric_df.corr().round(2)
     
     return html.Div([
         html.H1("\U0001F4CA Garmin Dashboard", style={"textAlign": "center"}),
@@ -113,7 +117,11 @@ def update_heatmap(coverage_filter):
         
         # Prepare numeric subset for correlation
         numeric_df = df.select_dtypes(include=np.number).dropna(axis=1, how='any')
-        corr = numeric_df.corr().round(2)
+        if numeric_df.shape[1] == 0:
+            # Handle case where no numeric columns remain after dropping NA
+            corr = pd.DataFrame([[0]], columns=['No numeric data'], index=['No numeric data'])
+        else:
+            corr = numeric_df.corr().round(2)
         
         title = "Correlation Heatmap"
         if 'filter' in coverage_filter:
@@ -124,17 +132,19 @@ def update_heatmap(coverage_filter):
             x=list(corr.columns),
             y=list(corr.index),
             colorscale='Viridis',
-            showscale=True,
-            title=title
+            showscale=True
         )
+        fig.update_layout(title=title)
         return fig
     except Exception as e:
         logging.error(f"Error updating heatmap: {e}")
         # Return empty figure on error
-        return ff.create_annotated_heatmap(
+        fig = ff.create_annotated_heatmap(
             z=[[0]], x=['Error'], y=['Error'], 
-            colorscale='Viridis', showscale=True, title="Error loading data"
+            colorscale='Viridis', showscale=True
         )
+        fig.update_layout(title="Error loading data")
+        return fig
 
 if __name__ == "__main__":
     try:

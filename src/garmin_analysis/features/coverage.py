@@ -127,11 +127,13 @@ def filter_by_24h_coverage(
     day_col: str = "day",
     max_gap: pd.Timedelta = pd.Timedelta(minutes=2),
     day_edge_tolerance: pd.Timedelta = pd.Timedelta(minutes=2),
+    stress_df: Optional[pd.DataFrame] = None,
+    db_path: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     Filter a master daily dataframe to only include days with 24-hour continuous coverage.
     
-    This function loads the stress timeseries data to determine which days have
+    This function uses stress timeseries data to determine which days have
     complete 24-hour coverage, then filters the master dataframe accordingly.
 
     Args:
@@ -139,6 +141,8 @@ def filter_by_24h_coverage(
         day_col: Name of the day column in master_df
         max_gap: Maximum allowed gap between consecutive samples in stress data
         day_edge_tolerance: Allowed tolerance at the day's edges
+        stress_df: Optional pre-loaded stress DataFrame. If None, will load from database.
+        db_path: Optional custom database path. If None, uses default DB_PATHS["garmin"].
 
     Returns:
         Filtered dataframe containing only days with 24-hour coverage
@@ -148,10 +152,24 @@ def filter_by_24h_coverage(
         return master_df
     
     try:
-        # Load stress timeseries data to determine coverage
-        from garmin_analysis.data_ingestion.load_all_garmin_dbs import load_table, DB_PATHS
+        # Get stress timeseries data for coverage analysis
+        if stress_df is not None:
+            # Use pre-loaded DataFrame
+            stress = stress_df
+            logger.info("Using pre-loaded stress DataFrame for coverage analysis")
+        else:
+            # Load from database
+            from garmin_analysis.data_ingestion.load_all_garmin_dbs import load_table, DB_PATHS
+            
+            if db_path is not None:
+                # Use custom database path
+                stress = load_table(db_path, "stress", parse_dates=["timestamp"])
+                logger.info(f"Loading stress data from custom path: {db_path}")
+            else:
+                # Use default database path
+                stress = load_table(DB_PATHS["garmin"], "stress", parse_dates=["timestamp"])
+                logger.info("Loading stress data from default database path")
         
-        stress = load_table(DB_PATHS["garmin"], "stress", parse_dates=["timestamp"])
         if stress is None or stress.empty:
             logger.warning("No stress timeseries data available for coverage analysis")
             return master_df

@@ -138,6 +138,9 @@ def tmp_db(tmp_path):
             CREATE TABLE IF NOT EXISTS activities (
                 activity_id TEXT,
                 start_time TEXT,
+                sport TEXT,
+                name TEXT,
+                description TEXT,
                 training_effect REAL,
                 anaerobic_training_effect REAL,
                 elapsed_time TEXT,
@@ -154,13 +157,17 @@ def tmp_db(tmp_path):
         start = _dt.datetime(2024, 1, 1, 7, 0, 0)
         act_rows = []
         steps_rows = []
+        sports = ['running', 'cycling', 'fitness_equipment', 'walking', 'swimming']
         for i in range(0, 60, 2):
             act_id = f"a{i}"
             st = start + _dt.timedelta(days=i, hours=(i % 3))
-            act_rows.append((act_id, st.strftime("%Y-%m-%d %H:%M:%S"), 2.0 + (i % 4) * 0.2, 0.3 + (i % 3) * 0.1, "00:30:00", 300 + (i % 3) * 25))
+            sport = sports[i % len(sports)]
+            name = f"Activity {i}"
+            description = f"Description for activity {i}"
+            act_rows.append((act_id, st.strftime("%Y-%m-%d %H:%M:%S"), sport, name, description, 2.0 + (i % 4) * 0.2, 0.3 + (i % 3) * 0.1, "00:30:00", 300 + (i % 3) * 25))
             steps_rows.append((act_id, "06:00" if i % 4 else "05:45", 40 + (i % 5)))
         cur.executemany(
-            "INSERT INTO activities (activity_id, start_time, training_effect, anaerobic_training_effect, elapsed_time, calories) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO activities (activity_id, start_time, sport, name, description, training_effect, anaerobic_training_effect, elapsed_time, calories) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             act_rows,
         )
         cur.executemany(

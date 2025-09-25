@@ -160,15 +160,15 @@ class TestActivityCalendarIntegration:
         with sqlite3.connect(activities_db) as conn:
             # Insert some test activities
             activities = [
-                ('test1', '2024-01-01 10:00:00', 'running'),
-                ('test2', '2024-01-02 11:00:00', 'cycling'),
-                ('test3', '2024-01-03 12:00:00', 'fitness_equipment'),
-                ('test4', '2024-01-01 15:00:00', 'running'),  # Multiple activities same day
+                ('test1', '2024-01-01 10:00:00', 'running', 'Morning Run', 'Easy morning run', 2.5, 0.5, '00:30:00', 300),
+                ('test2', '2024-01-02 11:00:00', 'cycling', 'Bike Ride', 'Cycling workout', 2.8, 0.7, '00:45:00', 350),
+                ('test3', '2024-01-03 12:00:00', 'fitness_equipment', 'Gym Workout', 'Strength training', 3.0, 0.8, '01:00:00', 400),
+                ('test4', '2024-01-01 15:00:00', 'running', 'Evening Run', 'Evening run', 2.2, 0.4, '00:25:00', 280),  # Multiple activities same day
             ]
             
             cursor = conn.cursor()
             cursor.executemany(
-                "INSERT INTO activities (activity_id, start_time, sport) VALUES (?, ?, ?)",
+                "INSERT INTO activities (activity_id, start_time, sport, name, description, training_effect, anaerobic_training_effect, elapsed_time, calories) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 activities
             )
             conn.commit()
@@ -179,7 +179,9 @@ class TestActivityCalendarIntegration:
         # Load data
         df = load_activities_data(activities_db)
         
-        assert len(df) == 4
+        # Should have the existing test data (30 activities from conftest.py) plus our 4 new ones
+        assert len(df) >= 4
+        assert len(df) == 34  # 30 from conftest.py + 4 new ones
         assert 'start_time' in df.columns
         assert 'sport' in df.columns
         

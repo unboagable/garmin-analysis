@@ -4,7 +4,7 @@ import numpy as np
 import logging
 from pathlib import Path
 from datetime import datetime
-from garmin_analysis.utils.data_processing import normalize_day_column, convert_time_to_minutes, ensure_datetime_sorted
+from ..utils.data_processing import normalize_day_column, convert_time_to_minutes, ensure_datetime_sorted
 
 # Logging is configured at package level
 

@@ -4,7 +4,15 @@ A comprehensive Garmin health data analysis platform with interactive dashboard,
 
 ## 🆕 What's New
 
-**24-Hour Coverage Filtering** is now available across all analysis tools! This major feature enhancement allows you to filter your analysis to only include days with complete 24-hour continuous data coverage, ensuring more reliable and accurate results.
+**Day-of-Week Analysis** is now available! Analyze sleep score, body battery, and water intake patterns by day of the week to identify weekly trends and optimize your health routines.
+
+- ✅ **Interactive dashboard** with day-of-week analysis tab
+- ✅ **CLI tool** for standalone day-of-week analysis
+- ✅ **Comprehensive visualizations** with bar charts and trend comparisons
+- ✅ **24-hour coverage filtering** support for reliable analysis
+- ✅ **Automated summary reports** showing best/worst days
+
+**24-Hour Coverage Filtering** is available across all analysis tools! This major feature enhancement allows you to filter your analysis to only include days with complete 24-hour continuous data coverage, ensuring more reliable and accurate results.
 
 - ✅ **All visualization tools** now support `--filter-24h-coverage`
 - ✅ **Interactive dashboard** has real-time filtering checkboxes
@@ -14,10 +22,11 @@ A comprehensive Garmin health data analysis platform with interactive dashboard,
 
 ## Features
 
-- **⏰ 24-Hour Coverage Filtering**: **NEW!** Filter analysis to only days with complete 24-hour continuous data coverage for more reliable results
-- **📅 Activity Calendar**: **NEW!** Visualize activity patterns with color-coded calendar showing different activity types
-- **🏷️ Activity Type Mappings**: **NEW!** Customize display names and colors for unknown or poorly named activity types
-- **📊 Interactive Dashboard**: Real-time metric trends and correlation analysis with filtering options
+- **📅 Day-of-Week Analysis**: **NEW!** Analyze sleep score, body battery, and water intake patterns by day of the week
+- **⏰ 24-Hour Coverage Filtering**: Filter analysis to only days with complete 24-hour continuous data coverage for more reliable results
+- **📅 Activity Calendar**: Visualize activity patterns with color-coded calendar showing different activity types
+- **🏷️ Activity Type Mappings**: Customize display names and colors for unknown or poorly named activity types
+- **📊 Interactive Dashboard**: Real-time metric trends, correlation analysis, and day-of-week analysis with filtering options
 - **🤖 Machine Learning**: Comprehensive ML pipeline with anomaly detection, clustering, and predictive modeling
 - **📈 Visualization**: Multiple plotting tools for trends, correlations, and feature analysis
 - **📋 Reporting**: Automated summaries and comprehensive analytics reports
@@ -116,9 +125,18 @@ poetry run python -m garmin_analysis.dashboard.app
 
 ### Launch dashboard
 ```bash
-poetry run python -m garmin_analysis.dashboard.app
+# Using the convenient script
+poetry run python run_dashboard.py
+
+# Or run directly
+poetry run python -m src.garmin_analysis.dashboard.app
 ```
 Open `http://localhost:8050`.
+
+The dashboard now includes:
+- **📈 Metric Trends**: Time series plots with filtering
+- **📊 Correlation Heatmap**: Feature correlation analysis
+- **📅 Day of Week Analysis**: NEW! Sleep score, body battery, and water intake by day of week
 
 ### Visualization utilities
 ```bash
@@ -139,6 +157,114 @@ poetry run python -m garmin_analysis.viz.cli_activity_calendar --start-date 2024
 
 # Generate summary statistics
 poetry run python -m garmin_analysis.features.summary_stats
+```
+
+## 📅 Day-of-Week Analysis
+
+**NEW FEATURE!** Analyze your sleep score, body battery, and water intake patterns by day of the week to identify weekly trends and optimize your health routines.
+
+### Quick Start
+
+```bash
+# Run day-of-week analysis with visualizations
+poetry run python -m src.garmin_analysis.cli_day_of_week
+
+# Run with verbose output
+poetry run python -m src.garmin_analysis.cli_day_of_week --verbose
+
+# Show plots interactively (instead of saving)
+poetry run python -m src.garmin_analysis.cli_day_of_week --show-plots
+
+# Skip saving plots to files
+poetry run python -m src.garmin_analysis.cli_day_of_week --no-save
+```
+
+### Dashboard Integration
+
+The day-of-week analysis is also available in the interactive dashboard:
+
+```bash
+# Launch the dashboard
+poetry run python run_dashboard.py
+# Or: poetry run python -m src.garmin_analysis.dashboard.app
+```
+
+Then navigate to the **"📅 Day of Week Analysis"** tab to:
+- Select which metrics to analyze (Sleep Score, Body Battery Max/Min, Water Intake)
+- Apply 24-hour coverage filtering for reliable results
+- View interactive bar charts and trend comparisons
+- Explore patterns in real-time
+
+### Key Features
+
+- **📊 Comprehensive Analysis**: Sleep score, body battery max/min, and water intake
+- **📈 Multiple Visualizations**: Bar charts with error bars and trend line comparisons
+- **🎯 Interactive Controls**: Select metrics and apply filters in real-time
+- **📋 Automated Summaries**: Best/worst days with statistical differences
+- **⚡ 24-Hour Coverage Filtering**: Optional filtering for high-quality data only
+- **🎨 Color-Coded Metrics**: Easy identification of different health metrics
+
+### Understanding Your Results
+
+The analysis shows:
+
+- **Sleep Score**: Average sleep quality by day of week (0-100 scale)
+- **Body Battery Max**: Peak energy level by day of week (0-100 scale)
+- **Body Battery Min**: Lowest energy level by day of week (0-100 scale)
+- **Water Intake**: Daily hydration by day of week (ml)
+
+### Example Output
+
+```
+DAY-OF-WEEK AVERAGES SUMMARY
+============================================================
+
+Sleep Score:
+----------------------------------------
+      Monday:   61.8 ±  18.2 (n=62)
+     Tuesday:   62.1 ±  15.8 (n=58)
+   Wednesday:   61.3 ±  15.7 (n=61)
+    Thursday:   61.1 ±  17.8 (n=50)
+      Friday:   59.5 ±  20.1 (n=53)
+    Saturday:   60.9 ±  19.0 (n=61)
+      Sunday:   60.4 ±  20.5 (n=57)
+
+Best day:  Tuesday (62.1)
+Worst day: Friday (59.5)
+Difference: 2.6
+```
+
+### Use Cases
+
+- **🛌 Sleep Optimization**: Identify which days you sleep best and adjust your routine
+- **⚡ Energy Management**: Find patterns in your body battery to optimize activity timing
+- **💧 Hydration Tracking**: Monitor water intake patterns (if tracked by your device)
+- **📊 Weekly Planning**: Use insights to plan your week for optimal health
+- **🔍 Pattern Recognition**: Spot trends that might not be obvious in daily data
+
+### Generated Files
+
+The analysis creates several visualization files in the `plots/` directory:
+- `*_day_of_week_sleep_score.png` - Sleep score by day of week
+- `*_day_of_week_body_battery_max.png` - Peak body battery by day of week
+- `*_day_of_week_body_battery_min.png` - Minimum body battery by day of week
+- `*_day_of_week_water_intake.png` - Water intake by day of week
+- `*_day_of_week_combined.png` - All metrics comparison chart
+
+### Data Requirements
+
+- **Sleep Score**: Requires data in the `sleep` table with `score` column
+- **Body Battery**: Requires data in the `daily_summary` table with `bb_max` and `bb_min` columns
+- **Water Intake**: Requires data in the `daily_summary` table with `hydration_intake` column
+
+### Testing
+
+```bash
+# Run day-of-week analysis tests
+poetry run pytest tests/test_day_of_week_analysis.py -v
+
+# Run dashboard integration tests
+poetry run pytest tests/test_dashboard_integration.py -v
 ```
 
 ## 📅 Activity Calendar & Type Mappings
@@ -376,7 +502,8 @@ The system analyzes the stress timeseries data to identify days where:
 | **Visualization** | Trend Plots | `plot_trends_range` | Generate comprehensive trend visualizations |
 | | Correlation Matrix | `plot_feature_correlation` | Create feature correlation heatmaps |
 | | Feature Trends | `plot_feature_trend` | Plot individual feature trends over time |
-| | Activity Calendar | `cli_activity_calendar` | **NEW!** Create calendar view of activity patterns |
+| | Activity Calendar | `cli_activity_calendar` | Create calendar view of activity patterns |
+| | Day-of-Week Analysis | `cli_day_of_week` | **NEW!** Analyze sleep, body battery, water intake by day of week |
 | | Summary Stats | `summary_stats` | Generate statistical summaries |
 | **Modeling** | Full Pipeline | `comprehensive_modeling_pipeline` | Complete ML analysis pipeline |
 | | Anomaly Detection | `enhanced_anomaly_detection` | Advanced anomaly detection algorithms |
@@ -389,7 +516,7 @@ The system analyzes the stress timeseries data to identify days where:
 | | Coverage Analysis | `coverage` | 24-hour coverage assessment |
 | **Reporting** | Full Analytics | `run_all_analytics` | Comprehensive analytics reports |
 | | Trend Summary | `generate_trend_summary` | Statistical trend summaries |
-| **Dashboard** | Web Interface | `dashboard.app` | Interactive web dashboard |
+| **Dashboard** | Web Interface | `dashboard.app` | Interactive web dashboard with day-of-week analysis |
 | **Testing** | Unit Tests | `pytest -m "not integration"` | Fast unit tests |
 | | Integration Tests | `pytest -m integration` | Full integration tests |
 | | All Tests | `pytest` | Complete test suite |
@@ -538,6 +665,7 @@ garmin-analysis/
 │   └── activity_type_mappings.md # Activity mapping documentation
 ├── examples/                     # Example scripts
 │   └── activity_calendar_example.py # Activity calendar example
+├── run_dashboard.py              # Convenient dashboard launcher script
 ├── tests/                        # Test suite
 ├── notebooks/                    # Jupyter notebooks
 ├── data/                         # Generated datasets

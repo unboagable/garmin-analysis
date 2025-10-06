@@ -129,14 +129,14 @@ poetry run python -m garmin_analysis.dashboard.app
 poetry run python run_dashboard.py
 
 # Or run directly
-poetry run python -m src.garmin_analysis.dashboard.app
+poetry run python -m garmin_analysis.dashboard.app
 ```
 Open `http://localhost:8050`.
 
 The dashboard now includes:
+- **📅 Day of Week Analysis**: Sleep score, body battery, and water intake by day of week
+- **📊 30-Day Health Overview**: Variable 30-day window for stress, HR, body battery, and sleep
 - **📈 Metric Trends**: Time series plots with filtering
-- **📊 Correlation Heatmap**: Feature correlation analysis
-- **📅 Day of Week Analysis**: NEW! Sleep score, body battery, and water intake by day of week
 
 ### Visualization utilities
 ```bash
@@ -167,16 +167,16 @@ poetry run python -m garmin_analysis.features.summary_stats
 
 ```bash
 # Run day-of-week analysis with visualizations
-poetry run python -m src.garmin_analysis.cli_day_of_week
+poetry run python -m garmin_analysis.cli_day_of_week
 
 # Run with verbose output
-poetry run python -m src.garmin_analysis.cli_day_of_week --verbose
+poetry run python -m garmin_analysis.cli_day_of_week --verbose
 
 # Show plots interactively (instead of saving)
-poetry run python -m src.garmin_analysis.cli_day_of_week --show-plots
+poetry run python -m garmin_analysis.cli_day_of_week --show-plots
 
 # Skip saving plots to files
-poetry run python -m src.garmin_analysis.cli_day_of_week --no-save
+poetry run python -m garmin_analysis.cli_day_of_week --no-save
 ```
 
 ### Dashboard Integration
@@ -186,7 +186,7 @@ The day-of-week analysis is also available in the interactive dashboard:
 ```bash
 # Launch the dashboard
 poetry run python run_dashboard.py
-# Or: poetry run python -m src.garmin_analysis.dashboard.app
+# Or: poetry run python -m garmin_analysis.dashboard.app
 ```
 
 Then navigate to the **"📅 Day of Week Analysis"** tab to:
@@ -540,7 +540,7 @@ poetry run python -m garmin_analysis.reporting.run_all_analytics --filter-24h-co
 
 ### Dashboard Usage
 
-In the interactive dashboard, you can toggle the "Only days with 24-hour continuous coverage" checkbox to filter both trend plots and correlation heatmaps. The filtering is applied in real-time and plot titles will indicate when filtering is active.
+In the interactive dashboard, you can toggle the "Only days with 24-hour continuous coverage" checkbox to filter trend plots and analysis views. The filtering is applied in real-time and plot titles will indicate when filtering is active.
 
 ### Configuration Parameters
 

@@ -530,13 +530,13 @@ poetry run python -m garmin_analysis.viz.plot_trends_range --filter-24h-coverage
 poetry run python -m garmin_analysis.reporting.generate_trend_summary --filter-24h-coverage
 
 # Advanced usage - customize coverage parameters
-poetry run python -m garmin_analysis.viz.plot_trends_range --filter-24h-coverage --max-gap 5 --day-edge-tolerance 5
+poetry run python -m garmin_analysis.viz.plot_trends_range --filter-24h-coverage --max-gap 5 --day-edge-tolerance 5 --coverage-allowance-minutes 60
 
 # Full pipeline with filtering
 poetry run python -m garmin_analysis.modeling.comprehensive_modeling_pipeline --filter-24h-coverage --target-col score
 
 # Monthly reports with filtering
-poetry run python -m garmin_analysis.reporting.run_all_analytics --filter-24h-coverage --monthly
+poetry run python -m garmin_analysis.reporting.run_all_analytics --filter-24h-coverage --monthly --coverage-allowance-minutes 120
 ```
 
 ### Dashboard Usage
@@ -545,12 +545,14 @@ In the interactive dashboard, you can toggle the "Only days with 24-hour continu
 
 ### Configuration Parameters
 
+- `--filter-24h-coverage`: Enable 24-hour coverage filtering
 - `--max-gap`: Maximum allowed gap between consecutive samples (default: 2 minutes)
 - `--day-edge-tolerance`: Allowed tolerance at day start/end (default: 2 minutes)
-- `--filter-24h-coverage`: Enable 24-hour coverage filtering
+- `--coverage-allowance-minutes`: Total allowed missing minutes within a day (0–300, default: 0). This allowance applies to the sum of: (a) all internal gaps that exceed `--max-gap` and (b) late starts/early ends beyond `--day-edge-tolerance` at the day's edges. If the cumulative missing time is within the allowance, the day qualifies even if individual gaps exceed `--max-gap`.
 
 Dashboard-specific:
 - "Max gap (minutes)": Same as `--max-gap`, adjustable per-tab in the UI
+- "Coverage allowance (minutes)": Same as `--coverage-allowance-minutes`
 
 ### Data Quality Check
 

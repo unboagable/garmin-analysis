@@ -33,21 +33,25 @@ def days_with_continuous_coverage(
     timestamp_col: str = "timestamp",
     max_gap: pd.Timedelta = pd.Timedelta(minutes=2),
     day_edge_tolerance: pd.Timedelta = pd.Timedelta(minutes=2),
+    total_missing_allowance: pd.Timedelta = pd.Timedelta(minutes=0),
 ) -> List[pd.Timestamp]:
     """
     Return list of days (normalized to midnight) where the timeseries has continuous
-    24-hour coverage with no gap larger than `max_gap`.
+    24-hour coverage with no gap larger than `max_gap` and cumulative missing time
+    across the day not exceeding `total_missing_allowance`.
 
     A day qualifies if:
     - First sample is no later than (day_start + day_edge_tolerance)
     - Last sample is no earlier than (day_end - day_edge_tolerance)
-    - The maximum interval between consecutive samples is <= max_gap
+    - Cumulative missing time (gaps beyond `max_gap` plus unmet edges beyond
+      `day_edge_tolerance`) is <= `total_missing_allowance`
 
     Args:
         df: DataFrame containing a timestamp column
         timestamp_col: Name of the timestamp column
         max_gap: Maximum allowed gap between consecutive samples
         day_edge_tolerance: Allowed tolerance at the day's edges
+        total_missing_allowance: Total allowed missing time within the day (default 0)
 
     Returns:
         List of tz-naive pandas Timestamps (midnight) representing qualifying days
@@ -78,17 +82,29 @@ def days_with_continuous_coverage(
         day_start = current_day
         day_end = day_start + one_day
 
-        # Compute maximum gap between consecutive timestamps
+        # Compute cumulative missing time:
+        # - Internal missing: sum of (gap - max_gap) for gaps larger than max_gap
+        # - Edge missing: time outside tolerated edges at start/end
         if len(stamps) == 1:
-            max_consecutive_gap = end_ts - start_ts
+            diffs = pd.Series([], dtype="timedelta64[ns]")
+            max_consecutive_gap = pd.NaT
         else:
             diffs = stamps.diff().iloc[1:]
             max_consecutive_gap = diffs.max()
 
-        edge_ok = (start_ts <= day_start + day_edge_tolerance) and (end_ts >= day_end - day_edge_tolerance)
-        gaps_ok = pd.isna(max_consecutive_gap) or (max_consecutive_gap <= max_gap)
+        internal_missing = diffs.apply(lambda d: max(pd.Timedelta(0), d - max_gap)).sum() if len(diffs) > 0 else pd.Timedelta(0)
 
-        if edge_ok and gaps_ok:
+        start_deficit = max(pd.Timedelta(0), (start_ts - (day_start + day_edge_tolerance)))
+        end_deficit = max(pd.Timedelta(0), ((day_end - day_edge_tolerance) - end_ts))
+        edge_missing = start_deficit + end_deficit
+
+        total_missing = internal_missing + edge_missing
+
+        allowance_ok = (total_missing <= total_missing_allowance)
+
+        # Edge tolerance must still be respected within the allowance budget
+        # i.e., we do not require exact edges as long as total_missing stays within allowance
+        if allowance_ok:
             qualifying_days.append(day_start)
 
     return qualifying_days
@@ -127,6 +143,7 @@ def filter_by_24h_coverage(
     day_col: str = "day",
     max_gap: pd.Timedelta = pd.Timedelta(minutes=2),
     day_edge_tolerance: pd.Timedelta = pd.Timedelta(minutes=2),
+    total_missing_allowance: pd.Timedelta = pd.Timedelta(minutes=0),
     stress_df: Optional[pd.DataFrame] = None,
     db_path: Optional[str] = None,
 ) -> pd.DataFrame:
@@ -141,6 +158,7 @@ def filter_by_24h_coverage(
         day_col: Name of the day column in master_df
         max_gap: Maximum allowed gap between consecutive samples in stress data
         day_edge_tolerance: Allowed tolerance at the day's edges
+        total_missing_allowance: Total allowed missing time within day (default 0)
         stress_df: Optional pre-loaded stress DataFrame. If None, will load from database.
         db_path: Optional custom database path. If None, uses default DB_PATHS["garmin"].
 
@@ -179,7 +197,8 @@ def filter_by_24h_coverage(
             stress, 
             timestamp_col="timestamp",
             max_gap=max_gap,
-            day_edge_tolerance=day_edge_tolerance
+            day_edge_tolerance=day_edge_tolerance,
+            total_missing_allowance=total_missing_allowance,
         )
         
         if not qualifying_days:

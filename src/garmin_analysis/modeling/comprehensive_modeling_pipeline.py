@@ -383,7 +383,7 @@ class ComprehensiveModelingPipeline:
             f.write("---\n")
             f.write("*Report generated automatically by Comprehensive Modeling Pipeline*\n")
     
-    def run_full_pipeline(self, df: pd.DataFrame, filter_24h_coverage=False, max_gap_minutes=2, day_edge_tolerance_minutes=2, **kwargs) -> Dict:
+    def run_full_pipeline(self, df: pd.DataFrame, filter_24h_coverage=False, max_gap_minutes=2, day_edge_tolerance_minutes=2, coverage_allowance_minutes=0, **kwargs) -> Dict:
         """Run the complete modeling pipeline."""
         logger.info("Starting comprehensive modeling pipeline...")
         
@@ -396,7 +396,8 @@ class ComprehensiveModelingPipeline:
                 logger.info("Filtering to days with 24-hour continuous coverage...")
                 max_gap = pd.Timedelta(minutes=max_gap_minutes)
                 day_edge_tolerance = pd.Timedelta(minutes=day_edge_tolerance_minutes)
-                df = filter_by_24h_coverage(df, max_gap=max_gap, day_edge_tolerance=day_edge_tolerance)
+                total_missing_allowance = pd.Timedelta(minutes=max(0, min(coverage_allowance_minutes, 300)))
+                df = filter_by_24h_coverage(df, max_gap=max_gap, day_edge_tolerance=day_edge_tolerance, total_missing_allowance=total_missing_allowance)
                 logger.info(f"After 24h coverage filtering: {len(df)} days remaining")
             
             # Run all analyses
@@ -440,6 +441,8 @@ def main():
                        help='Day edge tolerance in minutes for continuous coverage (default: 2)')
     parser.add_argument('--target-col', type=str, default='score',
                        help='Target column for predictive modeling (default: score)')
+    parser.add_argument('--coverage-allowance-minutes', type=int, default=0,
+                       help='Total allowed missing minutes within a day (0-300, default: 0)')
     parser.add_argument('--tune-hyperparameters', action='store_true', default=True,
                        help='Tune hyperparameters (default: True)')
     
@@ -461,6 +464,7 @@ def main():
             filter_24h_coverage=args.filter_24h_coverage,
             max_gap_minutes=args.max_gap,
             day_edge_tolerance_minutes=args.day_edge_tolerance,
+            coverage_allowance_minutes=args.coverage_allowance_minutes,
             tune_hyperparameters=args.tune_hyperparameters,
             target_col=args.target_col
         )

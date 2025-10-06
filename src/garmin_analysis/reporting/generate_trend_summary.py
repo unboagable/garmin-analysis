@@ -30,13 +30,14 @@ def log_top_correlations(corr_df, threshold=0.5, max_pairs=20):
     for x, y, r in top_corrs[:max_pairs]:
         logging.info(f"  • {x} ↔ {y}: {r:.2f}")
 
-def generate_trend_summary(df, date_col='day', output_dir='reports', filter_24h_coverage=False, max_gap_minutes=2, day_edge_tolerance_minutes=2, timestamp=None):
+def generate_trend_summary(df, date_col='day', output_dir='reports', filter_24h_coverage=False, max_gap_minutes=2, day_edge_tolerance_minutes=2, coverage_allowance_minutes=0, timestamp=None):
     # Apply 24-hour coverage filtering if requested
     if filter_24h_coverage:
         logging.info("Filtering to days with 24-hour continuous coverage...")
         max_gap = pd.Timedelta(minutes=max_gap_minutes)
         day_edge_tolerance = pd.Timedelta(minutes=day_edge_tolerance_minutes)
-        df = filter_by_24h_coverage(df, max_gap=max_gap, day_edge_tolerance=day_edge_tolerance)
+        total_missing_allowance = pd.Timedelta(minutes=max(0, min(coverage_allowance_minutes, 300)))
+        df = filter_by_24h_coverage(df, max_gap=max_gap, day_edge_tolerance=day_edge_tolerance, total_missing_allowance=total_missing_allowance)
         logging.info(f"After 24h coverage filtering: {len(df)} days remaining")
     
     df = clean_data(df)
@@ -86,10 +87,13 @@ if __name__ == "__main__":
                        help='Maximum gap in minutes for continuous coverage (default: 2)')
     parser.add_argument('--day-edge-tolerance', type=int, default=2,
                        help='Day edge tolerance in minutes for continuous coverage (default: 2)')
+    parser.add_argument('--coverage-allowance-minutes', type=int, default=0,
+                        help='Total allowed missing minutes within a day (0-300, default: 0)')
     
     args = parser.parse_args()
     
     df = load_master_dataframe()
     generate_trend_summary(df, filter_24h_coverage=args.filter_24h_coverage, 
                          max_gap_minutes=args.max_gap, 
-                         day_edge_tolerance_minutes=args.day_edge_tolerance)
+                         day_edge_tolerance_minutes=args.day_edge_tolerance,
+                         coverage_allowance_minutes=args.coverage_allowance_minutes)

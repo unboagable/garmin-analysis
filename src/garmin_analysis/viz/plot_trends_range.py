@@ -38,6 +38,8 @@ def main():
                        help='Maximum gap in minutes for continuous coverage (default: 2)')
     parser.add_argument('--day-edge-tolerance', type=int, default=2,
                        help='Day edge tolerance in minutes for continuous coverage (default: 2)')
+    parser.add_argument('--coverage-allowance-minutes', type=int, default=0,
+                        help='Total allowed missing minutes within a day (0-300, default: 0)')
     
     args = parser.parse_args()
     
@@ -62,7 +64,8 @@ def main():
         logging.info("Filtering to days with 24-hour continuous coverage...")
         max_gap = pd.Timedelta(minutes=args.max_gap)
         day_edge_tolerance = pd.Timedelta(minutes=args.day_edge_tolerance)
-        df = filter_by_24h_coverage(df, max_gap=max_gap, day_edge_tolerance=day_edge_tolerance)
+        total_missing_allowance = pd.Timedelta(minutes=max(0, min(args.coverage_allowance_minutes, 300)))
+        df = filter_by_24h_coverage(df, max_gap=max_gap, day_edge_tolerance=day_edge_tolerance, total_missing_allowance=total_missing_allowance)
         logging.info(f"After 24h coverage filtering: {len(df)} days remaining")
 
     # --- Trend Plots ---

@@ -99,5 +99,77 @@ def test_days_with_continuous_coverage_with_gap():
     assert len(qualifying_days) == 0
 
 
+def test_days_with_continuous_coverage_with_allowance_internal_gap_allows():
+    """A 30-minute internal gap should be allowed when allowance >= 30."""
+    start_time = pd.Timestamp('2024-01-01 00:00:00')
+    timestamps = []
+    # First block: 8 hours, minutely
+    for i in range(8 * 60):
+        timestamps.append(start_time + pd.Timedelta(minutes=i))
+    # Gap: 30 minutes
+    # Second block resumes after 30 minute gap
+    resume = start_time + pd.Timedelta(hours=8, minutes=30)
+    for i in range(16 * 60 - 30):  # remaining minutes to fill until 24h
+        timestamps.append(resume + pd.Timedelta(minutes=i))
+
+    stress_df = pd.DataFrame({'timestamp': timestamps})
+
+    days = days_with_continuous_coverage(
+        stress_df,
+        timestamp_col='timestamp',
+        max_gap=pd.Timedelta(minutes=2),
+        day_edge_tolerance=pd.Timedelta(minutes=2),
+        total_missing_allowance=pd.Timedelta(minutes=30),
+    )
+
+    assert pd.Timestamp('2024-01-01') in days
+
+
+def test_days_with_continuous_coverage_with_allowance_edge_deficit_allows():
+    """A late start and early end totalling 20 minutes should be allowed when allowance >= 20."""
+    day = pd.Timestamp('2024-01-01')
+    # Start 10 minutes late, end 10 minutes early, otherwise minutely
+    ts = pd.date_range(day + pd.Timedelta(minutes=10), day + pd.Timedelta(days=1) - pd.Timedelta(minutes=10), freq="1min")
+    stress_df = pd.DataFrame({'timestamp': ts})
+
+    days = days_with_continuous_coverage(
+        stress_df,
+        timestamp_col='timestamp',
+        max_gap=pd.Timedelta(minutes=2),
+        day_edge_tolerance=pd.Timedelta(minutes=2),
+        total_missing_allowance=pd.Timedelta(minutes=20),
+    )
+
+    assert pd.Timestamp('2024-01-01') in days
+
+
+def test_filter_by_24h_coverage_with_total_allowance_filters_master():
+    """Master df is filtered when stress coverage meets total allowance but violates max_gap."""
+    master_df = pd.DataFrame({
+        'day': pd.date_range('2024-01-01', periods=2),
+        'steps': [1000, 2000]
+    })
+
+    # Build stress with one 15-minute internal gap on the first day
+    day = pd.Timestamp('2024-01-01')
+    ts1a = pd.date_range(day, day + pd.Timedelta(hours=6), freq='1min', inclusive='left')
+    ts1b = pd.date_range(day + pd.Timedelta(hours=6, minutes=15), day + pd.Timedelta(days=1), freq='1min', inclusive='left')
+    stress_day1 = ts1a.append(ts1b)
+
+    # Second day has no data; should not pass
+    stress_df = pd.DataFrame({'timestamp': stress_day1})
+
+    filtered = filter_by_24h_coverage(
+        master_df,
+        stress_df=stress_df,
+        max_gap=pd.Timedelta(minutes=2),
+        day_edge_tolerance=pd.Timedelta(minutes=2),
+        total_missing_allowance=pd.Timedelta(minutes=15),
+    )
+
+    assert len(filtered) == 1
+    assert filtered['day'].iloc[0] == pd.Timestamp('2024-01-01')
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

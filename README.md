@@ -100,6 +100,7 @@ poetry run python -m garmin_analysis.reporting.run_all_analytics --filter-24h-co
 # Launch dashboard with filtering options
 poetry run python -m garmin_analysis.dashboard.app
 # Then check the "Only days with 24-hour continuous coverage" checkbox
+# and set "Max gap (minutes)" to your preferred tolerance (default: 2)
 ```
 
 ### Why use 24-hour coverage filtering?
@@ -540,13 +541,16 @@ poetry run python -m garmin_analysis.reporting.run_all_analytics --filter-24h-co
 
 ### Dashboard Usage
 
-In the interactive dashboard, you can toggle the "Only days with 24-hour continuous coverage" checkbox to filter trend plots and analysis views. The filtering is applied in real-time and plot titles will indicate when filtering is active.
+In the interactive dashboard, you can toggle the "Only days with 24-hour continuous coverage" checkbox to filter trend plots and analysis views. Use the adjacent "Max gap (minutes)" input to set the maximum allowed gap between samples (default 2). The filtering is applied in real-time and plot titles will indicate when filtering is active.
 
 ### Configuration Parameters
 
 - `--max-gap`: Maximum allowed gap between consecutive samples (default: 2 minutes)
 - `--day-edge-tolerance`: Allowed tolerance at day start/end (default: 2 minutes)
 - `--filter-24h-coverage`: Enable 24-hour coverage filtering
+
+Dashboard-specific:
+- "Max gap (minutes)": Same as `--max-gap`, adjustable per-tab in the UI
 
 ### Data Quality Check
 

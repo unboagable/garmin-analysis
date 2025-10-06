@@ -32,7 +32,7 @@ def test_day_of_week_callback():
     selected_metrics = ['sleep_score', 'body_battery_max']
     coverage_filter = []
     
-    bar_fig, combined_fig = update_day_of_week_charts(selected_metrics, coverage_filter)
+    bar_fig, combined_fig = update_day_of_week_charts(selected_metrics, coverage_filter, 2)
     
     # Check that figures were created
     assert bar_fig is not None
@@ -50,7 +50,7 @@ def test_day_of_week_callback_with_coverage_filter():
     selected_metrics = ['sleep_score']
     coverage_filter = ['filter']
     
-    bar_fig, combined_fig = update_day_of_week_charts(selected_metrics, coverage_filter)
+    bar_fig, combined_fig = update_day_of_week_charts(selected_metrics, coverage_filter, 2)
     
     # Check that figures were created (may be empty if no data after filtering)
     assert bar_fig is not None
@@ -64,7 +64,7 @@ def test_day_of_week_callback_empty_metrics():
     selected_metrics = []
     coverage_filter = []
     
-    bar_fig, combined_fig = update_day_of_week_charts(selected_metrics, coverage_filter)
+    bar_fig, combined_fig = update_day_of_week_charts(selected_metrics, coverage_filter, 2)
     
     # Should still return figures (may be empty)
     assert bar_fig is not None
@@ -114,7 +114,7 @@ def test_dashboard_integration(tmp_db):
         assert layout is not None
         
         # Test day-of-week callback
-        bar_fig, combined_fig = update_day_of_week_charts(['sleep_score'], [])
+        bar_fig, combined_fig = update_day_of_week_charts(['sleep_score'], [], 2)
         assert bar_fig is not None
         assert combined_fig is not None
         

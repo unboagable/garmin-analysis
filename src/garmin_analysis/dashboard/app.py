@@ -32,7 +32,18 @@ def create_layout(df):
                             id='coverage-filter-dow',
                             options=[{'label': ' Only days with 24-hour continuous coverage', 'value': 'filter'}],
                             value=[]
-                        )
+                        ),
+                        html.Div([
+                            html.Label("Max gap (minutes):"),
+                            dcc.Input(
+                                id='coverage-gap-minutes-dow',
+                                type='number',
+                                min=1,
+                                step=1,
+                                value=2,
+                                style={'width': '120px'}
+                            )
+                        ], style={'marginTop': '6px'})
                     ], style={'margin': '10px'}),
                     html.Div([
                         html.Label("Select Metrics:"),
@@ -61,7 +72,18 @@ def create_layout(df):
                             id='coverage-filter-30day',
                             options=[{'label': ' Only days with 24-hour continuous coverage', 'value': 'filter'}],
                             value=[]
-                        )
+                        ),
+                        html.Div([
+                            html.Label("Max gap (minutes):"),
+                            dcc.Input(
+                                id='coverage-gap-minutes-30day',
+                                type='number',
+                                min=1,
+                                step=1,
+                                value=2,
+                                style={'width': '120px'}
+                            )
+                        ], style={'marginTop': '6px'})
                     ], style={'margin': '10px'}),
                     html.Div([
                         html.Label("Select 30-day window:"),
@@ -102,7 +124,18 @@ def create_layout(df):
                             id='coverage-filter',
                             options=[{'label': ' Only days with 24-hour continuous coverage', 'value': 'filter'}],
                             value=[]
-                        )
+                        ),
+                        html.Div([
+                            html.Label("Max gap (minutes):"),
+                            dcc.Input(
+                                id='coverage-gap-minutes',
+                                type='number',
+                                min=1,
+                                step=1,
+                                value=2,
+                                style={'width': '120px'}
+                            )
+                        ], style={'marginTop': '6px'})
                     ], style={'margin': '10px'}),
                     dcc.Dropdown(
                         id='metric-dropdown',
@@ -128,16 +161,23 @@ def create_layout(df):
     Input('metric-dropdown', 'value'),
     Input('date-picker', 'start_date'),
     Input('date-picker', 'end_date'),
-    Input('coverage-filter', 'value')
+    Input('coverage-filter', 'value'),
+    Input('coverage-gap-minutes', 'value')
 )
-def update_plot(metric, start, end, coverage_filter):
+def update_plot(metric, start, end, coverage_filter, coverage_gap_minutes=None):
     try:
         df = load_master_dataframe()
         
         # Apply 24-hour coverage filtering if requested
         if 'filter' in coverage_filter:
             logging.info("Applying 24-hour coverage filter...")
-            df = filter_by_24h_coverage(df)
+            try:
+                max_gap_minutes = int(coverage_gap_minutes) if coverage_gap_minutes is not None else 2
+                if max_gap_minutes < 1:
+                    max_gap_minutes = 2
+            except (TypeError, ValueError):
+                max_gap_minutes = 2
+            df = filter_by_24h_coverage(df, max_gap=pd.Timedelta(minutes=max_gap_minutes))
             logging.info(f"After 24h coverage filtering: {len(df)} days remaining")
         
         filtered = df[(df['day'] >= start) & (df['day'] <= end)].sort_values(by="day")
@@ -156,9 +196,10 @@ def update_plot(metric, start, end, coverage_filter):
     [Output('dow-bar-chart', 'figure'),
      Output('dow-combined-chart', 'figure')],
     [Input('dow-metrics', 'value'),
-     Input('coverage-filter-dow', 'value')]
+     Input('coverage-filter-dow', 'value'),
+     Input('coverage-gap-minutes-dow', 'value')]
 )
-def update_day_of_week_charts(selected_metrics, coverage_filter):
+def update_day_of_week_charts(selected_metrics, coverage_filter, coverage_gap_minutes_dow=None):
     """Update day-of-week analysis charts"""
     try:
         df = load_master_dataframe()
@@ -166,7 +207,13 @@ def update_day_of_week_charts(selected_metrics, coverage_filter):
         # Apply 24-hour coverage filtering if requested
         if 'filter' in coverage_filter:
             logging.info("Applying 24-hour coverage filter to day-of-week analysis...")
-            df = filter_by_24h_coverage(df)
+            try:
+                max_gap_minutes = int(coverage_gap_minutes_dow) if coverage_gap_minutes_dow is not None else 2
+                if max_gap_minutes < 1:
+                    max_gap_minutes = 2
+            except (TypeError, ValueError):
+                max_gap_minutes = 2
+            df = filter_by_24h_coverage(df, max_gap=pd.Timedelta(minutes=max_gap_minutes))
             logging.info(f"After 24h coverage filtering: {len(df)} days remaining")
         
         # Calculate day-of-week averages
@@ -264,9 +311,10 @@ def update_day_of_week_charts(selected_metrics, coverage_filter):
     [Input('30day-date-picker', 'start_date'),
      Input('30day-date-picker', 'end_date'),
      Input('30day-metrics', 'value'),
-     Input('coverage-filter-30day', 'value')]
+     Input('coverage-filter-30day', 'value'),
+     Input('coverage-gap-minutes-30day', 'value')]
 )
-def update_30day_charts(start_date, end_date, selected_metrics, coverage_filter):
+def update_30day_charts(start_date, end_date, selected_metrics, coverage_filter, coverage_gap_minutes_30day=None):
     """Update 30-day health overview charts"""
     try:
         df = load_master_dataframe()
@@ -274,7 +322,13 @@ def update_30day_charts(start_date, end_date, selected_metrics, coverage_filter)
         # Apply 24-hour coverage filtering if requested
         if 'filter' in coverage_filter:
             logging.info("Applying 24-hour coverage filter to 30-day analysis...")
-            df = filter_by_24h_coverage(df)
+            try:
+                max_gap_minutes = int(coverage_gap_minutes_30day) if coverage_gap_minutes_30day is not None else 2
+                if max_gap_minutes < 1:
+                    max_gap_minutes = 2
+            except (TypeError, ValueError):
+                max_gap_minutes = 2
+            df = filter_by_24h_coverage(df, max_gap=pd.Timedelta(minutes=max_gap_minutes))
             logging.info(f"After 24h coverage filtering: {len(df)} days remaining")
         
         # Filter to date range

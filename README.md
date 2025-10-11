@@ -178,6 +178,13 @@ poetry run python -m garmin_analysis.cli_day_of_week --show-plots
 
 # Skip saving plots to files
 poetry run python -m garmin_analysis.cli_day_of_week --no-save
+
+# Use 24-hour coverage filtering (optional)
+poetry run python -m garmin_analysis.cli_day_of_week --filter-24h-coverage
+
+# Customize filtering parameters
+poetry run python -m garmin_analysis.cli_day_of_week --filter-24h-coverage \
+  --max-gap 5 --day-edge-tolerance 5 --coverage-allowance-minutes 60
 ```
 
 ### Dashboard Integration

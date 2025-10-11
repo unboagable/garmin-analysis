@@ -43,6 +43,28 @@ def create_layout(df):
                                 value=2,
                                 style={'width': '120px'}
                             )
+                        ], style={'marginTop': '6px'}),
+                        html.Div([
+                            html.Label("Day edge tolerance (minutes):"),
+                            dcc.Input(
+                                id='coverage-edge-minutes-dow',
+                                type='number',
+                                min=0,
+                                step=1,
+                                value=2,
+                                style={'width': '120px'}
+                            )
+                        ], style={'marginTop': '6px'}),
+                        html.Div([
+                            html.Label("Coverage allowance (minutes):"),
+                            dcc.Input(
+                                id='coverage-allowance-minutes-dow',
+                                type='number',
+                                min=0,
+                                step=1,
+                                value=0,
+                                style={'width': '120px'}
+                            )
                         ], style={'marginTop': '6px'})
                     ], style={'margin': '10px'}),
                     html.Div([
@@ -81,6 +103,28 @@ def create_layout(df):
                                 min=1,
                                 step=1,
                                 value=2,
+                                style={'width': '120px'}
+                            )
+                        ], style={'marginTop': '6px'}),
+                        html.Div([
+                            html.Label("Day edge tolerance (minutes):"),
+                            dcc.Input(
+                                id='coverage-edge-minutes-30day',
+                                type='number',
+                                min=0,
+                                step=1,
+                                value=2,
+                                style={'width': '120px'}
+                            )
+                        ], style={'marginTop': '6px'}),
+                        html.Div([
+                            html.Label("Coverage allowance (minutes):"),
+                            dcc.Input(
+                                id='coverage-allowance-minutes-30day',
+                                type='number',
+                                min=0,
+                                step=1,
+                                value=0,
                                 style={'width': '120px'}
                             )
                         ], style={'marginTop': '6px'})
@@ -135,6 +179,28 @@ def create_layout(df):
                                 value=2,
                                 style={'width': '120px'}
                             )
+                        ], style={'marginTop': '6px'}),
+                        html.Div([
+                            html.Label("Day edge tolerance (minutes):"),
+                            dcc.Input(
+                                id='coverage-edge-minutes',
+                                type='number',
+                                min=0,
+                                step=1,
+                                value=2,
+                                style={'width': '120px'}
+                            )
+                        ], style={'marginTop': '6px'}),
+                        html.Div([
+                            html.Label("Coverage allowance (minutes):"),
+                            dcc.Input(
+                                id='coverage-allowance-minutes',
+                                type='number',
+                                min=0,
+                                step=1,
+                                value=0,
+                                style={'width': '120px'}
+                            )
                         ], style={'marginTop': '6px'})
                     ], style={'margin': '10px'}),
                     dcc.Dropdown(
@@ -162,9 +228,11 @@ def create_layout(df):
     Input('date-picker', 'start_date'),
     Input('date-picker', 'end_date'),
     Input('coverage-filter', 'value'),
-    Input('coverage-gap-minutes', 'value')
+    Input('coverage-gap-minutes', 'value'),
+    Input('coverage-edge-minutes', 'value'),
+    Input('coverage-allowance-minutes', 'value')
 )
-def update_plot(metric, start, end, coverage_filter, coverage_gap_minutes=None):
+def update_plot(metric, start, end, coverage_filter, coverage_gap_minutes=None, coverage_edge_minutes=None, coverage_allowance_minutes=None):
     try:
         df = load_master_dataframe()
         
@@ -177,7 +245,24 @@ def update_plot(metric, start, end, coverage_filter, coverage_gap_minutes=None):
                     max_gap_minutes = 2
             except (TypeError, ValueError):
                 max_gap_minutes = 2
-            df = filter_by_24h_coverage(df, max_gap=pd.Timedelta(minutes=max_gap_minutes))
+            try:
+                edge_minutes = int(coverage_edge_minutes) if coverage_edge_minutes is not None else 2
+                if edge_minutes < 0:
+                    edge_minutes = 2
+            except (TypeError, ValueError):
+                edge_minutes = 2
+            try:
+                allowance_minutes = int(coverage_allowance_minutes) if coverage_allowance_minutes is not None else 0
+                if allowance_minutes < 0:
+                    allowance_minutes = 0
+            except (TypeError, ValueError):
+                allowance_minutes = 0
+            df = filter_by_24h_coverage(
+                df,
+                max_gap=pd.Timedelta(minutes=max_gap_minutes),
+                day_edge_tolerance=pd.Timedelta(minutes=edge_minutes),
+                total_missing_allowance=pd.Timedelta(minutes=allowance_minutes),
+            )
             logging.info(f"After 24h coverage filtering: {len(df)} days remaining")
         
         filtered = df[(df['day'] >= start) & (df['day'] <= end)].sort_values(by="day")
@@ -197,9 +282,11 @@ def update_plot(metric, start, end, coverage_filter, coverage_gap_minutes=None):
      Output('dow-combined-chart', 'figure')],
     [Input('dow-metrics', 'value'),
      Input('coverage-filter-dow', 'value'),
-     Input('coverage-gap-minutes-dow', 'value')]
+     Input('coverage-gap-minutes-dow', 'value'),
+     Input('coverage-edge-minutes-dow', 'value'),
+     Input('coverage-allowance-minutes-dow', 'value')]
 )
-def update_day_of_week_charts(selected_metrics, coverage_filter, coverage_gap_minutes_dow=None):
+def update_day_of_week_charts(selected_metrics, coverage_filter, coverage_gap_minutes_dow=None, coverage_edge_minutes_dow=None, coverage_allowance_minutes_dow=None):
     """Update day-of-week analysis charts"""
     try:
         df = load_master_dataframe()
@@ -213,7 +300,24 @@ def update_day_of_week_charts(selected_metrics, coverage_filter, coverage_gap_mi
                     max_gap_minutes = 2
             except (TypeError, ValueError):
                 max_gap_minutes = 2
-            df = filter_by_24h_coverage(df, max_gap=pd.Timedelta(minutes=max_gap_minutes))
+            try:
+                edge_minutes = int(coverage_edge_minutes_dow) if coverage_edge_minutes_dow is not None else 2
+                if edge_minutes < 0:
+                    edge_minutes = 2
+            except (TypeError, ValueError):
+                edge_minutes = 2
+            try:
+                allowance_minutes = int(coverage_allowance_minutes_dow) if coverage_allowance_minutes_dow is not None else 0
+                if allowance_minutes < 0:
+                    allowance_minutes = 0
+            except (TypeError, ValueError):
+                allowance_minutes = 0
+            df = filter_by_24h_coverage(
+                df,
+                max_gap=pd.Timedelta(minutes=max_gap_minutes),
+                day_edge_tolerance=pd.Timedelta(minutes=edge_minutes),
+                total_missing_allowance=pd.Timedelta(minutes=allowance_minutes),
+            )
             logging.info(f"After 24h coverage filtering: {len(df)} days remaining")
         
         # Calculate day-of-week averages
@@ -312,9 +416,11 @@ def update_day_of_week_charts(selected_metrics, coverage_filter, coverage_gap_mi
      Input('30day-date-picker', 'end_date'),
      Input('30day-metrics', 'value'),
      Input('coverage-filter-30day', 'value'),
-     Input('coverage-gap-minutes-30day', 'value')]
+     Input('coverage-gap-minutes-30day', 'value'),
+     Input('coverage-edge-minutes-30day', 'value'),
+     Input('coverage-allowance-minutes-30day', 'value')]
 )
-def update_30day_charts(start_date, end_date, selected_metrics, coverage_filter, coverage_gap_minutes_30day=None):
+def update_30day_charts(start_date, end_date, selected_metrics, coverage_filter, coverage_gap_minutes_30day=None, coverage_edge_minutes_30day=None, coverage_allowance_minutes_30day=None):
     """Update 30-day health overview charts"""
     try:
         df = load_master_dataframe()
@@ -328,7 +434,24 @@ def update_30day_charts(start_date, end_date, selected_metrics, coverage_filter,
                     max_gap_minutes = 2
             except (TypeError, ValueError):
                 max_gap_minutes = 2
-            df = filter_by_24h_coverage(df, max_gap=pd.Timedelta(minutes=max_gap_minutes))
+            try:
+                edge_minutes = int(coverage_edge_minutes_30day) if coverage_edge_minutes_30day is not None else 2
+                if edge_minutes < 0:
+                    edge_minutes = 2
+            except (TypeError, ValueError):
+                edge_minutes = 2
+            try:
+                allowance_minutes = int(coverage_allowance_minutes_30day) if coverage_allowance_minutes_30day is not None else 0
+                if allowance_minutes < 0:
+                    allowance_minutes = 0
+            except (TypeError, ValueError):
+                allowance_minutes = 0
+            df = filter_by_24h_coverage(
+                df,
+                max_gap=pd.Timedelta(minutes=max_gap_minutes),
+                day_edge_tolerance=pd.Timedelta(minutes=edge_minutes),
+                total_missing_allowance=pd.Timedelta(minutes=allowance_minutes),
+            )
             logging.info(f"After 24h coverage filtering: {len(df)} days remaining")
         
         # Filter to date range

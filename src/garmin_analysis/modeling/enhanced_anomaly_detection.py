@@ -28,6 +28,7 @@ warnings.filterwarnings('ignore')
 
 from garmin_analysis.utils import load_master_dataframe, standardize_features
 from garmin_analysis.utils_cleaning import clean_data
+from garmin_analysis.utils.imputation import impute_missing_values
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +41,23 @@ class EnhancedAnomalyDetector:
         self.results = {}
         self.feature_importance = {}
         
-    def prepare_features(self, df: pd.DataFrame, feature_cols: Optional[List[str]] = None) -> Tuple[np.ndarray, List[str]]:
-        """Prepare features for anomaly detection."""
+    def prepare_features(self, df: pd.DataFrame, feature_cols: Optional[List[str]] = None,
+                        imputation_strategy: str = 'median') -> Tuple[np.ndarray, List[str]]:
+        """
+        Prepare features for anomaly detection.
+        
+        Args:
+            df: Input DataFrame
+            feature_cols: List of feature columns
+            imputation_strategy: Strategy for handling missing values
+                               - 'median': Fill with median (default, robust)
+                               - 'mean': Fill with mean
+                               - 'drop': Drop rows with missing values
+                               - 'none': No imputation
+        
+        Returns:
+            Tuple of (X_scaled, feature_names)
+        """
         if feature_cols is None:
             # Use features that actually have data in the dataset
             feature_cols = [
@@ -97,14 +113,14 @@ class EnhancedAnomalyDetector:
             feature_completeness[col] = completeness
             logger.info(f"Feature '{col}': {non_null_count}/{total_count} ({completeness:.1%} complete)")
         
-        # Drop rows with missing values in required features
-        df_clean = df_clean.dropna(subset=available_features)
+        # Impute missing values using specified strategy
+        df_clean = impute_missing_values(df_clean, available_features, strategy=imputation_strategy, copy=False)
         
         if df_clean.empty:
-            raise ValueError("No data left after dropping rows with missing values")
+            raise ValueError("No data left after handling missing values")
         
         if len(df_clean) < 10:
-            raise ValueError(f"Not enough complete rows for anomaly detection. Need at least 10, got {len(df_clean)}")
+            raise ValueError(f"Not enough rows for anomaly detection. Need at least 10, got {len(df_clean)}")
         
         # Extract features
         X = df_clean[available_features].values

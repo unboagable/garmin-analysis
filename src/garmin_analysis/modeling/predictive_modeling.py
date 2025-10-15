@@ -29,6 +29,7 @@ warnings.filterwarnings('ignore')
 
 from garmin_analysis.utils import load_master_dataframe, standardize_features
 from garmin_analysis.utils_cleaning import clean_data
+from garmin_analysis.utils.imputation import impute_missing_values
 
 logger = logging.getLogger(__name__)
 
@@ -45,8 +46,26 @@ class HealthPredictor:
     def prepare_features(self, df: pd.DataFrame, target_col: str = 'score',
                         feature_cols: Optional[List[str]] = None,
                         lag_features: bool = True,
-                        rolling_features: bool = True) -> Tuple[np.ndarray, np.ndarray, List[str]]:
-        """Prepare features for predictive modeling."""
+                        rolling_features: bool = True,
+                        imputation_strategy: str = 'median') -> Tuple[np.ndarray, np.ndarray, List[str]]:
+        """
+        Prepare features for predictive modeling.
+        
+        Args:
+            df: Input DataFrame
+            target_col: Target column name
+            feature_cols: List of feature columns
+            lag_features: Whether to create lag features
+            rolling_features: Whether to create rolling features
+            imputation_strategy: Strategy for handling missing values
+                               - 'median': Fill with median (default, robust)
+                               - 'mean': Fill with mean
+                               - 'drop': Drop rows with missing values
+                               - 'none': No imputation
+        
+        Returns:
+            Tuple of (X_scaled, y, feature_names)
+        """
         if feature_cols is None:
             # Use features that actually have data in the dataset
             feature_cols = [
@@ -151,11 +170,14 @@ class HealthPredictor:
         if df_clean[target_col].notna().sum() < 20:
             raise ValueError(f"Target column '{target_col}' has insufficient data: {df_clean[target_col].notna().sum()} non-null values (need at least 20)")
         
-        # Drop rows with missing values
-        df_clean = df_clean.dropna(subset=[target_col] + available_features)
+        # Drop rows with missing target (always required)
+        df_clean = df_clean.dropna(subset=[target_col])
+        
+        # Impute missing feature values using specified strategy
+        df_clean = impute_missing_values(df_clean, available_features, strategy=imputation_strategy, copy=False)
         
         if df_clean.empty:
-            raise ValueError("No data left after dropping rows with missing values")
+            raise ValueError("No data left after handling missing values")
         
         if len(df_clean) < 20:
             raise ValueError(f"Not enough complete rows for predictive modeling. Need at least 20, got {len(df_clean)}")

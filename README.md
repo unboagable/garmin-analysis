@@ -757,11 +757,13 @@ garmin-analysis/
 │   │   └── enhanced_anomaly_detection.py  # Anomaly detection (with imputation)
 │   ├── reporting/                # Automated report generation
 │   ├── utils/                    # Utility modules
-│   │   ├── imputation.py         # NEW! Shared imputation utilities
-│   │   ├── activity_mappings.py  # Activity type mappings
-│   │   └── ...                   # Other utilities
+│   │   ├── data_loading.py       # Database and file loading
+│   │   ├── data_processing.py    # Data transformation and cleaning
+│   │   ├── data_filtering.py     # Filtering and feature preparation
+│   │   ├── imputation.py         # Missing value handling strategies
+│   │   └── activity_mappings.py  # Activity type customization
 │   ├── viz/                      # Visualization tools
-│   └── utils.py                  # General utility functions
+│   └── utils_cleaning.py         # Data cleaning utilities
 ├── config/                       # Configuration files
 │   └── activity_type_mappings.json # Activity type mappings
 ├── docs/                         # Documentation
@@ -802,20 +804,6 @@ Test fixtures:
 Notes on data sources:
 - If real Garmin DBs are available, place them under `db/` (e.g., `db/garmin.db`, `db/garmin_summary.db`, `db/garmin_activities.db`).
 - When DBs are missing outside of tests, some commands may generate a synthetic dataset for convenience and log clear WARNINGS. This synthetic data is only for smoke testing and should not be used for real analysis.
-
-## Project Structure
-```
-src/
-└── garmin_analysis/
-    ├── dashboard/
-    ├── data_ingestion/
-    ├── features/
-    ├── modeling/
-    ├── reporting/
-    ├── viz/
-    ├── utils.py
-    └── utils_cleaning.py
-```
 
 ## Notes
 - This repo uses the `src/garmin_analysis` package layout. Prefer running modules via `python -m garmin_analysis.<module>`.

@@ -6,12 +6,12 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from garmin_analysis.utils.data_loading import load_master_dataframe
+from garmin_analysis.logging_config import get_logger
 from ..features.coverage import filter_by_24h_coverage
 from ..features.day_of_week_analysis import calculate_day_of_week_averages, get_day_order
-import logging
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Get logger
+logger = get_logger(__name__)
 
 # Build app
 app = dash.Dash(__name__)
@@ -238,7 +238,7 @@ def update_plot(metric, start, end, coverage_filter, coverage_gap_minutes=None, 
         
         # Apply 24-hour coverage filtering if requested
         if 'filter' in coverage_filter:
-            logging.info("Applying 24-hour coverage filter...")
+            logger.info("Applying 24-hour coverage filter...")
             try:
                 max_gap_minutes = int(coverage_gap_minutes) if coverage_gap_minutes is not None else 2
                 if max_gap_minutes < 1:
@@ -263,7 +263,7 @@ def update_plot(metric, start, end, coverage_filter, coverage_gap_minutes=None, 
                 day_edge_tolerance=pd.Timedelta(minutes=edge_minutes),
                 total_missing_allowance=pd.Timedelta(minutes=allowance_minutes),
             )
-            logging.info(f"After 24h coverage filtering: {len(df)} days remaining")
+            logger.info(f"After 24h coverage filtering: {len(df)} days remaining")
         
         filtered = df[(df['day'] >= start) & (df['day'] <= end)].sort_values(by="day")
         title = f"{metric} over Time"
@@ -273,7 +273,7 @@ def update_plot(metric, start, end, coverage_filter, coverage_gap_minutes=None, 
         fig = px.line(filtered, x="day", y=metric, title=title)
         return fig
     except Exception as e:
-        logging.error(f"Error updating plot: {e}")
+        logger.error(f"Error updating plot: {e}")
         # Return empty figure on error
         return px.line(title="Error loading data")
 
@@ -293,7 +293,7 @@ def update_day_of_week_charts(selected_metrics, coverage_filter, coverage_gap_mi
         
         # Apply 24-hour coverage filtering if requested
         if 'filter' in coverage_filter:
-            logging.info("Applying 24-hour coverage filter to day-of-week analysis...")
+            logger.info("Applying 24-hour coverage filter to day-of-week analysis...")
             try:
                 max_gap_minutes = int(coverage_gap_minutes_dow) if coverage_gap_minutes_dow is not None else 2
                 if max_gap_minutes < 1:
@@ -318,7 +318,7 @@ def update_day_of_week_charts(selected_metrics, coverage_filter, coverage_gap_mi
                 day_edge_tolerance=pd.Timedelta(minutes=edge_minutes),
                 total_missing_allowance=pd.Timedelta(minutes=allowance_minutes),
             )
-            logging.info(f"After 24h coverage filtering: {len(df)} days remaining")
+            logger.info(f"After 24h coverage filtering: {len(df)} days remaining")
         
         # Calculate day-of-week averages
         day_averages = calculate_day_of_week_averages(df)
@@ -403,7 +403,7 @@ def update_day_of_week_charts(selected_metrics, coverage_filter, coverage_gap_mi
         return bar_fig, combined_fig
         
     except Exception as e:
-        logging.error(f"Error updating day-of-week charts: {e}")
+        logger.error(f"Error updating day-of-week charts: {e}")
         # Return error figures
         error_fig = go.Figure()
         error_fig.update_layout(title=f"Error loading data: {str(e)}")
@@ -427,7 +427,7 @@ def update_30day_charts(start_date, end_date, selected_metrics, coverage_filter,
         
         # Apply 24-hour coverage filtering if requested
         if 'filter' in coverage_filter:
-            logging.info("Applying 24-hour coverage filter to 30-day analysis...")
+            logger.info("Applying 24-hour coverage filter to 30-day analysis...")
             try:
                 max_gap_minutes = int(coverage_gap_minutes_30day) if coverage_gap_minutes_30day is not None else 2
                 if max_gap_minutes < 1:
@@ -452,7 +452,7 @@ def update_30day_charts(start_date, end_date, selected_metrics, coverage_filter,
                 day_edge_tolerance=pd.Timedelta(minutes=edge_minutes),
                 total_missing_allowance=pd.Timedelta(minutes=allowance_minutes),
             )
-            logging.info(f"After 24h coverage filtering: {len(df)} days remaining")
+            logger.info(f"After 24h coverage filtering: {len(df)} days remaining")
         
         # Filter to date range
         if start_date and end_date:
@@ -550,7 +550,7 @@ def update_30day_charts(start_date, end_date, selected_metrics, coverage_filter,
         return combined_fig, individual_fig
         
     except Exception as e:
-        logging.error(f"Error updating 30-day charts: {e}")
+        logger.error(f"Error updating 30-day charts: {e}")
         # Return error figures
         error_fig = go.Figure()
         error_fig.update_layout(title=f"Error loading data: {str(e)}")
@@ -561,10 +561,10 @@ if __name__ == "__main__":
         # Load data
         df = load_master_dataframe()
         app.layout = create_layout(df)
-        logging.info("Dashboard initialized successfully")
+        logger.info("Dashboard initialized successfully")
         app.run(debug=True)
     except Exception as e:
-        logging.error(f"Failed to initialize dashboard: {e}")
+        logger.error(f"Failed to initialize dashboard: {e}")
         # Create error layout
         app.layout = html.Div([
             html.H1("❌ Dashboard Error", style={"textAlign": "center", "color": "red"}),

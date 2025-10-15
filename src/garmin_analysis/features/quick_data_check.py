@@ -156,7 +156,7 @@ def main():
     
     try:
         # Import and load data
-        from garmin_analysis.utils import load_master_dataframe
+        from garmin_analysis.utils.data_loading import load_master_dataframe
         
         print("📥 Loading Garmin data...")
         df = load_master_dataframe()

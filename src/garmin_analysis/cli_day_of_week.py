@@ -11,7 +11,7 @@ from .features.day_of_week_analysis import (
     plot_day_of_week_averages,
     print_day_of_week_summary
 )
-from .utils import load_master_dataframe
+from .utils.data_loading import load_master_dataframe
 from .features.coverage import filter_by_24h_coverage
 
 def main():

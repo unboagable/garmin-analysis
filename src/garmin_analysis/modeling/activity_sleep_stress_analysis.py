@@ -5,7 +5,7 @@ import seaborn as sns
 from pathlib import Path
 from datetime import datetime
 import logging
-from garmin_analysis.utils import filter_required_columns
+from garmin_analysis.utils.data_filtering import filter_required_columns
 
 # Logging is configured at package level
 

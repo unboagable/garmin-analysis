@@ -85,7 +85,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # Load data
-    from garmin_analysis.utils import load_master_dataframe
+    from garmin_analysis.utils.data_loading import load_master_dataframe
     df = load_master_dataframe()
     
     # Run analytics

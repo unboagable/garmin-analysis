@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from garmin_analysis.utils import convert_time_to_minutes, normalize_day_column
+from garmin_analysis.utils.data_processing import convert_time_to_minutes, normalize_day_column
 
 
 def test_convert_time_to_minutes_hms():

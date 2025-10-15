@@ -2,7 +2,7 @@ import pandas as pd
 import logging
 from pathlib import Path
 import argparse
-from garmin_analysis.utils import load_master_dataframe
+from garmin_analysis.utils.data_loading import load_master_dataframe
 from garmin_analysis.utils_cleaning import clean_data
 from garmin_analysis.features.coverage import filter_by_24h_coverage
 

@@ -565,7 +565,7 @@ def main():
     """Main function to run Garmin data quality analysis."""
     try:
         # Import Garmin data loading function
-        from garmin_analysis.utils import load_master_dataframe
+        from garmin_analysis.utils.data_loading import load_master_dataframe
         
         print("🏃‍♂️ Starting Garmin Data Quality Analysis...")
         

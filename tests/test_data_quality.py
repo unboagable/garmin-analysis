@@ -353,7 +353,7 @@ def test_data_quality_checker():
 def test_real_data_quality(tmp_db):
     """Test data quality analysis on real Garmin data."""
     try:
-        from garmin_analysis.utils import load_master_dataframe
+        from garmin_analysis.utils.data_loading import load_master_dataframe
         
         # Load real data
         df = load_master_dataframe()

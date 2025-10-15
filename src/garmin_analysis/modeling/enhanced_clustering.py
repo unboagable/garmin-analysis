@@ -25,7 +25,8 @@ from typing import Dict, List, Tuple, Optional, Union
 import warnings
 warnings.filterwarnings('ignore')
 
-from garmin_analysis.utils import load_master_dataframe, standardize_features
+from garmin_analysis.utils.data_loading import load_master_dataframe
+from garmin_analysis.utils.data_filtering import standardize_features
 from garmin_analysis.utils_cleaning import clean_data
 from garmin_analysis.utils.imputation import impute_missing_values
 

@@ -5,7 +5,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from ..utils import load_master_dataframe
+from garmin_analysis.utils.data_loading import load_master_dataframe
 from ..features.coverage import filter_by_24h_coverage
 from ..features.day_of_week_analysis import calculate_day_of_week_averages, get_day_order
 import logging

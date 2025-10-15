@@ -5,13 +5,11 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from datetime import datetime
 import argparse
+from garmin_analysis.config import PLOTS_DIR
 from garmin_analysis.utils.data_filtering import filter_required_columns
 from garmin_analysis.features.coverage import filter_by_24h_coverage
 
 # Logging is configured at package level
-
-PLOTS_DIR = Path("plots")
-PLOTS_DIR.mkdir(exist_ok=True)
 
 def plot_columns(df, columns, title):
     available = [col for col in columns if col in df.columns]

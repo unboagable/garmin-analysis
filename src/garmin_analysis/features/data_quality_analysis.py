@@ -18,12 +18,10 @@ import logging
 from pathlib import Path
 import json
 from datetime import datetime
+from garmin_analysis.logging_config import setup_logging
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+setup_logging(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -411,56 +409,56 @@ class GarminDataQualityAnalyzer:
     
     def print_summary(self):
         """Print a comprehensive summary of the analysis."""
-        print("\n" + "="*80)
-        print("🏃‍♂️ GARMIN DATA QUALITY ANALYSIS SUMMARY")
-        print("="*80)
+        logger.info("\n" + "="*80)
+        logger.info("🏃‍♂️ GARMIN DATA QUALITY ANALYSIS SUMMARY")
+        logger.info("="*80)
         
         # Dataset info
         info = self.analysis_results['dataset_info']
-        print(f"📊 Dataset Overview:")
-        print(f"   • Size: {info['total_rows']:,} rows × {info['total_columns']} columns")
-        print(f"   • Memory: {info['memory_usage_mb']:.1f} MB")
+        logger.info(f"📊 Dataset Overview:")
+        logger.info(f"   • Size: {info['total_rows']:,} rows × {info['total_columns']} columns")
+        logger.info(f"   • Memory: {info['memory_usage_mb']:.1f} MB")
         if info['date_range']['column']:
-            print(f"   • Date Range: {info['date_range']['start_date']} to {info['date_range']['end_date']}")
-            print(f"   • Duration: {info['date_range']['duration_days']} days")
-        print(f"   • Unique Days: {info['unique_days']}")
+            logger.info(f"   • Date Range: {info['date_range']['start_date']} to {info['date_range']['end_date']}")
+            logger.info(f"   • Duration: {info['date_range']['duration_days']} days")
+        logger.info(f"   • Unique Days: {info['unique_days']}")
         
         # Completeness summary
         completeness = self.analysis_results['completeness']
         sufficient_cols = sum(1 for data in completeness.values() if data['is_sufficient_for_modeling'])
         adequate_cols = sum(1 for data in completeness.values() if data['is_adequate_for_analysis'])
         
-        print(f"\n✅ Data Completeness:")
-        print(f"   • Columns with ≥50 non-null values: {sufficient_cols}/{len(completeness)}")
-        print(f"   • Columns with ≥10% completeness: {adequate_cols}/{len(completeness)}")
+        logger.info(f"\n✅ Data Completeness:")
+        logger.info(f"   • Columns with ≥50 non-null values: {sufficient_cols}/{len(completeness)}")
+        logger.info(f"   • Columns with ≥10% completeness: {adequate_cols}/{len(completeness)}")
         
         # Feature categories
         categories = self.analysis_results['feature_categories']
-        print(f"\n🏷️  Feature Categories:")
+        logger.info(f"\n🏷️  Feature Categories:")
         for category, features in categories.items():
             if features:
                 sufficient_count = sum(1 for f in features if f['is_sufficient'])
-                print(f"   • {category.title()}: {len(features)} features ({sufficient_count} sufficient)")
+                logger.info(f"   • {category.title()}: {len(features)} features ({sufficient_count} sufficient)")
         
         # Modeling suitability
         suitability = self.analysis_results['modeling_suitability']
-        print(f"\n🔍 Modeling Suitability:")
-        print(f"   • Anomaly Detection: {len(suitability['anomaly_detection'])} features")
-        print(f"   • Clustering: {len(suitability['clustering'])} features")
-        print(f"   • Predictive Modeling: {len(suitability['predictive_modeling'])} features")
-        print(f"   • Time Series: {len(suitability['time_series'])} features")
+        logger.info(f"\n🔍 Modeling Suitability:")
+        logger.info(f"   • Anomaly Detection: {len(suitability['anomaly_detection'])} features")
+        logger.info(f"   • Clustering: {len(suitability['clustering'])} features")
+        logger.info(f"   • Predictive Modeling: {len(suitability['predictive_modeling'])} features")
+        logger.info(f"   • Time Series: {len(suitability['time_series'])} features")
         
         # Top recommendations
         recommendations = self.analysis_results['recommendations']
         if recommendations:
-            print(f"\n💡 Top Recommendations:")
+            logger.info(f"\n💡 Top Recommendations:")
             for i, rec in enumerate(recommendations[:3], 1):
                 priority_icon = "🔴" if rec['priority'] == 'high' else "🟡" if rec['priority'] == 'medium' else "🟢"
-                print(f"   {i}. {priority_icon} {rec['message']}")
+                logger.info(f"   {i}. {priority_icon} {rec['message']}")
                 if 'details' in rec:
-                    print(f"      Details: {rec['details']}")
+                    logger.info(f"      Details: {rec['details']}")
         
-        print("="*80)
+        logger.info("="*80)
     
     def save_report(self, filename: str = None):
         """Save the analysis report to JSON and Markdown files."""
@@ -567,38 +565,38 @@ def main():
         # Import Garmin data loading function
         from garmin_analysis.utils.data_loading import load_master_dataframe
         
-        print("🏃‍♂️ Starting Garmin Data Quality Analysis...")
+        logger.info("🏃‍♂️ Starting Garmin Data Quality Analysis...")
         
         # Load data
-        print("📥 Loading Garmin data...")
+        logger.info("📥 Loading Garmin data...")
         df = load_master_dataframe()
-        print(f"✅ Loaded {len(df):,} rows × {len(df.columns)} columns")
+        logger.info(f"✅ Loaded {len(df):,} rows × {len(df.columns)} columns")
         
         # Initialize analyzer
         analyzer = GarminDataQualityAnalyzer()
         
         # Run analysis
-        print("🔍 Running comprehensive analysis...")
+        logger.info("🔍 Running comprehensive analysis...")
         results = analyzer.analyze_garmin_data(df)
         
         # Print summary
         analyzer.print_summary()
         
         # Save reports
-        print("\n💾 Saving reports...")
+        logger.info("\n💾 Saving reports...")
         json_path, md_path = analyzer.save_report()
         
-        print(f"\n🎉 Analysis completed successfully!")
-        print(f"📊 Reports saved to: {analyzer.output_dir}")
+        logger.info(f"\n🎉 Analysis completed successfully!")
+        logger.info(f"📊 Reports saved to: {analyzer.output_dir}")
         
         return analyzer
         
     except ImportError as e:
-        print(f"❌ Import error: {e}")
-        print("Make sure you're running from the project root directory")
+        logger.error(f"❌ Import error: {e}")
+        logger.error("Make sure you're running from the project root directory")
         return None
     except Exception as e:
-        print(f"❌ Analysis failed: {e}")
+        logger.error(f"❌ Analysis failed: {e}")
         return None
 
 

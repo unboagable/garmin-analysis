@@ -772,30 +772,29 @@ class HRActivitySleepModel:
 
 def main():
     """Main function to run the analysis."""
+    from garmin_analysis.logging_config import setup_logging
+    
     # Set up logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
+    setup_logging(level=logging.INFO)
     
     # Run analysis
     model = HRActivitySleepModel()
     results = model.run_analysis(use_lag_features=True)
     
-    # Print summary
-    print("\n" + "="*80)
-    print("SUMMARY")
-    print("="*80)
-    print(f"Best Model: {results['best_model']}")
-    print(f"Test R² Score: {results['best_r2']:.4f}")
-    print(f"Test MAE: {results['best_mae']:.2f} points")
-    print(f"Samples: {results['n_samples']}")
-    print(f"Features: {results['n_features']}")
-    print(f"\nTop 5 Most Important Features:")
+    # Log summary
+    logging.info("\n" + "="*80)
+    logging.info("SUMMARY")
+    logging.info("="*80)
+    logging.info(f"Best Model: {results['best_model']}")
+    logging.info(f"Test R² Score: {results['best_r2']:.4f}")
+    logging.info(f"Test MAE: {results['best_mae']:.2f} points")
+    logging.info(f"Samples: {results['n_samples']}")
+    logging.info(f"Features: {results['n_features']}")
+    logging.info(f"\nTop 5 Most Important Features:")
     for rank, (idx, row) in enumerate(results['feature_importance'].head(5).iterrows(), start=1):
-        print(f"  {rank}. {row['feature']}: {row['importance']:.6f}")
-    print(f"\nReport: {results['report_path']}")
-    print("="*80)
+        logging.info(f"  {rank}. {row['feature']}: {row['importance']:.6f}")
+    logging.info(f"\nReport: {results['report_path']}")
+    logging.info("="*80)
 
 
 if __name__ == "__main__":

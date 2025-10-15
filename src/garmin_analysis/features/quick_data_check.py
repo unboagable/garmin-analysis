@@ -13,6 +13,7 @@ Usage:
 
 import argparse
 import sys
+import logging
 from pathlib import Path
 
 # Add project root to path
@@ -24,8 +25,8 @@ from garmin_analysis.features.data_quality_analysis import GarminDataQualityAnal
 
 def quick_completeness_check(df):
     """Quick check of data completeness."""
-    print("📊 QUICK COMPLETENESS CHECK")
-    print("=" * 50)
+    logging.info("📊 QUICK COMPLETENESS CHECK")
+    logging.info("=" * 50)
     
     total_cols = len(df.columns)
     sufficient_cols = 0
@@ -41,12 +42,12 @@ def quick_completeness_check(df):
         if completeness_pct >= 0.1:
             adequate_cols += 1
     
-    print(f"Total columns: {total_cols}")
-    print(f"Columns with ≥50 non-null values: {sufficient_cols} ({sufficient_cols/total_cols:.1%})")
-    print(f"Columns with ≥10% completeness: {adequate_cols} ({adequate_cols/total_cols:.1%})")
+    logging.info(f"Total columns: {total_cols}")
+    logging.info(f"Columns with ≥50 non-null values: {sufficient_cols} ({sufficient_cols/total_cols:.1%})")
+    logging.info(f"Columns with ≥10% completeness: {adequate_cols} ({adequate_cols/total_cols:.1%})")
     
     # Show worst columns
-    print("\n🔴 WORST 10 COLUMNS (by completeness):")
+    logging.info("\n🔴 WORST 10 COLUMNS (by completeness):")
     completeness_data = []
     for col in df.columns:
         non_null_count = df[col].notna().sum()
@@ -59,13 +60,13 @@ def quick_completeness_check(df):
     
     for i, (col, pct, count) in enumerate(completeness_data[:10]):
         status = "🔴" if pct < 0.1 else "🟡" if pct < 0.5 else "🟢"
-        print(f"  {i+1:2d}. {status} {col:<30} {pct:6.1%} ({count:4d}/{len(df)})")
+        logging.info(f"  {i+1:2d}. {status} {col:<30} {pct:6.1%} ({count:4d}/{len(df)})")
 
 
 def quick_feature_check(df):
     """Quick check of feature suitability for modeling."""
-    print("🔍 QUICK FEATURE SUITABILITY CHECK")
-    print("=" * 50)
+    logging.info("🔍 QUICK FEATURE SUITABILITY CHECK")
+    logging.info("=" * 50)
     
     suitable_features = []
     unsuitable_features = []
@@ -79,11 +80,11 @@ def quick_feature_check(df):
         else:
             unsuitable_features.append(col)
     
-    print(f"Suitable for modeling: {len(suitable_features)} features")
-    print(f"Unsuitable for modeling: {len(unsuitable_features)} features")
+    logging.info(f"Suitable for modeling: {len(suitable_features)} features")
+    logging.info(f"Unsuitable for modeling: {len(unsuitable_features)} features")
     
     if suitable_features:
-        print(f"\n✅ TOP 10 SUITABLE FEATURES:")
+        logging.info(f"\n✅ TOP 10 SUITABLE FEATURES:")
         # Sort by completeness
         feature_completeness = []
         for col in suitable_features:
@@ -95,25 +96,25 @@ def quick_feature_check(df):
         feature_completeness.sort(key=lambda x: x[1], reverse=True)
         
         for i, (col, pct) in enumerate(feature_completeness[:10]):
-            print(f"  {i+1:2d}. {col:<30} {pct:6.1%}")
+            logging.info(f"  {i+1:2d}. {col:<30} {pct:6.1%}")
     
     if unsuitable_features:
-        print(f"\n❌ SAMPLE UNSUITABLE FEATURES:")
+        logging.info(f"\n❌ SAMPLE UNSUITABLE FEATURES:")
         for i, col in enumerate(unsuitable_features[:10]):
             non_null_count = df[col].notna().sum()
             total_count = len(df)
             completeness_pct = non_null_count / total_count
             dtype = df[col].dtype
-            print(f"  {i+1:2d}. {col:<30} {pct:6.1%} (type: {dtype})")
+            logging.info(f"  {i+1:2d}. {col:<30} {completeness_pct:6.1%} (type: {dtype})")
 
 
 def quick_summary(df):
     """Quick summary of the dataset."""
-    print("📈 QUICK DATASET SUMMARY")
-    print("=" * 50)
+    logging.info("📈 QUICK DATASET SUMMARY")
+    logging.info("=" * 50)
     
-    print(f"Dataset size: {len(df):,} rows × {len(df.columns)} columns")
-    print(f"Memory usage: {df.memory_usage(deep=True).sum() / 1024 / 1024:.1f} MB")
+    logging.info(f"Dataset size: {len(df):,} rows × {len(df.columns)} columns")
+    logging.info(f"Memory usage: {df.memory_usage(deep=True).sum() / 1024 / 1024:.1f} MB")
     
     # Date range
     date_columns = [col for col in df.columns if 'date' in col.lower() or 'day' in col.lower()]
@@ -124,23 +125,23 @@ def quick_summary(df):
                     min_date = df[col].min()
                     max_date = df[col].max()
                     unique_days = df[col].nunique()
-                    print(f"Date range: {min_date} to {max_date} ({unique_days} unique days)")
+                    logging.info(f"Date range: {min_date} to {max_date} ({unique_days} unique days)")
                     break
             except:
                 continue
     
     # Data types
     dtype_counts = df.dtypes.value_counts()
-    print(f"\nData types:")
+    logging.info(f"\nData types:")
     for dtype, count in dtype_counts.items():
-        print(f"  {dtype}: {count} columns")
+        logging.info(f"  {dtype}: {count} columns")
     
     # Missing data overview
     total_cells = len(df) * len(df.columns)
     missing_cells = df.isnull().sum().sum()
     missing_percentage = missing_cells / total_cells
     
-    print(f"\nMissing data: {missing_cells:,} cells ({missing_percentage:.1%})")
+    logging.info(f"\nMissing data: {missing_cells:,} cells ({missing_percentage:.1%})")
 
 
 def main():
@@ -157,27 +158,32 @@ def main():
     try:
         # Import and load data
         from garmin_analysis.utils.data_loading import load_master_dataframe
+        from garmin_analysis.logging_config import setup_logging
         
-        print("📥 Loading Garmin data...")
+        # Setup logging
+        setup_logging(level=logging.INFO)
+        
+        logging.info("📥 Loading Garmin data...")
         df = load_master_dataframe()
-        print(f"✅ Loaded {len(df):,} rows × {len(df.columns)} columns\n")
+        logging.info(f"✅ Loaded {len(df):,} rows × {len(df.columns)} columns\n")
         
         # Run requested analysis
         if args.continuous_24h:
             # Load raw stress table to assess coverage
-            from garmin_analysis.data_ingestion.load_all_garmin_dbs import load_table, DB_PATHS
+            from garmin_analysis.config import DB_PATHS
+            from garmin_analysis.data_ingestion.load_all_garmin_dbs import load_table
             from garmin_analysis.features.coverage import days_with_continuous_coverage
 
             stress = load_table(DB_PATHS["garmin"], "stress", parse_dates=["timestamp"])
             if stress is None or stress.empty:
-                print("❌ No stress timeseries available to compute coverage.")
+                logging.error("❌ No stress timeseries available to compute coverage.")
                 sys.exit(2)
 
             days = days_with_continuous_coverage(stress, timestamp_col="timestamp")
-            print("📅 Days with 24h continuous coverage (no gap >2min):")
+            logging.info("📅 Days with 24h continuous coverage (no gap >2min):")
             for d in days:
-                print(f"  - {d.date()}")
-            print(f"Total: {len(days)} days")
+                logging.info(f"  - {d.date()}")
+            logging.info(f"Total: {len(days)} days")
         elif args.completeness:
             quick_completeness_check(df)
         elif args.features:
@@ -187,20 +193,20 @@ def main():
         else:
             # Default: run all quick checks
             quick_summary(df)
-            print()
+            logging.info("")
             quick_completeness_check(df)
-            print()
+            logging.info("")
             quick_feature_check(df)
             
-            print("\n" + "=" * 50)
-            print("💡 For detailed analysis, run: python src/features/data_quality_analysis.py")
+            logging.info("\n" + "=" * 50)
+            logging.info("💡 For detailed analysis, run: python src/features/data_quality_analysis.py")
         
     except ImportError as e:
-        print(f"❌ Import error: {e}")
-        print("Make sure you're running from the project root directory")
+        logging.error(f"❌ Import error: {e}")
+        logging.error("Make sure you're running from the project root directory")
         sys.exit(1)
     except Exception as e:
-        print(f"❌ Analysis failed: {e}")
+        logging.error(f"❌ Analysis failed: {e}")
         sys.exit(1)
 
 

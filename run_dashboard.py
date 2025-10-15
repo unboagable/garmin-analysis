@@ -16,12 +16,10 @@ def main():
     try:
         from garmin_analysis.dashboard.app import app
         from garmin_analysis.utils import load_master_dataframe
+        from garmin_analysis.logging_config import setup_logging
         
         # Configure logging
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s'
-        )
+        setup_logging(level=logging.INFO)
         
         # Load data and start dashboard
         logging.info("Loading data for dashboard...")

@@ -4,12 +4,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
 from datetime import datetime
+from garmin_analysis.config import PLOTS_DIR
 from garmin_analysis.utils.data_loading import load_master_dataframe
 
 # Logging is configured at package level
-
-PLOTS_DIR = Path("plots")
-PLOTS_DIR.mkdir(exist_ok=True)
 
 def get_day_order():
     """Return day names in Sunday-first order"""

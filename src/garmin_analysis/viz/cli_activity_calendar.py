@@ -12,21 +12,13 @@ from pathlib import Path
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+from garmin_analysis.logging_config import setup_logging
 from garmin_analysis.viz.plot_activity_calendar import (
     load_activities_data, 
     plot_activity_calendar, 
     suggest_activity_mappings
 )
 from garmin_analysis.utils.activity_mappings import add_activity_mapping
-
-def setup_logging(verbose: bool = False):
-    """Set up logging configuration."""
-    level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(
-        level=level,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
 
 def main():
     """Main CLI function."""
@@ -115,7 +107,8 @@ Examples:
     args = parser.parse_args()
     
     # Set up logging
-    setup_logging(args.verbose)
+    level = logging.DEBUG if args.verbose else logging.INFO
+    setup_logging(level=level)
     
     # Validate database path
     if not Path(args.db_path).exists():

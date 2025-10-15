@@ -4,20 +4,13 @@ import numpy as np
 import logging
 from pathlib import Path
 from datetime import datetime
+from garmin_analysis.config import DB_PATHS, MASTER_CSV
 from garmin_analysis.utils.data_processing import normalize_day_column, convert_time_to_minutes, ensure_datetime_sorted
 
 # Logging is configured at package level
 
-# --- Paths ---
-DB_PATHS = {
-    "garmin": Path("db/garmin.db"),
-    "activities": Path("db/garmin_activities.db"),
-    "monitoring": Path("db/garmin_monitoring.db"),
-    "summary": Path("db/garmin_summary.db"),
-    "summary2": Path("db/summary.db"),
-}
-
-OUTPUT_PATH = Path("data/master_daily_summary.csv")
+# Use OUTPUT_PATH for backward compatibility in this module
+OUTPUT_PATH = MASTER_CSV
 
 # Flag set to True when synthetic data is used to build the master dataset
 USING_SYNTHETIC_DATA: bool = False

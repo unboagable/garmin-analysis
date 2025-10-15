@@ -5,13 +5,11 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 from pathlib import Path
+from garmin_analysis.config import PLOTS_DIR
 from garmin_analysis.utils.data_loading import load_master_dataframe
 from garmin_analysis.utils.data_filtering import standardize_features
 
 # Logging is configured at package level
-
-PLOTS_DIR = Path("plots")
-PLOTS_DIR.mkdir(exist_ok=True)
 
 def main():
     df = load_master_dataframe()

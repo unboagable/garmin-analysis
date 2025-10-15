@@ -5,18 +5,15 @@ import seaborn as sns
 from pathlib import Path
 from datetime import datetime
 import logging
+from garmin_analysis.config import PLOTS_DIR, MASTER_CSV
 from garmin_analysis.utils.data_filtering import filter_required_columns
 
 # Logging is configured at package level
 
-MERGED_PATH = Path("data/master_daily_summary.csv")
-PLOTS_DIR = Path("plots")
-PLOTS_DIR.mkdir(exist_ok=True)
-
 def load_data():
-    if not MERGED_PATH.exists():
-        raise FileNotFoundError(f"Merged dataset not found: {MERGED_PATH}")
-    df = pd.read_csv(MERGED_PATH, parse_dates=["day"])
+    if not MASTER_CSV.exists():
+        raise FileNotFoundError(f"Merged dataset not found: {MASTER_CSV}")
+    df = pd.read_csv(MASTER_CSV, parse_dates=["day"])
     return df
 
 def plot_correlations(df, show=False):

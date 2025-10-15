@@ -6,6 +6,7 @@ CLI entry point for day-of-week analysis of sleep score, body battery, and water
 import argparse
 import logging
 from pathlib import Path
+from garmin_analysis.logging_config import setup_logging
 from garmin_analysis.features.day_of_week_analysis import (
     calculate_day_of_week_averages,
     plot_day_of_week_averages,
@@ -13,6 +14,7 @@ from garmin_analysis.features.day_of_week_analysis import (
 )
 from garmin_analysis.utils.data_loading import load_master_dataframe
 from garmin_analysis.features.coverage import filter_by_24h_coverage
+import pandas as pd
 
 def main():
     """CLI entry point for day-of-week analysis."""
@@ -62,9 +64,9 @@ def main():
     
     # Configure logging
     if args.verbose:
-        logging.basicConfig(level=logging.INFO)
+        setup_logging(level=logging.INFO)
     else:
-        logging.basicConfig(level=logging.WARNING)
+        setup_logging(level=logging.WARNING)
     
     try:
         # Load data

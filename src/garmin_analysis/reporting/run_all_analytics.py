@@ -99,4 +99,4 @@ if __name__ == "__main__":
         coverage_allowance_minutes=args.coverage_allowance_minutes
     )
     
-    print(f"Report generated: {report_path}")
+    logging.info(f"Report generated: {report_path}")

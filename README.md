@@ -742,6 +742,41 @@ poetry run jupyter lab
 poetry run jupyter notebook
 ```
 
+## Code Organization
+
+### Package Structure
+```
+src/garmin_analysis/
+├── dashboard/          # Interactive Dash web application
+├── data_ingestion/     # Database loading and CSV generation
+├── features/           # Data quality and feature engineering
+├── modeling/           # Machine learning models
+├── reporting/          # Automated report generation
+├── viz/                # Visualization tools
+├── utils/              # Utility modules
+│   ├── data_loading.py     # Load data from DB/CSV
+│   ├── data_processing.py  # Transform and clean data
+│   ├── data_filtering.py   # Date filters and feature prep
+│   ├── imputation.py       # Missing value strategies
+│   └── activity_mappings.py # Activity type customization
+└── config/             # Configuration files
+```
+
+### Utility Modules
+
+**When to use each**:
+
+| Module | Use For | Example |
+|--------|---------|---------|
+| `utils.data_loading` | Loading master dataframe, Garmin tables | `load_master_dataframe()` |
+| `utils.data_processing` | Date normalization, time conversions | `normalize_day_column()` |
+| `utils.data_filtering` | Date ranges, feature filtering | `filter_by_date()` |
+| `utils.imputation` | Handling missing values | `impute_missing_values()` |
+
+### Configuration Files
+- `config/activity_type_mappings.json` - Customize activity names and colors
+- `logging_config.py` - Centralized logging setup
+
 ## Project Structure
 
 ```
@@ -791,11 +826,26 @@ garmin-analysis/
 
 ## Dependencies
 
-The project uses modern Python data science libraries:
-- **Core**: pandas, numpy, matplotlib, seaborn
-- **ML**: scikit-learn, tsfresh, statsmodels, prophet
-- **Visualization**: plotly, dash
+Dependencies are managed via Poetry in `pyproject.toml`.
+
+**Installation**:
+```bash
+poetry install
+```
+
+**For non-Poetry users**, generate requirements.txt:
+```bash
+poetry export -f requirements.txt --output requirements.txt --without-hashes
+pip install -r requirements.txt
+```
+
+**Core Libraries**:
+- **Data**: pandas, numpy
+- **ML**: scikit-learn, tsfresh, statsmodels, prophet  
+- **Visualization**: matplotlib, seaborn, plotly, dash
 - **Development**: pytest, jupyter
+
+See `pyproject.toml` for version constraints.
 
 Test fixtures:
 - `mem_db` (unit): In-memory SQLite with minimal schema and seed data for pure SQL/transform functions.

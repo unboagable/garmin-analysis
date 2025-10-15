@@ -7,8 +7,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from garmin_analysis.utils.data_loading import load_master_dataframe
 from garmin_analysis.logging_config import get_logger
-from ..features.coverage import filter_by_24h_coverage
-from ..features.day_of_week_analysis import calculate_day_of_week_averages, get_day_order
+from garmin_analysis.features.coverage import filter_by_24h_coverage
+from garmin_analysis.features.day_of_week_analysis import calculate_day_of_week_averages, get_day_order
 
 # Get logger
 logger = get_logger(__name__)

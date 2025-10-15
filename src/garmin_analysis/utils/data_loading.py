@@ -31,7 +31,7 @@ def load_master_dataframe():
         logging.warning("%s not found. Attempting to build it via summarize_and_merge().", df_path)
         try:
             # Lazy import to avoid circulars at module import time
-            from ..data_ingestion.load_all_garmin_dbs import summarize_and_merge, USING_SYNTHETIC_DATA
+            from garmin_analysis.data_ingestion.load_all_garmin_dbs import summarize_and_merge, USING_SYNTHETIC_DATA
             df = summarize_and_merge(return_df=True)
             # Ensure the file is saved for subsequent calls
             os.makedirs(os.path.dirname(df_path), exist_ok=True)

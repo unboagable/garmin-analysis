@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
 from datetime import datetime
-from ..utils.data_loading import load_master_dataframe
+from garmin_analysis.utils.data_loading import load_master_dataframe
 
 # Logging is configured at package level
 

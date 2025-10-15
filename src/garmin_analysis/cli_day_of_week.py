@@ -6,13 +6,13 @@ CLI entry point for day-of-week analysis of sleep score, body battery, and water
 import argparse
 import logging
 from pathlib import Path
-from .features.day_of_week_analysis import (
+from garmin_analysis.features.day_of_week_analysis import (
     calculate_day_of_week_averages,
     plot_day_of_week_averages,
     print_day_of_week_summary
 )
-from .utils.data_loading import load_master_dataframe
-from .features.coverage import filter_by_24h_coverage
+from garmin_analysis.utils.data_loading import load_master_dataframe
+from garmin_analysis.features.coverage import filter_by_24h_coverage
 
 def main():
     """CLI entry point for day-of-week analysis."""

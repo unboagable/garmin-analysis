@@ -6,9 +6,61 @@ from pandas.tseries.offsets import DateOffset
 from sklearn.preprocessing import StandardScaler
 
 
-def normalize_dates(df, col="day"):
+def strip_time_from_dates(df, col="day"):
+    """
+    Strip time component from datetime column, keeping only the date.
+    
+    This function normalizes datetime values to midnight (00:00:00),
+    effectively removing the time component while preserving the date.
+    Useful for ensuring date-only comparisons and grouping.
+    
+    Args:
+        df (pd.DataFrame): DataFrame containing datetime column
+        col (str): Name of the datetime column to normalize (default: "day")
+    
+    Returns:
+        pd.DataFrame: DataFrame with normalized datetime column
+    
+    Example:
+        >>> df['day'] = ['2024-01-01 14:30:00', '2024-01-02 08:15:00']
+        >>> df = strip_time_from_dates(df, col='day')
+        >>> # Result: ['2024-01-01 00:00:00', '2024-01-02 00:00:00']
+    
+    Note:
+        This is different from normalize_day_column() in data_processing.py:
+        - normalize_day_column(): Detects and converts day/calendarDate/timestamp
+          columns during initial data loading (more flexible, multiple column names)
+        - strip_time_from_dates(): Strips time from a specific known column
+          for consistent date-only operations (simpler, targeted use)
+    
+    See Also:
+        - garmin_analysis.utils.data_processing.normalize_day_column(): For initial data loading
+    """
+    # Handle empty DataFrame
+    if df.empty or col not in df.columns:
+        return df
+    
     df[col] = pd.to_datetime(df[col]).dt.normalize()
     return df
+
+
+# Backward compatibility alias (deprecated)
+def normalize_dates(df, col="day"):
+    """
+    Deprecated: Use strip_time_from_dates() instead.
+    
+    This function is maintained for backward compatibility but will be
+    removed in a future version. Please update your code to use
+    strip_time_from_dates() which has the same functionality but a
+    clearer name.
+    """
+    import warnings
+    warnings.warn(
+        "normalize_dates() is deprecated. Use strip_time_from_dates() instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    return strip_time_from_dates(df, col)
 
 
 def filter_by_date(df, date_col="day", from_date=None, to_date=None, days_back=None, weeks_back=None, months_back=None):
@@ -37,16 +89,29 @@ def filter_by_date(df, date_col="day", from_date=None, to_date=None, days_back=N
 
 
 def convert_time_columns(df, columns):
-    def time_to_minutes(val):
-        try:
-            h, m, s = map(int, val.split(":"))
-            return h * 60 + m + s / 60
-        except (ValueError, AttributeError, TypeError):
-            return np.nan
-
+    """
+    Convert time columns from string format to minutes.
+    
+    Uses the centralized convert_time_to_minutes function which handles:
+    - "HH:MM:SS" format (e.g., "1:30:00" -> 90 minutes)
+    - "MM:SS" format (e.g., "45:30" -> 45.5 minutes)
+    - Direct numeric strings
+    
+    Args:
+        df (pd.DataFrame): DataFrame with time columns
+        columns (list): List of column names to convert
+    
+    Returns:
+        pd.DataFrame: DataFrame with converted columns
+    
+    Example:
+        >>> df = convert_time_columns(df, ['total_sleep', 'deep_sleep'])
+    """
+    from garmin_analysis.utils.data_processing import convert_time_to_minutes
+    
     for col in columns:
         if col in df.columns and df[col].dtype == object:
-            df[col] = df[col].apply(time_to_minutes)
+            df[col] = df[col].apply(convert_time_to_minutes)
     return df
 
 

@@ -1,11 +1,26 @@
+# Core dependencies - synced with pyproject.toml
+# For reproducible environments, use Poetry: poetry install
+# This file provides version constraints matching pyproject.toml
+
+# Data handling
+numpy>=1.24,<1.27
 pandas
-numpy
-matplotlib
+
+# Visualization
+matplotlib>=3.10.3
 seaborn
-scikit-learn
-tabulate
-dash
 plotly
+dash
+
+# Machine Learning
+scikit-learn>=1.4.2
 tsfresh
 statsmodels
 prophet
+
+# Utilities
+tabulate
+
+# Jupyter support
+notebook>=7.4.3
+ipykernel>=6.29.5

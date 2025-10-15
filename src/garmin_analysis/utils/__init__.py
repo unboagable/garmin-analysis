@@ -14,7 +14,8 @@ from .data_loading import (
 )
 
 from .data_filtering import (
-    normalize_dates,
+    strip_time_from_dates,
+    normalize_dates,  # Deprecated, use strip_time_from_dates instead
     filter_by_date,
     convert_time_columns,
     standardize_features,
@@ -28,7 +29,8 @@ __all__ = [
     'ensure_datetime_sorted',
     'filter_required_columns',
     'load_garmin_tables',
-    'normalize_dates',
+    'strip_time_from_dates',  # Preferred name
+    'normalize_dates',  # Deprecated, kept for backward compatibility
     'filter_by_date',
     'convert_time_columns',
     'aggregate_stress',

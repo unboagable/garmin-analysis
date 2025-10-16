@@ -2,12 +2,12 @@ import pytest
 from src.garmin_analysis.dashboard.app import app, create_layout, update_day_of_week_charts
 from src.garmin_analysis.utils import load_master_dataframe
 
-def test_dashboard_imports():
+def test_app_imports():
     """Test that dashboard imports successfully."""
     assert app is not None
     assert app.title == "Garmin Health Dashboard"
 
-def test_dashboard_layout_creation():
+def test_create_layout_structure():
     """Test that dashboard layout can be created."""
     df = load_master_dataframe()
     layout = create_layout(df)
@@ -24,7 +24,7 @@ def test_dashboard_layout_creation():
     for expected_tab in expected_tabs:
         assert expected_tab in tab_labels
 
-def test_day_of_week_callback():
+def test_update_day_of_week_charts_with_selected_metrics():
     """Test the day-of-week analysis callback."""
     df = load_master_dataframe()
     
@@ -42,7 +42,7 @@ def test_day_of_week_callback():
     assert len(bar_fig.data) >= 1  # At least one metric should have data
     assert len(combined_fig.data) >= 1
 
-def test_day_of_week_callback_with_coverage_filter():
+def test_update_day_of_week_charts_with_coverage_filter():
     """Test the day-of-week analysis callback with coverage filter."""
     df = load_master_dataframe()
     
@@ -56,7 +56,7 @@ def test_day_of_week_callback_with_coverage_filter():
     assert bar_fig is not None
     assert combined_fig is not None
 
-def test_day_of_week_callback_empty_metrics():
+def test_update_day_of_week_charts_with_empty_metrics():
     """Test the day-of-week analysis callback with no metrics selected."""
     df = load_master_dataframe()
     
@@ -71,7 +71,7 @@ def test_day_of_week_callback_empty_metrics():
     assert combined_fig is not None
 
 @pytest.mark.integration
-def test_dashboard_integration(tmp_db):
+def test_dashboard_end_to_end(tmp_db):
     """Integration test for dashboard with test database."""
     # This test uses the integration marker and tmp_db fixture
     # to test with actual database structure

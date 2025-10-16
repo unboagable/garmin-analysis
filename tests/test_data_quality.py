@@ -302,7 +302,7 @@ class DataQualityChecker:
 
 
 # Test functions
-def test_data_quality_checker():
+def test_data_quality_checker_analyze_dataframe():
     """Test the DataQualityChecker class."""
     # Create sample data with various quality issues
     data = {
@@ -350,7 +350,7 @@ def test_data_quality_checker():
 
 
 @pytest.mark.integration
-def test_real_data_quality(tmp_db):
+def test_data_quality_analysis_end_to_end(tmp_db):
     """Test data quality analysis on real Garmin data."""
     try:
         from garmin_analysis.utils.data_loading import load_master_dataframe

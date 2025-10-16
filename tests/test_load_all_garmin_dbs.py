@@ -13,13 +13,13 @@ from garmin_analysis.data_ingestion.load_all_garmin_dbs import (
 # --------------------------
 
 @pytest.mark.integration
-def test_merge_output_non_empty(tmp_db):
+def test_summarize_and_merge_output_non_empty(tmp_db):
     df = summarize_and_merge(return_df=True)
     assert not df.empty, "The merged DataFrame should not be empty"
 
 
 @pytest.mark.integration
-def test_key_columns_present(tmp_db):
+def test_summarize_and_merge_key_columns_present(tmp_db):
     df = summarize_and_merge(return_df=True)
     expected_columns = [
         "yesterday_activity_minutes",
@@ -30,7 +30,7 @@ def test_key_columns_present(tmp_db):
 
 
 @pytest.mark.integration
-def test_lag_feature_shift_logic(tmp_db):
+def test_summarize_and_merge_lag_feature_shift(tmp_db):
     df = summarize_and_merge(return_df=True)
     if "activity_minutes" in df.columns and "yesterday_activity_minutes" in df.columns:
         actual = df["yesterday_activity_minutes"]
@@ -92,7 +92,7 @@ def mock_tables():
     }
 
 
-def test_preprocess_sleep_works():
+def test_preprocess_sleep_converts_time():
     sleep = pd.DataFrame({
         "day": ["2024-01-01"],
         "total_sleep": ["7:00:00"],
@@ -123,7 +123,7 @@ def test_aggregate_stress_output():
 
 
 @pytest.mark.integration
-def test_column_dtypes_are_correct(tmp_db):
+def test_summarize_and_merge_column_dtypes(tmp_db):
     df = summarize_and_merge(return_df=True)
     assert pd.api.types.is_datetime64_any_dtype(df["day"])
     assert pd.api.types.is_numeric_dtype(df["steps"])
@@ -134,13 +134,13 @@ def test_column_dtypes_are_correct(tmp_db):
 
 
 @pytest.mark.integration
-def test_merged_dates_are_valid(tmp_db):
+def test_summarize_and_merge_dates_valid(tmp_db):
     df = summarize_and_merge(return_df=True)
     assert df["day"].between("2010-01-01", "2100-01-01").all(), "Dates should be valid and normalized"
 
 
 @pytest.mark.integration
-def test_expected_merged_columns_exist(tmp_db):
+def test_summarize_and_merge_columns_exist(tmp_db):
     df = summarize_and_merge(return_df=True)
     expected_cols = {
         "day", "steps", "calories_total", "score", "resting_heart_rate",

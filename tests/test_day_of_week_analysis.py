@@ -63,13 +63,13 @@ def test_calculate_day_of_week_averages(sample_data):
     for metric in expected_metrics:
         assert metric in result_metrics
 
-def test_calculate_day_of_week_averages_empty_data():
+def test_calculate_day_of_week_averages_with_empty_data():
     """Test day-of-week averages with empty data."""
     empty_df = pd.DataFrame()
     result = calculate_day_of_week_averages(empty_df)
     assert result.empty
 
-def test_calculate_day_of_week_averages_missing_columns():
+def test_calculate_day_of_week_averages_with_missing_columns():
     """Test day-of-week averages with missing columns."""
     # Create data with only some columns
     data = pd.DataFrame({
@@ -117,7 +117,7 @@ def test_print_day_of_week_summary(sample_data, caplog):
     assert "Sleep Score" in caplog.text
     assert "Body Battery" in caplog.text
 
-def test_print_day_of_week_summary_empty_data(caplog):
+def test_print_day_of_week_summary_with_empty_data(caplog):
     """Test summary printing with empty data."""
     empty_df = pd.DataFrame()
     
@@ -128,7 +128,7 @@ def test_print_day_of_week_summary_empty_data(caplog):
     assert "No day-of-week averages to summarize" in caplog.text
 
 @pytest.mark.integration
-def test_integration_with_real_data(tmp_db):
+def test_day_of_week_analysis_end_to_end(tmp_db):
     """Integration test with real database structure."""
     # This test uses the integration marker and tmp_db fixture
     # to test with actual database structure

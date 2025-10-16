@@ -25,7 +25,7 @@ def temp_db():
     os.remove(db_path)
 
 
-def test_inspect_sqlite_db_output(temp_db, caplog):
+def test_inspect_sqlite_db_prints_output(temp_db, caplog):
     caplog.set_level(logging.INFO)
 
     # Run the inspection

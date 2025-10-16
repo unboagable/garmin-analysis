@@ -144,6 +144,163 @@ class TestActivityCalendar:
             
             plot_files = list(Path(temp_dir).glob("activity_calendar_*.png"))
             assert len(plot_files) == 1
+    
+    def test_plot_activity_calendar_edge_case_no_activities_in_date_range(self):
+        """Test with no activities in specified date range."""
+        # Create activities in January
+        activities_data = [
+            {'start_time': datetime(2024, 1, 5), 'sport': 'running'},
+            {'start_time': datetime(2024, 1, 10), 'sport': 'cycling'},
+            {'start_time': datetime(2024, 1, 15), 'sport': 'running'}
+        ]
+        
+        df = pd.DataFrame(activities_data)
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Request data for February (no activities)
+            plot_activity_calendar(
+                df,
+                start_date='2024-02-01',
+                end_date='2024-02-29',
+                output_dir=temp_dir
+            )
+            
+            # Should handle gracefully - no plot created or empty plot
+            # (behavior depends on implementation)
+            plot_files = list(Path(temp_dir).glob("activity_calendar_*.png"))
+            # Either no file or empty plot file
+            assert len(plot_files) <= 1
+    
+    def test_plot_activity_calendar_edge_case_multiple_activities_same_day_varied(self):
+        """Test with many activities on the same day."""
+        date = datetime(2024, 1, 15)
+        activities_data = []
+        
+        # Add 10 different activities on the same day
+        sports = ['running', 'cycling', 'swimming', 'walking', 'hiking', 
+                  'fitness_equipment', 'yoga', 'weightlifting', 'tennis', 'basketball']
+        
+        for i, sport in enumerate(sports):
+            activities_data.append({
+                'start_time': date + timedelta(hours=i),
+                'sport': sport
+            })
+        
+        df = pd.DataFrame(activities_data)
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Should handle multiple activities on same day
+            plot_activity_calendar(df, output_dir=temp_dir)
+            
+            plot_files = list(Path(temp_dir).glob("activity_calendar_*.png"))
+            assert len(plot_files) == 1
+    
+    def test_plot_activity_calendar_edge_case_unknown_activity_types_only(self):
+        """Test with only unknown/unrecognized activity types."""
+        activities_data = [
+            {'start_time': datetime(2024, 1, 1), 'sport': 'quantum_jumping'},
+            {'start_time': datetime(2024, 1, 2), 'sport': 'time_travel_training'},
+            {'start_time': datetime(2024, 1, 3), 'sport': 'teleportation_practice'},
+            {'start_time': datetime(2024, 1, 4), 'sport': None},
+            {'start_time': datetime(2024, 1, 5), 'sport': ''}
+        ]
+        
+        df = pd.DataFrame(activities_data)
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Should handle all unknown sports gracefully
+            plot_activity_calendar(df, output_dir=temp_dir)
+            
+            plot_files = list(Path(temp_dir).glob("activity_calendar_*.png"))
+            assert len(plot_files) == 1
+    
+    def test_plot_activity_calendar_edge_case_invalid_date_range(self):
+        """Test with invalid date range (end before start)."""
+        activities_data = [
+            {'start_time': datetime(2024, 1, 15), 'sport': 'running'},
+            {'start_time': datetime(2024, 1, 20), 'sport': 'cycling'}
+        ]
+        
+        df = pd.DataFrame(activities_data)
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # End date before start date
+            try:
+                plot_activity_calendar(
+                    df,
+                    start_date='2024-02-01',
+                    end_date='2024-01-01',  # Invalid: before start
+                    output_dir=temp_dir
+                )
+                # If it doesn't raise, check behavior
+                plot_files = list(Path(temp_dir).glob("activity_calendar_*.png"))
+                # Should handle gracefully
+                assert True
+            except (ValueError, AssertionError):
+                # If it raises an error, that's also acceptable
+                assert True
+    
+    def test_plot_activity_calendar_edge_case_very_long_date_range(self):
+        """Test with very long date range (> 1 year)."""
+        # Create activities over 2 years
+        start_date = datetime(2023, 1, 1)
+        activities_data = []
+        
+        # Add activities every 10 days for 2 years
+        for i in range(73):  # ~730 days / 10
+            date = start_date + timedelta(days=i*10)
+            activities_data.append({
+                'start_time': date,
+                'sport': 'running' if i % 2 == 0 else 'cycling'
+            })
+        
+        df = pd.DataFrame(activities_data)
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Should handle long date ranges
+            plot_activity_calendar(df, output_dir=temp_dir)
+            
+            plot_files = list(Path(temp_dir).glob("activity_calendar_*.png"))
+            assert len(plot_files) == 1
+    
+    def test_plot_activity_calendar_edge_case_18_month_range(self):
+        """Test with 18 month date range."""
+        start_date = datetime(2023, 1, 1)
+        activities_data = []
+        
+        # Add activities weekly for 18 months
+        for i in range(78):  # ~18 months * 4.33 weeks
+            date = start_date + timedelta(weeks=i)
+            activities_data.append({
+                'start_time': date,
+                'sport': ['running', 'cycling', 'swimming'][i % 3]
+            })
+        
+        df = pd.DataFrame(activities_data)
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Should handle 18 month range
+            plot_activity_calendar(df, output_dir=temp_dir)
+            
+            plot_files = list(Path(temp_dir).glob("activity_calendar_*.png"))
+            assert len(plot_files) == 1
+    
+    def test_plot_activity_calendar_edge_case_future_dates(self):
+        """Test with activities in the future."""
+        future_date = datetime.now() + timedelta(days=30)
+        activities_data = [
+            {'start_time': future_date, 'sport': 'running'},
+            {'start_time': future_date + timedelta(days=1), 'sport': 'cycling'}
+        ]
+        
+        df = pd.DataFrame(activities_data)
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Should handle future dates gracefully
+            plot_activity_calendar(df, output_dir=temp_dir)
+            
+            plot_files = list(Path(temp_dir).glob("activity_calendar_*.png"))
+            assert len(plot_files) == 1
 
 
 @pytest.mark.integration

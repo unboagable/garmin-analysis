@@ -12,7 +12,7 @@ def test_days_with_continuous_coverage_full_day_minutely():
     assert pd.Timestamp("2024-01-01") in days
 
 
-def test_days_with_continuous_coverage_has_gap_fails():
+def test_days_with_continuous_coverage_with_gap():
     day = pd.Timestamp("2024-01-02")
     # Create 1-minute series but remove a 10-minute chunk in the middle
     ts = pd.date_range(day, day + pd.Timedelta(days=1), freq="1min", inclusive="left")

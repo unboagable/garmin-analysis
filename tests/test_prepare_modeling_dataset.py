@@ -33,7 +33,7 @@ def test_prepare_modeling_dataset_creates_output_file():
     )
     assert Path(TEST_OUTPUT_PATH).exists()
 
-def test_required_feature_filtering():
+def test_prepare_modeling_dataset_filters_required_features():
     prepare_modeling_dataset(
         input_path=TEST_INPUT_PATH,
         output_path=TEST_OUTPUT_PATH,
@@ -42,12 +42,12 @@ def test_required_feature_filtering():
     df = pd.read_csv(TEST_OUTPUT_PATH)
     assert not df[["score", "stress_avg", "yesterday_activity_minutes"]].isnull().any().any()
 
-def test_metadata_columns_dropped():
+def test_prepare_modeling_dataset_drops_metadata():
     prepare_modeling_dataset(input_path=TEST_INPUT_PATH, output_path=TEST_OUTPUT_PATH)
     df = pd.read_csv(TEST_OUTPUT_PATH)
     assert not any("missing_" in col or "Unnamed" in col for col in df.columns)
 
-def test_columns_with_high_missingness_dropped():
+def test_prepare_modeling_dataset_drops_high_missingness():
     prepare_modeling_dataset(
         input_path=TEST_INPUT_PATH,
         output_path=TEST_OUTPUT_PATH,

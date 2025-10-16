@@ -7,14 +7,14 @@ from datetime import datetime, timedelta
 from garmin_analysis.features.coverage import filter_by_24h_coverage, days_with_continuous_coverage
 
 
-def test_filter_by_24h_coverage_empty_dataframe():
+def test_filter_by_24h_coverage_with_empty_dataframe():
     """Test that empty dataframe is handled gracefully"""
     empty_df = pd.DataFrame()
     result = filter_by_24h_coverage(empty_df)
     assert result.empty
 
 
-def test_filter_by_24h_coverage_no_stress_data():
+def test_filter_by_24h_coverage_with_no_stress_data():
     """Test that missing stress data is handled gracefully"""
     # Create a simple dataframe with day column
     df = pd.DataFrame({
@@ -55,7 +55,7 @@ def test_filter_by_24h_coverage_with_stress_data():
     assert result['steps'].iloc[0] == 1000
 
 
-def test_days_with_continuous_coverage_basic():
+def test_days_with_continuous_coverage_with_full_day():
     """Test basic functionality of days_with_continuous_coverage"""
     # Create a simple stress dataframe with continuous coverage for one day
     start_time = pd.Timestamp('2024-01-01 00:00:00')
@@ -99,7 +99,7 @@ def test_days_with_continuous_coverage_with_gap():
     assert len(qualifying_days) == 0
 
 
-def test_days_with_continuous_coverage_with_allowance_internal_gap_allows():
+def test_days_with_continuous_coverage_with_allowance_internal_gap():
     """A 30-minute internal gap should be allowed when allowance >= 30."""
     start_time = pd.Timestamp('2024-01-01 00:00:00')
     timestamps = []
@@ -125,7 +125,7 @@ def test_days_with_continuous_coverage_with_allowance_internal_gap_allows():
     assert pd.Timestamp('2024-01-01') in days
 
 
-def test_days_with_continuous_coverage_with_allowance_edge_deficit_allows():
+def test_days_with_continuous_coverage_with_allowance_edge_deficit():
     """A late start and early end totalling 20 minutes should be allowed when allowance >= 20."""
     day = pd.Timestamp('2024-01-01')
     # Start 10 minutes late, end 10 minutes early, otherwise minutely
@@ -143,7 +143,7 @@ def test_days_with_continuous_coverage_with_allowance_edge_deficit_allows():
     assert pd.Timestamp('2024-01-01') in days
 
 
-def test_filter_by_24h_coverage_with_total_allowance_filters_master():
+def test_filter_by_24h_coverage_with_total_allowance():
     """Master df is filtered when stress coverage meets total allowance but violates max_gap."""
     master_df = pd.DataFrame({
         'day': pd.date_range('2024-01-01', periods=2),

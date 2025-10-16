@@ -70,7 +70,7 @@ def temp_db_with_schema():
         os.remove(path)
 
 
-def test_extract_schema_basic(temp_db_with_schema):
+def test_extract_schema_returns_table_info(temp_db_with_schema):
     schema = extract_schema(temp_db_with_schema)
     # daily_summary
     assert "daily_summary" in schema
@@ -91,7 +91,7 @@ def test_extract_schema_basic(temp_db_with_schema):
     assert ("resting_heart_rate", "FLOAT") in schema["resting_hr"]
 
 
-def test_detect_schema_drift_no_drift(temp_db_with_schema):
+def test_detect_schema_drift_with_no_changes(temp_db_with_schema):
     expected = extract_schema(temp_db_with_schema)
     actual = extract_schema(temp_db_with_schema)
     report = detect_schema_drift(expected, actual)

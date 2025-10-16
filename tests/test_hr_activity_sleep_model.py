@@ -136,7 +136,8 @@ class TestHRActivitySleepModelInit:
         """Test default initialization."""
         model = HRActivitySleepModel()
         
-        assert model.data_path == "data/modeling_ready_dataset.csv"
+        # Check that data_path ends with the expected file (may be absolute or relative)
+        assert model.data_path.endswith("data/modeling_ready_dataset.csv")
         assert model.random_state == 42
         assert model.df is None
         assert model.models == {}

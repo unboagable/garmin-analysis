@@ -22,6 +22,7 @@ from garmin_analysis.modeling.enhanced_anomaly_detection import EnhancedAnomalyD
 from garmin_analysis.modeling.enhanced_clustering import EnhancedClusterer
 from garmin_analysis.modeling.predictive_modeling import HealthPredictor
 from garmin_analysis.utils.cli_helpers import add_24h_coverage_args, apply_24h_coverage_filter_from_args
+from garmin_analysis.config import MODELING_RESULTS_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class ComprehensiveModelingPipeline:
     """Orchestrates comprehensive modeling analysis."""
     
     def __init__(self, output_dir: Path = None, random_state: int = 42):
-        self.output_dir = output_dir or Path("modeling_results")
+        self.output_dir = output_dir or MODELING_RESULTS_DIR
         self.random_state = random_state
         self.results = {}
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -448,7 +449,7 @@ def main():
         
         # Initialize pipeline
         pipeline = ComprehensiveModelingPipeline(
-            output_dir=Path("modeling_results"),
+            output_dir=MODELING_RESULTS_DIR,
             random_state=42
         )
         

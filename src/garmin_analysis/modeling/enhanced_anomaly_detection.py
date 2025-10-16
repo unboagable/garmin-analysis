@@ -30,6 +30,7 @@ from garmin_analysis.utils.data_loading import load_master_dataframe
 from garmin_analysis.utils.data_filtering import standardize_features
 from garmin_analysis.utils_cleaning import clean_data
 from garmin_analysis.utils.imputation import impute_missing_values
+from garmin_analysis.config import PLOTS_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -397,7 +398,7 @@ class EnhancedAnomalyDetector:
                                  output_dir: Path = None) -> Dict:
         """Run comprehensive anomaly detection analysis."""
         if output_dir is None:
-            output_dir = Path("plots")
+            output_dir = PLOTS_DIR
         
         try:
             # Prepare features
@@ -460,7 +461,7 @@ def main():
         results = detector.run_comprehensive_analysis(
             df, 
             tune_hyperparameters=True,
-            output_dir=Path("plots")
+            output_dir=PLOTS_DIR
         )
         
         # Print summary

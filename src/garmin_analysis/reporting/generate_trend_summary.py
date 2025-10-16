@@ -5,6 +5,7 @@ import argparse
 from garmin_analysis.utils.data_loading import load_master_dataframe
 from garmin_analysis.utils_cleaning import clean_data
 from garmin_analysis.utils.cli_helpers import add_24h_coverage_args, apply_24h_coverage_filter_from_args
+from garmin_analysis.config import REPORTS_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,9 @@ def log_top_correlations(corr_df, threshold=0.5, max_pairs=20):
     for x, y, r in top_corrs[:max_pairs]:
         logger.info(f"  • {x} ↔ {y}: {r:.2f}")
 
-def generate_trend_summary(df, date_col='day', output_dir='reports', filter_24h_coverage=False, max_gap_minutes=2, day_edge_tolerance_minutes=2, coverage_allowance_minutes=0, timestamp=None):
+def generate_trend_summary(df, date_col='day', output_dir=None, filter_24h_coverage=False, max_gap_minutes=2, day_edge_tolerance_minutes=2, coverage_allowance_minutes=0, timestamp=None):
+    if output_dir is None:
+        output_dir = str(REPORTS_DIR)
     # Apply 24-hour coverage filtering if requested (using internal logic for function API compatibility)
     if filter_24h_coverage:
         from garmin_analysis.features.coverage import filter_by_24h_coverage

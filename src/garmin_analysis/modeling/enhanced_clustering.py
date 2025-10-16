@@ -29,6 +29,7 @@ from garmin_analysis.utils.data_loading import load_master_dataframe
 from garmin_analysis.utils.data_filtering import standardize_features
 from garmin_analysis.utils_cleaning import clean_data
 from garmin_analysis.utils.imputation import impute_missing_values
+from garmin_analysis.config import PLOTS_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -533,7 +534,7 @@ class EnhancedClusterer:
             algorithms = ['kmeans', 'gaussian_mixture', 'hierarchical', 'dbscan']
         
         if output_dir is None:
-            output_dir = Path("plots")
+            output_dir = PLOTS_DIR
         
         try:
             # Prepare features
@@ -639,7 +640,7 @@ def main():
         results = clusterer.run_comprehensive_clustering(
             df, 
             tune_hyperparameters=True,
-            output_dir=Path("plots")
+            output_dir=PLOTS_DIR
         )
         
         # Print summary

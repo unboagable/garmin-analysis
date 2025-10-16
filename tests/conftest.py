@@ -192,10 +192,10 @@ def tmp_db(tmp_path):
         # Restore original DB paths
         ladd.DB_PATHS.update(original_paths)
         # Clean up any generated master CSV from integration runs
-        master_csv = Path("data/master_daily_summary.csv")
-        if master_csv.exists():
+        from garmin_analysis.config import MASTER_CSV
+        if MASTER_CSV.exists():
             try:
-                master_csv.unlink()
+                MASTER_CSV.unlink()
             except Exception:
                 pass
 

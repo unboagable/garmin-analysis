@@ -2,14 +2,20 @@ import pandas as pd
 import logging
 from pathlib import Path
 
+from garmin_analysis.config import MASTER_CSV, MODELING_CSV
+
 # Logging is configured at package level
 
 def prepare_modeling_dataset(
-    input_path: str = "data/master_daily_summary.csv",
-    output_path: str = "data/modeling_ready_dataset.csv",
+    input_path: str = None,
+    output_path: str = None,
     required_features: list = None,
     missing_threshold: float = 0.5
 ):
+    if input_path is None:
+        input_path = str(MASTER_CSV)
+    if output_path is None:
+        output_path = str(MODELING_CSV)
     if required_features is None:
         required_features = [
             "score",

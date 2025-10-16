@@ -6,10 +6,13 @@ import argparse
 from garmin_analysis.reporting.generate_trend_summary import generate_trend_summary
 from garmin_analysis.modeling.anomaly_detection import run_anomaly_detection
 from garmin_analysis.utils.cli_helpers import add_24h_coverage_args, apply_24h_coverage_filter_from_args
+from garmin_analysis.config import REPORTS_DIR
 
 logger = logging.getLogger(__name__)
 
-def run_all_analytics(df: pd.DataFrame, date_col='day', output_dir='reports', as_html=False, monthly=False, filter_24h_coverage=False, max_gap_minutes=2, day_edge_tolerance_minutes=2, coverage_allowance_minutes=0):
+def run_all_analytics(df: pd.DataFrame, date_col='day', output_dir=None, as_html=False, monthly=False, filter_24h_coverage=False, max_gap_minutes=2, day_edge_tolerance_minutes=2, coverage_allowance_minutes=0):
+    if output_dir is None:
+        output_dir = str(REPORTS_DIR)
     os.makedirs(output_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     ext = 'html' if as_html else 'md'

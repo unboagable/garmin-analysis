@@ -3,6 +3,8 @@ import sqlite3
 import pandas as pd
 import logging
 
+from garmin_analysis.config import MASTER_CSV
+
 
 def load_garmin_tables(db_path="db/garmin.db"):
     if not os.path.exists(db_path):
@@ -26,7 +28,7 @@ def load_garmin_tables(db_path="db/garmin.db"):
 
 
 def load_master_dataframe():
-    df_path = "data/master_daily_summary.csv"
+    df_path = str(MASTER_CSV)
     if not os.path.exists(df_path):
         logging.warning("%s not found. Attempting to build it via summarize_and_merge().", df_path)
         try:

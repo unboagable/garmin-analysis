@@ -19,6 +19,7 @@ from pathlib import Path
 import json
 from datetime import datetime
 from garmin_analysis.logging_config import setup_logging
+from garmin_analysis.config import DATA_QUALITY_REPORTS_DIR
 
 # Configure logging
 setup_logging(level=logging.INFO)
@@ -28,13 +29,15 @@ logger = logging.getLogger(__name__)
 class GarminDataQualityAnalyzer:
     """Specialized data quality analyzer for Garmin health data."""
     
-    def __init__(self, output_dir: str = "data_quality_reports"):
+    def __init__(self, output_dir: str = None):
         """
         Initialize the Garmin data quality analyzer.
         
         Args:
             output_dir: Directory to save analysis reports
         """
+        if output_dir is None:
+            output_dir = str(DATA_QUALITY_REPORTS_DIR)
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         self.analysis_results = {}

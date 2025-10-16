@@ -5,6 +5,8 @@ import os
 import logging
 from datetime import datetime
 
+from garmin_analysis.config import PLOTS_DIR, MASTER_CSV
+
 # Logging is configured at package level
 
 def plot_feature_correlation(df: pd.DataFrame, output_path: str = None,
@@ -42,7 +44,7 @@ def plot_feature_correlation(df: pd.DataFrame, output_path: str = None,
     # Generate timestamped output path if not provided
     if output_path is None:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_path = f"plots/feature_correlation_{timestamp}.png"
+        output_path = str(PLOTS_DIR / f"feature_correlation_{timestamp}.png")
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     plt.savefig(output_path)
@@ -52,5 +54,5 @@ def plot_feature_correlation(df: pd.DataFrame, output_path: str = None,
 
 # Example usage:
 if __name__ == "__main__":
-    sample = pd.read_csv("data/master_daily_summary.csv")  # adjust if needed
+    sample = pd.read_csv(str(MASTER_CSV))  # adjust if needed
     plot_feature_correlation(sample, exclude_cols=["timestamp", "date"])

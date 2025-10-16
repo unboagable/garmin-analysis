@@ -4,12 +4,14 @@ import os
 import logging
 from datetime import datetime
 
+from garmin_analysis.config import PLOTS_DIR, MASTER_CSV
+
 # Logging is configured at package level
 
 def plot_feature_trend(df: pd.DataFrame, feature: str,
                         date_col: str = None,
                         rolling_days: int = 7,
-                        output_dir: str = "plots",
+                        output_dir: str = None,
                         anomalies: pd.DataFrame = None):
     """
     Plots a single feature over time with an optional rolling average and anomaly highlights.
@@ -60,6 +62,8 @@ def plot_feature_trend(df: pd.DataFrame, feature: str,
     plt.grid(True)
     plt.tight_layout()
 
+    if output_dir is None:
+        output_dir = str(PLOTS_DIR)
     os.makedirs(output_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_path = os.path.join(output_dir, f"{feature}_trend_{timestamp}.png")
@@ -70,6 +74,6 @@ def plot_feature_trend(df: pd.DataFrame, feature: str,
 
 # Example usage:
 if __name__ == "__main__":
-    df = pd.read_csv("data/master_daily_summary.csv")
+    df = pd.read_csv(str(MASTER_CSV))
     anomalies = pd.read_csv("data/anomalies.csv") if os.path.exists("data/anomalies.csv") else None
     plot_feature_trend(df, feature="stress_avg", anomalies=anomalies)

@@ -22,12 +22,14 @@ from sklearn.model_selection import train_test_split, cross_val_score, TimeSerie
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.preprocessing import StandardScaler
 
+from garmin_analysis.config import MODELING_CSV, PLOTS_DIR, REPORTS_DIR, MODELING_RESULTS_DIR
+
 logger = logging.getLogger(__name__)
 
 class HRActivitySleepModel:
     """Model to analyze HR and activity impact on sleep score."""
     
-    def __init__(self, data_path: str = "data/modeling_ready_dataset.csv", random_state: int = 42):
+    def __init__(self, data_path: str = None, random_state: int = 42):
         """
         Initialize the model.
         
@@ -35,6 +37,8 @@ class HRActivitySleepModel:
             data_path: Path to the modeling dataset
             random_state: Random state for reproducibility
         """
+        if data_path is None:
+            data_path = str(MODELING_CSV)
         self.data_path = data_path
         self.random_state = random_state
         self.df = None
@@ -361,7 +365,7 @@ class HRActivitySleepModel:
     
     def create_visualizations(self, results: Dict, feature_importance_df: pd.DataFrame,
                             X: pd.DataFrame, y: pd.Series, feature_names: List[str],
-                            output_dir: Path = Path("plots")) -> List[str]:
+                            output_dir: Path = None) -> List[str]:
         """
         Create comprehensive visualizations.
         
@@ -376,6 +380,8 @@ class HRActivitySleepModel:
         Returns:
             List of saved plot paths
         """
+        if output_dir is None:
+            output_dir = PLOTS_DIR
         output_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         plot_paths = []
@@ -564,7 +570,7 @@ class HRActivitySleepModel:
         return plot_paths
     
     def generate_summary_report(self, results: Dict, feature_importance_df: pd.DataFrame,
-                               output_dir: Path = Path("reports")) -> str:
+                               output_dir: Path = None) -> str:
         """
         Generate a text summary report.
         
@@ -576,6 +582,8 @@ class HRActivitySleepModel:
         Returns:
             Path to saved report
         """
+        if output_dir is None:
+            output_dir = REPORTS_DIR
         output_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         report_path = output_dir / f"{timestamp}_hr_activity_sleep_report.txt"
@@ -701,7 +709,7 @@ class HRActivitySleepModel:
     
     def run_analysis(self, use_lag_features: bool = True, 
                     imputation_strategy: str = 'median',
-                    output_dir: Path = Path("modeling_results")) -> Dict:
+                    output_dir: Path = None) -> Dict:
         """
         Run the complete analysis pipeline.
         
@@ -717,6 +725,8 @@ class HRActivitySleepModel:
         Returns:
             Dictionary with analysis results
         """
+        if output_dir is None:
+            output_dir = MODELING_RESULTS_DIR
         logger.info("Starting HR & Activity -> Sleep Quality Analysis")
         logger.info("="*80)
         

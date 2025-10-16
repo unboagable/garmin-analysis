@@ -2,6 +2,51 @@
 
 A comprehensive Garmin health data analysis platform with interactive dashboard, machine learning capabilities, automated reporting, and **24-hour coverage filtering** for high-quality data analysis.
 
+## 📑 Table of Contents
+
+- [Quick Start](#quick-start-in-5-minutes)
+- [What's New](#-whats-new)
+- [Features](#features)
+- [Getting Started](#getting-started)
+- [Common Commands](#common-commands)
+- [24-Hour Coverage Filtering](#-quick-start-with-24-hour-coverage-filtering)
+- [Dashboard](#launch-dashboard)
+- [Day-of-Week Analysis](#-day-of-week-analysis)
+- [Activity Calendar](#-activity-calendar--type-mappings)
+- [Machine Learning & Modeling](#machine-learning--modeling)
+- [Reporting & Analytics](#reporting--analytics)
+- [Data Quality Tools](#data-quality-tools)
+- [Use Cases](#use-cases)
+- [Testing](#testing)
+- [Project Structure](#project-structure)
+- [Dependencies](#dependencies)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Quick Start (in 5 minutes)
+
+```bash
+# 1. Install dependencies
+pipx install poetry
+poetry install
+
+# 2. Set up your Garmin data (requires GarminDB export)
+mkdir -p db
+cp /path/to/GarminDB/garmin.db db/garmin.db
+
+# 3. Generate unified dataset
+poetry run python -m garmin_analysis.data_ingestion.load_all_garmin_dbs
+
+# 4. Launch the dashboard
+poetry run python run_dashboard.py
+# Open http://localhost:8050 in your browser
+
+# 5. (Optional) Run your first analysis
+poetry run python -m garmin_analysis.viz.plot_trends_range
+```
+
+For detailed setup instructions, see [Getting Started](#getting-started).
+
 ## 🆕 What's New
 
 ### 🌙 **HR & Activity Impact on Sleep Model** (October 2025)
@@ -12,7 +57,7 @@ A comprehensive Garmin health data analysis platform with interactive dashboard,
 - ✅ **28 features analyzed** - HR (min/max/resting), activities, and lag features
 - ✅ **Configurable imputation** - 6 strategies for handling missing data
 - ✅ **4 visualizations** - Performance, importance, predictions, correlations
-- ✅ **Comprehensive testing** - 68 tests ensuring reliability
+- ✅ **Comprehensive testing** - 42 dedicated tests ensuring reliability
 - ✅ **Extensive documentation** - Complete guides and examples
 
 **Key Finding**: Body Battery is the strongest predictor of sleep quality, followed by heart rate metrics (23.4% importance) and activity metrics (20.7% importance).
@@ -36,7 +81,7 @@ Standardized missing value handling across all core modeling files!
 - ✅ **Shared imputation utility** - `utils/imputation.py` with 6 strategies
 - ✅ **Applied to 4 core files** - Prevents 53% data loss
 - ✅ **Improved performance** - 33% better R² with median vs drop
-- ✅ **26 comprehensive tests** - Full coverage of all strategies
+- ✅ **32 comprehensive tests** - Full coverage of all strategies
 - ✅ **Backward compatible** - Existing code works unchanged
 
 **Strategies**: `median` (default, recommended), `mean`, `drop`, `forward_fill`, `backward_fill`, `none`
@@ -80,24 +125,63 @@ Analyze sleep score, body battery, and water intake patterns by day of the week 
 - **📋 Reporting**: Automated summaries and comprehensive analytics reports
 - **🔍 Data Quality**: Advanced data quality analysis and coverage assessment tools
 - **🗄️ Data Ingestion**: Unified data loading from multiple Garmin databases with schema validation
-- **🧪 Testing**: Comprehensive test suite with 68 tests (unit and integration)
+- **🧪 Testing**: Comprehensive test suite with 381 tests (unit and integration)
 - **📓 Notebooks**: Interactive Jupyter notebooks for exploratory analysis
 
 ## Getting Started
 
-### Poetry
+### Prerequisites
+
+- Python 3.11 or 3.12 or 3.13 (required)
+- [Poetry](https://python-poetry.org/) for dependency management
+- Garmin health data exported using [GarminDB](https://github.com/tcgoetz/GarminDB)
+
+### Installation
+
+1. **Install Poetry** (if not already installed):
 ```bash
 pipx install poetry
+```
+
+2. **Clone the repository** (if you haven't already):
+```bash
+git clone <repository-url>
+cd garmin-analysis
+```
+
+3. **Install dependencies**:
+```bash
 poetry install
 ```
 
-### Garmin data (via GarminDB)
-1) Download/import with GarminDB, producing a `garmin.db`.
-2) Copy it here:
+### Data Setup
+
+1. **Export your Garmin data** using [GarminDB](https://github.com/tcgoetz/GarminDB) to produce a `garmin.db` file.
+
+2. **Copy the database** to this project:
 ```bash
 mkdir -p db
 cp /path/to/GarminDB/garmin.db db/garmin.db
 ```
+
+3. **Generate the unified dataset**:
+```bash
+poetry run python -m garmin_analysis.data_ingestion.load_all_garmin_dbs
+```
+This creates `data/master_daily_summary.csv` combining all your Garmin data.
+
+### Quick Verification
+
+Check your data quality:
+```bash
+poetry run python -m garmin_analysis.features.quick_data_check --summary
+```
+
+### Next Steps
+
+- **Launch the dashboard**: `poetry run python run_dashboard.py`
+- **Run your first analysis**: See [Common Commands](#common-commands) below
+- **Explore visualizations**: Check the [Visualization utilities](#visualization-utilities) section
 
 ## Common Commands
 
@@ -187,24 +271,41 @@ The dashboard now includes:
 - **📊 30-Day Health Overview**: Variable 30-day window for stress, HR, body battery, and sleep
 - **📈 Metric Trends**: Time series plots with filtering
 
-### Visualization utilities
-```bash
-# Generate comprehensive trend plots
-poetry run python -m garmin_analysis.viz.plot_trends_range
-poetry run python -m garmin_analysis.viz.plot_trends_range --filter-24h-coverage
+### Visualization Tools
 
+#### Trend Analysis
+```bash
+# Generate comprehensive trend plots for all metrics
+poetry run python -m garmin_analysis.viz.plot_trends_range
+
+# With 24-hour coverage filtering
+poetry run python -m garmin_analysis.viz.plot_trends_range --filter-24h-coverage
+```
+
+#### Correlation Analysis
+```bash
 # Generate feature correlation heatmaps
 poetry run python -m garmin_analysis.viz.plot_feature_correlation
 
-# Generate individual feature trend plots
+# Plot individual feature trends
 poetry run python -m garmin_analysis.viz.plot_feature_trend
+```
 
-# Generate activity calendar (NEW!)
+#### Activity Calendar (NEW!)
+```bash
+# Generate calendar for all available data
 poetry run python -m garmin_analysis.viz.cli_activity_calendar
-poetry run python -m garmin_analysis.viz.cli_activity_calendar --months 6
-poetry run python -m garmin_analysis.viz.cli_activity_calendar --start-date 2024-01-01 --end-date 2024-12-31
 
-# Generate summary statistics
+# Last 6 months
+poetry run python -m garmin_analysis.viz.cli_activity_calendar --months 6
+
+# Specific date range
+poetry run python -m garmin_analysis.viz.cli_activity_calendar --start-date 2024-01-01 --end-date 2024-12-31
+```
+
+#### Summary Statistics
+```bash
+# Generate summary statistics for all metrics
 poetry run python -m garmin_analysis.features.summary_stats
 ```
 
@@ -422,15 +523,21 @@ The activity calendar generates:
 - **🔍 Data Quality**: Identify gaps in your activity data
 - **📈 Progress Monitoring**: Track improvement in activity consistency
 
-### Modeling
+### Machine Learning & Modeling
 
-- **HR & Activity → Sleep Analysis (NEW!):**
+#### HR & Activity → Sleep Analysis (NEW!)
+
+Analyze how heart rate metrics and physical activities affect sleep quality:
+
 ```bash
-# Analyze how heart rate and activities affect sleep quality
+# Run the sleep analysis model
 poetry run python -m garmin_analysis.modeling.hr_activity_sleep_model
+```
 
-# Or use programmatically with custom imputation
+**Programmatic usage:**
+```python
 from garmin_analysis.modeling.hr_activity_sleep_model import HRActivitySleepModel
+
 model = HRActivitySleepModel()
 results = model.run_analysis(
     use_lag_features=True,          # Include yesterday's metrics
@@ -444,52 +551,91 @@ results = model.run_analysis(
 # - Detailed text report
 ```
 
-- **Full pipeline (recommended):**
+#### Comprehensive Modeling Pipeline (Recommended)
+
+Run all modeling analyses in one command:
+
 ```bash
+# Run full pipeline
 poetry run python -m garmin_analysis.modeling.comprehensive_modeling_pipeline
+
+# With 24-hour coverage filtering
 poetry run python -m garmin_analysis.modeling.comprehensive_modeling_pipeline --filter-24h-coverage
 ```
 
-- **Individual modules:**
+#### Individual Modeling Modules
+
+All modules support flexible imputation strategies:
+
 ```bash
-# Enhanced anomaly detection with multiple algorithms (now with imputation!)
+# Enhanced anomaly detection
 poetry run python -m garmin_analysis.modeling.enhanced_anomaly_detection
 
-# Advanced clustering analysis (now with imputation!)
+# Advanced clustering analysis
 poetry run python -m garmin_analysis.modeling.enhanced_clustering
 
-# Predictive modeling (now with imputation!)
+# Predictive modeling
 poetry run python -m garmin_analysis.modeling.predictive_modeling
 
-# Activity-sleep-stress correlation analysis
+# Activity-sleep-stress correlation
 poetry run python -m garmin_analysis.modeling.activity_sleep_stress_analysis
 
-# Basic clustering behavior analysis
+# Basic clustering
 poetry run python -m garmin_analysis.modeling.clustering_behavior
 
 # Basic anomaly detection
 poetry run python -m garmin_analysis.modeling.anomaly_detection
 ```
 
-**All modeling modules now support flexible imputation strategies:**
+#### Imputation Strategies
+
+All modeling modules support 6 imputation strategies for handling missing data:
+
 ```python
-# Use median imputation (default, robust to outliers)
+# Median imputation (default, robust to outliers - RECOMMENDED)
 predictor.prepare_features(df, imputation_strategy='median')
 
-# Use mean imputation
+# Mean imputation
 predictor.prepare_features(df, imputation_strategy='mean')
 
-# Drop rows with missing values (old behavior)
+# Drop rows with missing values
 predictor.prepare_features(df, imputation_strategy='drop')
+
+# Forward fill
+predictor.prepare_features(df, imputation_strategy='forward_fill')
+
+# Backward fill
+predictor.prepare_features(df, imputation_strategy='backward_fill')
+
+# No imputation
+predictor.prepare_features(df, imputation_strategy='none')
 ```
 
-### Reporting
+See `docs/imputation_strategies.md` for detailed guidance.
+
+### Reporting & Analytics
+
+#### Comprehensive Analytics Report
+Run all analytics and generate comprehensive reports:
 ```bash
+# Full analytics report
 poetry run python -m garmin_analysis.reporting.run_all_analytics
+
+# With 24-hour coverage filtering
 poetry run python -m garmin_analysis.reporting.run_all_analytics --filter-24h-coverage
+```
+
+#### Trend Summary Report
+Generate statistical trend summaries:
+```bash
+# Generate trend summary
 poetry run python -m garmin_analysis.reporting.generate_trend_summary
+
+# With 24-hour coverage filtering
 poetry run python -m garmin_analysis.reporting.generate_trend_summary --filter-24h-coverage
 ```
+
+Reports are saved to the `reports/` directory.
 
 ### Data quality tools
 - **Quick check (summary, completeness, feature suitability):**
@@ -555,7 +701,7 @@ This platform is designed for comprehensive Garmin health data analysis:
 - **🔍 Data Quality Assurance**: Advanced tools for data validation and quality assessment
 - **📋 Automated Reporting**: Generate comprehensive health reports automatically
 - **⚡ Performance Optimization**: 24-hour coverage filtering for faster, more reliable analysis
-- **🧪 Comprehensive Testing**: 68 tests with full coverage (unit and integration)
+- **🧪 Comprehensive Testing**: 381 tests with full coverage (unit and integration)
 - **📓 Interactive Analysis**: Jupyter notebooks for exploratory data analysis
 
 ## 24-Hour Coverage Filtering
@@ -705,28 +851,62 @@ poetry run python -m garmin_analysis.data_ingestion.inspect_sqlite_schema export
 poetry run python -m garmin_analysis.data_ingestion.inspect_sqlite_schema compare db/garmin.db reports/expected_schema.json --fail-on-drift
 ```
 
-### Testing
-- **Run unit tests (no I/O, uses in-memory DB fixtures):**
-```bash
-poetry run pytest -q -m "not integration"
-```
+## Testing
 
-- **Run integration tests (file-backed temp DBs; exercises real I/O paths):**
-```bash
-poetry run pytest -q -m integration
-```
+The project has a comprehensive test suite with **381 tests** covering unit and integration scenarios.
 
-- **Run all tests:**
+### Run All Tests
 ```bash
+# Run all tests (recommended for CI/CD)
+poetry run pytest
+
+# Run with verbose output
+poetry run pytest -v
+
+# Run with quiet mode
 poetry run pytest -q
 ```
 
-- **Run specific test modules:**
+### Run Test Categories
+
+**Unit Tests** (fast, in-memory DB fixtures):
 ```bash
-poetry run pytest tests/test_coverage_filtering.py -v
-poetry run pytest tests/test_data_quality.py -v
-poetry run pytest tests/test_dashboard_dependencies.py -v
+poetry run pytest -m "not integration"
 ```
+
+**Integration Tests** (file-backed temp DBs, tests real I/O):
+```bash
+poetry run pytest -m integration
+```
+
+### Run Specific Test Modules
+
+```bash
+# Coverage filtering tests
+poetry run pytest tests/test_coverage_filtering.py -v
+
+# Data quality tests
+poetry run pytest tests/test_data_quality.py -v
+
+# Dashboard tests
+poetry run pytest tests/test_dashboard_dependencies.py -v
+poetry run pytest tests/test_dashboard_integration.py -v
+
+# Modeling tests
+poetry run pytest tests/test_hr_activity_sleep_model.py -v
+poetry run pytest tests/test_imputation.py -v
+
+# Day-of-week analysis tests
+poetry run pytest tests/test_day_of_week_analysis.py -v
+```
+
+### Test Coverage
+
+- **381 total tests** across 26 test modules
+- **42 tests** for HR & Activity Sleep Model
+- **32 tests** for imputation strategies
+- Full coverage of unit and integration scenarios
+- Tests use in-memory SQLite for speed and file-backed DBs for integration testing
 
 ### Jupyter Notebooks
 Interactive analysis notebooks are available in the `notebooks/` directory:
@@ -810,10 +990,10 @@ garmin-analysis/
 ├── examples/                     # Example scripts
 │   └── activity_calendar_example.py # Activity calendar example
 ├── run_dashboard.py              # Convenient dashboard launcher script
-├── tests/                        # Test suite
-│   ├── test_imputation.py        # NEW! Imputation utility tests (26 tests)
+├── tests/                        # Test suite (381 tests total)
+│   ├── test_imputation.py        # NEW! Imputation utility tests (32 tests)
 │   ├── test_hr_activity_sleep_model.py  # NEW! Sleep model tests (42 tests)
-│   └── ...                       # Other test files
+│   └── ...                       # Other test files (26 modules)
 ├── notebooks/                    # Jupyter notebooks
 ├── data/                         # Generated datasets
 ├── plots/                        # Generated plots
@@ -855,6 +1035,21 @@ Notes on data sources:
 - If real Garmin DBs are available, place them under `db/` (e.g., `db/garmin.db`, `db/garmin_summary.db`, `db/garmin_activities.db`).
 - When DBs are missing outside of tests, some commands may generate a synthetic dataset for convenience and log clear WARNINGS. This synthetic data is only for smoke testing and should not be used for real analysis.
 
+## Contributing
+
+This project uses:
+- **Python 3.11+**: Required for compatibility
+- **Poetry**: Dependency management
+- **pytest**: Testing framework with 381 tests
+- **Black/Flake8**: Code formatting (if configured)
+
+## License
+
+See the [LICENSE](LICENSE) file for details.
+
 ## Notes
-- This repo uses the `src/garmin_analysis` package layout. Prefer running modules via `python -m garmin_analysis.<module>`.
-- If `poetry check` warns about mixed `[project.*]` and `[tool.poetry.*]`, migrate fully to PEP 621 `[project]` fields.
+
+- This repo uses the `src/garmin_analysis` package layout. Always run modules via `python -m garmin_analysis.<module>`.
+- Logging is used instead of print statements throughout the codebase.
+- Test fixtures use in-memory SQLite (`mem_db`) for unit tests and file-backed DBs (`tmp_db`) for integration tests.
+- If real Garmin databases are unavailable, some commands may generate synthetic data for smoke testing (with warnings).

@@ -9,6 +9,11 @@ from garmin_analysis.utils.data_loading import load_master_dataframe
 from garmin_analysis.logging_config import get_logger
 from garmin_analysis.features.coverage import filter_by_24h_coverage
 from garmin_analysis.features.day_of_week_analysis import calculate_day_of_week_averages, get_day_order
+from garmin_analysis.features.time_of_day_stress_analysis import (
+    load_stress_data,
+    calculate_hourly_stress_averages,
+    calculate_hourly_stress_by_weekday
+)
 
 # Get logger
 logger = get_logger(__name__)
@@ -157,6 +162,27 @@ def create_layout(df):
                     html.Div([
                         dcc.Graph(id='30day-combined-chart'),
                         dcc.Graph(id='30day-individual-charts')
+                    ], style={'display': 'flex', 'flex-direction': 'column', 'gap': '20px'})
+                ])
+            ]),
+            dcc.Tab(label='😰 Stress by Time of Day', children=[
+                html.Div([
+                    html.Div([
+                        html.H3("Stress Patterns Throughout the Day"),
+                        html.P("Analyze how your stress levels vary by hour of day and day of week"),
+                    ], style={'margin': '10px'}),
+                    html.Div([
+                        html.Label("Analysis Options:"),
+                        dcc.Checklist(
+                            id='stress-show-weekday',
+                            options=[{'label': ' Show day-of-week breakdown', 'value': 'weekday'}],
+                            value=['weekday']
+                        )
+                    ], style={'margin': '10px'}),
+                    html.Div([
+                        dcc.Graph(id='stress-hourly-line'),
+                        dcc.Graph(id='stress-hourly-bar'),
+                        dcc.Graph(id='stress-heatmap'),
                     ], style={'display': 'flex', 'flex-direction': 'column', 'gap': '20px'})
                 ])
             ]),
@@ -556,19 +582,185 @@ def update_30day_charts(start_date, end_date, selected_metrics, coverage_filter,
         error_fig.update_layout(title=f"Error loading data: {str(e)}")
         return error_fig, error_fig
 
-if __name__ == "__main__":
+@app.callback(
+    [Output('stress-hourly-line', 'figure'),
+     Output('stress-hourly-bar', 'figure'),
+     Output('stress-heatmap', 'figure')],
+    [Input('stress-show-weekday', 'value')]
+)
+def update_stress_charts(show_weekday):
+    """Update stress by time-of-day charts"""
     try:
-        # Load data
-        df = load_master_dataframe()
-        app.layout = create_layout(df)
-        logger.info("Dashboard initialized successfully")
-        app.run(debug=True)
+        # Load stress data
+        stress_df = load_stress_data()
+        
+        if stress_df.empty:
+            empty_fig = go.Figure()
+            empty_fig.update_layout(title="No stress data available")
+            return empty_fig, empty_fig, empty_fig
+        
+        # Calculate hourly averages
+        hourly_stats = calculate_hourly_stress_averages(stress_df)
+        
+        if hourly_stats.empty:
+            empty_fig = go.Figure()
+            empty_fig.update_layout(title="Unable to calculate hourly averages")
+            return empty_fig, empty_fig, empty_fig
+        
+        # Create hourly line chart with confidence interval
+        line_fig = go.Figure()
+        
+        hours = hourly_stats['hour']
+        means = hourly_stats['mean']
+        ci_lower = hourly_stats['ci_lower']
+        ci_upper = hourly_stats['ci_upper']
+        
+        # Add confidence interval as filled area
+        line_fig.add_trace(go.Scatter(
+            name='95% CI Upper',
+            x=hours,
+            y=ci_upper,
+            mode='lines',
+            line=dict(width=0),
+            showlegend=False,
+            hoverinfo='skip'
+        ))
+        
+        line_fig.add_trace(go.Scatter(
+            name='95% CI Lower',
+            x=hours,
+            y=ci_lower,
+            mode='lines',
+            fill='tonexty',
+            fillcolor='rgba(68, 68, 68, 0.2)',
+            line=dict(width=0),
+            showlegend=True,
+            hoverinfo='skip'
+        ))
+        
+        # Add mean line
+        line_fig.add_trace(go.Scatter(
+            name='Mean Stress',
+            x=hours,
+            y=means,
+            mode='lines+markers',
+            line=dict(color='#d62728', width=3),
+            marker=dict(size=8)
+        ))
+        
+        line_fig.update_layout(
+            title='Average Stress Levels by Hour of Day',
+            xaxis_title='Hour of Day',
+            yaxis_title='Average Stress Level',
+            height=500,
+            hovermode='x unified',
+            xaxis=dict(
+                tickmode='array',
+                tickvals=list(range(24)),
+                ticktext=[f'{h:02d}:00' for h in range(24)]
+            )
+        )
+        
+        # Create hourly bar chart
+        bar_fig = go.Figure()
+        
+        # Color bars by stress level
+        colors = []
+        for stress_val in means:
+            if stress_val < 30:
+                colors.append('#2ca02c')  # Green - low stress
+            elif stress_val < 50:
+                colors.append('#ff7f0e')  # Orange - medium stress
+            else:
+                colors.append('#d62728')  # Red - high stress
+        
+        bar_fig.add_trace(go.Bar(
+            x=hours,
+            y=means,
+            error_y=dict(type='data', array=hourly_stats['std'], visible=True),
+            marker_color=colors,
+            text=[f'{val:.1f}' for val in means],
+            textposition='outside',
+            hovertemplate='Hour: %{x}:00<br>Mean Stress: %{y:.1f}<extra></extra>'
+        ))
+        
+        bar_fig.update_layout(
+            title='Stress Distribution by Hour (Mean ± Std Dev)',
+            xaxis_title='Hour of Day',
+            yaxis_title='Average Stress Level',
+            height=500,
+            xaxis=dict(
+                tickmode='array',
+                tickvals=list(range(24)),
+                ticktext=[f'{h:02d}:00' for h in range(24)]
+            )
+        )
+        
+        # Create heatmap if weekday breakdown is requested
+        heatmap_fig = go.Figure()
+        
+        if 'weekday' in show_weekday:
+            hourly_weekday_stats = calculate_hourly_stress_by_weekday(stress_df)
+            
+            if not hourly_weekday_stats.empty:
+                # Pivot data for heatmap
+                heatmap_data = hourly_weekday_stats.pivot(
+                    index='day_of_week',
+                    columns='hour',
+                    values='mean'
+                )
+                
+                # Ensure proper day ordering (Sunday first)
+                day_order = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+                heatmap_data = heatmap_data.reindex(day_order)
+                
+                heatmap_fig = go.Figure(data=go.Heatmap(
+                    z=heatmap_data.values,
+                    x=[f'{h:02d}:00' for h in range(24)],
+                    y=heatmap_data.index,
+                    colorscale='RdYlGn_r',
+                    colorbar=dict(title='Stress Level'),
+                    hovertemplate='Day: %{y}<br>Hour: %{x}<br>Avg Stress: %{z:.1f}<extra></extra>'
+                ))
+                
+                heatmap_fig.update_layout(
+                    title='Stress Levels Heatmap: Hour of Day × Day of Week',
+                    xaxis_title='Hour of Day',
+                    yaxis_title='Day of Week',
+                    height=500
+                )
+            else:
+                heatmap_fig.update_layout(
+                    title='Weekday breakdown not available'
+                )
+        else:
+            heatmap_fig.update_layout(
+                title='Enable "Show day-of-week breakdown" to see this chart'
+            )
+        
+        return line_fig, bar_fig, heatmap_fig
+        
     except Exception as e:
-        logger.error(f"Failed to initialize dashboard: {e}")
-        # Create error layout
-        app.layout = html.Div([
-            html.H1("❌ Dashboard Error", style={"textAlign": "center", "color": "red"}),
-            html.P(f"Failed to load data: {str(e)}", style={"textAlign": "center"}),
-            html.P("Please ensure the data ingestion script has been run first.", style={"textAlign": "center"})
-        ])
-        app.run(debug=True)
+        logger.error(f"Error updating stress charts: {e}")
+        # Return error figures
+        error_fig = go.Figure()
+        error_fig.update_layout(title=f"Error loading stress data: {str(e)}")
+        return error_fig, error_fig, error_fig
+
+# Initialize layout at module level
+try:
+    # Load data
+    df = load_master_dataframe()
+    app.layout = create_layout(df)
+    logger.info("Dashboard initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize dashboard: {e}")
+    # Create error layout
+    app.layout = html.Div([
+        html.H1("❌ Dashboard Error", style={"textAlign": "center", "color": "red"}),
+        html.P(f"Failed to load data: {str(e)}", style={"textAlign": "center"}),
+        html.P("Please ensure the data ingestion script has been run first.", style={"textAlign": "center"})
+    ])
+
+if __name__ == "__main__":
+    app.run(debug=True)

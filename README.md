@@ -12,6 +12,7 @@ A comprehensive Garmin health data analysis platform with interactive dashboard,
 - [24-Hour Coverage Filtering](#-quick-start-with-24-hour-coverage-filtering)
 - [Dashboard](#launch-dashboard)
 - [Day-of-Week Analysis](#-day-of-week-analysis)
+- [Time-of-Day Stress Analysis](#-time-of-day-stress-analysis)
 - [Activity Calendar](#-activity-calendar--type-mappings)
 - [Machine Learning & Modeling](#machine-learning--modeling)
 - [Reporting & Analytics](#reporting--analytics)
@@ -422,6 +423,137 @@ poetry run pytest tests/test_day_of_week_analysis.py -v
 
 # Run dashboard integration tests
 poetry run pytest tests/test_dashboard_integration.py -v
+```
+
+## 😰 Time-of-Day Stress Analysis
+
+**NEW FEATURE!** Analyze your stress patterns throughout the day to identify peak stress times, low-stress periods, and patterns by day of week.
+
+### Quick Start
+
+```bash
+# Run full stress analysis with all visualizations
+poetry run python -m garmin_analysis.cli_time_of_day_stress
+
+# Run with verbose output
+poetry run python -m garmin_analysis.cli_time_of_day_stress --verbose
+
+# Show plots interactively (instead of saving)
+poetry run python -m garmin_analysis.cli_time_of_day_stress --show-plots
+
+# Skip weekday analysis (faster for large datasets)
+poetry run python -m garmin_analysis.cli_time_of_day_stress --no-weekday-analysis
+
+# Use custom database path
+poetry run python -m garmin_analysis.cli_time_of_day_stress --db-path /path/to/garmin.db
+```
+
+### Dashboard Integration
+
+The stress analysis is also available in the interactive dashboard:
+
+```bash
+# Launch the dashboard
+poetry run python run_dashboard.py
+```
+
+Then navigate to the **"😰 Stress by Time of Day"** tab to:
+- View hourly stress patterns with confidence intervals
+- See color-coded stress distribution by hour
+- Explore interactive heatmaps showing stress by day of week and hour
+- Toggle weekday breakdown on/off
+
+### Key Features
+
+- **📈 Hourly Patterns**: Average stress levels for each hour of the day (0-23)
+- **📊 Interactive Visualizations**: Line charts, bar charts, and heatmaps
+- **🗓️ Day-of-Week Breakdown**: See how stress patterns vary across the week
+- **📉 Confidence Intervals**: Statistical confidence bands (95% CI) on line charts
+- **🎨 Color-Coded Insights**: Green (low), orange (medium), red (high stress)
+- **🕐 Time Period Analysis**: Automatic grouping into morning, afternoon, evening, night
+
+### Understanding Your Results
+
+The analysis provides:
+
+- **Hourly Averages**: Mean stress level for each hour with standard deviation
+- **Peak Stress Times**: The 5 hours with highest average stress
+- **Low Stress Times**: The 5 hours with lowest average stress
+- **Time Period Breakdown**: 
+  - Morning (06:00-11:59)
+  - Afternoon (12:00-17:59)
+  - Evening (18:00-22:59)
+  - Night (23:00-05:59)
+- **Weekday Patterns**: How stress varies by day of week at different times
+
+### Example Output
+
+```
+======================================================================
+STRESS ANALYSIS BY TIME OF DAY
+======================================================================
+
+📊 Overall Stress Statistics:
+----------------------------------------------------------------------
+  Total measurements: 1,003,864
+  Overall mean stress: 42.3
+  Overall std dev: 18.7
+
+⬆️  Peak Stress Times:
+----------------------------------------------------------------------
+  14:00 - 15:00:  52.3 ± 17.2 (n=42,156)
+  15:00 - 16:00:  51.8 ± 17.5 (n=42,089)
+  13:00 - 14:00:  51.2 ± 17.1 (n=42,201)
+  16:00 - 17:00:  50.9 ± 17.8 (n=41,987)
+  12:00 - 13:00:  50.1 ± 17.3 (n=42,034)
+
+⬇️  Low Stress Times:
+----------------------------------------------------------------------
+  03:00 - 04:00:  28.5 ± 12.3 (n=41,234)
+  04:00 - 05:00:  28.9 ± 12.5 (n=41,156)
+  02:00 - 03:00:  29.2 ± 12.7 (n=41,298)
+  05:00 - 06:00:  30.1 ± 13.1 (n=41,087)
+  01:00 - 02:00:  30.8 ± 13.4 (n=41,267)
+
+🕐 Time Period Analysis:
+----------------------------------------------------------------------
+  Morning (06:00-11:59):   38.2 ± 15.4
+  Afternoon (12:00-17:59): 51.5 ± 17.6
+  Evening (18:00-22:59):   45.3 ± 16.8
+  Night (23:00-05:59):     29.7 ± 12.9
+```
+
+### Generated Files
+
+The analysis creates visualization files in the `plots/` directory:
+- `*_stress_by_hour.png` - Hourly stress with confidence interval
+- `*_stress_by_hour_bars.png` - Color-coded bar chart by hour
+- `*_stress_heatmap_weekday_hour.png` - Heatmap of stress by day/hour
+- `*_stress_by_weekday_hour.png` - Line chart comparison by day of week
+
+### Use Cases
+
+- **⏰ Schedule Optimization**: Plan important tasks during your low-stress periods
+- **🧘 Stress Management**: Identify when to take breaks or practice relaxation
+- **💤 Sleep Insights**: See how nighttime stress affects your rest
+- **📊 Weekly Planning**: Find which days/times are most stressful
+- **🔍 Pattern Discovery**: Uncover stress triggers you weren't aware of
+- **⚖️ Work-Life Balance**: Compare weekday vs weekend stress patterns
+
+### Data Requirements
+
+- **Stress Data**: Requires minute-by-minute stress measurements in the `stress` table of `garmin.db`
+- **Continuous Monitoring**: Best results with devices that track stress 24/7
+- **Data Volume**: Analysis works with any amount of data but more data provides better insights
+
+### Testing
+
+```bash
+# Run time-of-day stress analysis tests
+poetry run pytest tests/test_time_of_day_stress_analysis.py -v
+
+# Run integration test with real database
+poetry run pytest tests/test_time_of_day_stress_analysis.py::test_real_database_integration -v
 ```
 
 ## 📅 Activity Calendar & Type Mappings

@@ -242,8 +242,11 @@ class TestEdgeCases:
             'all_nan': [np.nan, np.nan, np.nan]
         })
         
-        # Median of all NaN should be NaN
-        result = impute_missing_values(df, ['all_nan'], strategy='median')
+        # Median of all NaN should be NaN (suppress expected RuntimeWarning)
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            result = impute_missing_values(df, ['all_nan'], strategy='median')
         assert result['all_nan'].isna().all()
     
     def test_no_missing(self, sample_df):

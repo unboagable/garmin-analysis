@@ -49,7 +49,12 @@ def clean_data(df: pd.DataFrame, remove_outliers: bool = False) -> pd.DataFrame:
     for placeholder in placeholders:
         placeholders_replaced += (df == placeholder).sum().sum()
     
-    df = df.replace(placeholders, np.nan)
+    # Suppress FutureWarning about downcasting - we explicitly infer types after
+    import warnings
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', message='Downcasting behavior')
+        df = df.replace(placeholders, np.nan)
+    
     if placeholders_replaced > 0:
         logging.info(f"Replaced {placeholders_replaced} placeholder values with NaN")
 

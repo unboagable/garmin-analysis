@@ -21,7 +21,7 @@ from garmin_analysis.utils_cleaning import clean_data
 from garmin_analysis.modeling.enhanced_anomaly_detection import EnhancedAnomalyDetector
 from garmin_analysis.modeling.enhanced_clustering import EnhancedClusterer
 from garmin_analysis.modeling.predictive_modeling import HealthPredictor
-from garmin_analysis.features.coverage import filter_by_24h_coverage
+from garmin_analysis.utils.cli_helpers import add_24h_coverage_args, apply_24h_coverage_filter_from_args
 
 logger = logging.getLogger(__name__)
 
@@ -391,8 +391,9 @@ class ComprehensiveModelingPipeline:
             # Create output directory
             self.output_dir.mkdir(parents=True, exist_ok=True)
             
-            # Apply 24-hour coverage filtering if requested
+            # Apply 24-hour coverage filtering if requested (using internal logic for function API compatibility)
             if filter_24h_coverage:
+                from garmin_analysis.features.coverage import filter_by_24h_coverage
                 logger.info("Filtering to days with 24-hour continuous coverage...")
                 max_gap = pd.Timedelta(minutes=max_gap_minutes)
                 day_edge_tolerance = pd.Timedelta(minutes=day_edge_tolerance_minutes)
@@ -433,16 +434,9 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description='Run comprehensive modeling pipeline on Garmin data')
-    parser.add_argument('--filter-24h-coverage', action='store_true', 
-                       help='Filter to only days with 24-hour continuous coverage')
-    parser.add_argument('--max-gap', type=int, default=2,
-                       help='Maximum gap in minutes for continuous coverage (default: 2)')
-    parser.add_argument('--day-edge-tolerance', type=int, default=2,
-                       help='Day edge tolerance in minutes for continuous coverage (default: 2)')
+    add_24h_coverage_args(parser)
     parser.add_argument('--target-col', type=str, default='score',
                        help='Target column for predictive modeling (default: score)')
-    parser.add_argument('--coverage-allowance-minutes', type=int, default=0,
-                       help='Total allowed missing minutes within a day (0-300, default: 0)')
     parser.add_argument('--tune-hyperparameters', action='store_true', default=True,
                        help='Tune hyperparameters (default: True)')
     

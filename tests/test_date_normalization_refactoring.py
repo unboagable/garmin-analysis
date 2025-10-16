@@ -220,7 +220,7 @@ class TestEdgeCases:
     
     def test_large_dataframe(self):
         """Test with large DataFrame."""
-        dates = pd.date_range('2020-01-01 12:00:00', periods=10000, freq='H')
+        dates = pd.date_range('2020-01-01 12:00:00', periods=10000, freq='h')
         df = pd.DataFrame({'day': dates})
         
         result = strip_time_from_dates(df)

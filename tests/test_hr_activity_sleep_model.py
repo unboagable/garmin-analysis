@@ -19,8 +19,13 @@ from pathlib import Path
 import tempfile
 import shutil
 import os
+import warnings
 
 from garmin_analysis.modeling.hr_activity_sleep_model import HRActivitySleepModel
+
+# Suppress expected sklearn convergence warnings in tests
+warnings.filterwarnings('ignore', category=FutureWarning, module='sklearn')
+warnings.filterwarnings('ignore', message='Objective did not converge')
 
 
 @pytest.fixture
@@ -775,8 +780,10 @@ class TestEdgeCases:
         X, y, feature_names = model.prepare_features()
         X_scaled = model.scaler.fit_transform(X)
         
-        # Should still train without errors
-        results = model.train_models(X_scaled, y, feature_names)
+        # Should still train without errors (suppress expected convergence warnings)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=Warning)
+            results = model.train_models(X_scaled, y, feature_names)
         assert len(results) > 0
     
     def test_high_correlation_features(self, tmp_path):

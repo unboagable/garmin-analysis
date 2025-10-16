@@ -7,15 +7,16 @@ from datetime import datetime
 import argparse
 from garmin_analysis.config import PLOTS_DIR
 from garmin_analysis.utils.data_filtering import filter_required_columns
-from garmin_analysis.features.coverage import filter_by_24h_coverage
+from garmin_analysis.utils.data_loading import load_master_dataframe
+from garmin_analysis.utils.cli_helpers import add_24h_coverage_args, apply_24h_coverage_filter_from_args
 
-# Logging is configured at package level
+logger = logging.getLogger(__name__)
 
 def plot_columns(df, columns, title):
     available = [col for col in columns if col in df.columns]
     missing = set(columns) - set(available)
     if missing:
-        logging.warning(f"Skipping missing columns: {missing}")
+        logger.warning(f"Skipping missing columns: {missing}")
     if available:
         ax = df.set_index("day")[available].plot(subplots=True, figsize=(12, 6), title=title)
         plt.tight_layout()
@@ -23,31 +24,20 @@ def plot_columns(df, columns, title):
         filename = f"{timestamp_str}_" + title.lower().replace(" ", "_") + ".png"
         out_path = PLOTS_DIR / filename
         plt.savefig(out_path)
-        logging.info(f"Saved plot to {out_path}")
+        logger.info(f"Saved plot to {out_path}")
         plt.close()
     else:
-        logging.warning(f"No valid columns available for: {title}")
+        logger.warning(f"No valid columns available for: {title}")
 
 def main():
     parser = argparse.ArgumentParser(description='Generate trend plots from Garmin data')
-    parser.add_argument('--filter-24h-coverage', action='store_true', 
-                       help='Filter to only days with 24-hour continuous coverage')
-    parser.add_argument('--max-gap', type=int, default=2,
-                       help='Maximum gap in minutes for continuous coverage (default: 2)')
-    parser.add_argument('--day-edge-tolerance', type=int, default=2,
-                       help='Day edge tolerance in minutes for continuous coverage (default: 2)')
-    parser.add_argument('--coverage-allowance-minutes', type=int, default=0,
-                        help='Total allowed missing minutes within a day (0-300, default: 0)')
+    add_24h_coverage_args(parser)
     
     args = parser.parse_args()
     
-    merged_path = "data/master_daily_summary.csv"
-    if not os.path.exists(merged_path):
-        logging.error("Missing master_daily_summary.csv — please run load_all_garmin_dbs.py first.")
-        return
-
-    logging.info("Loading master daily summary data...")
-    df = pd.read_csv(merged_path, parse_dates=["day"])
+    # Load data using standardized loader
+    logger.info("Loading master daily summary data...")
+    df = load_master_dataframe()
     df = df.sort_values("day")
 
     # Rename columns for consistency if needed
@@ -58,16 +48,10 @@ def main():
     df = filter_required_columns(df, ["yesterday_activity_minutes", "stress_avg"])
     
     # Apply 24-hour coverage filtering if requested
-    if args.filter_24h_coverage:
-        logging.info("Filtering to days with 24-hour continuous coverage...")
-        max_gap = pd.Timedelta(minutes=args.max_gap)
-        day_edge_tolerance = pd.Timedelta(minutes=args.day_edge_tolerance)
-        total_missing_allowance = pd.Timedelta(minutes=max(0, min(args.coverage_allowance_minutes, 300)))
-        df = filter_by_24h_coverage(df, max_gap=max_gap, day_edge_tolerance=day_edge_tolerance, total_missing_allowance=total_missing_allowance)
-        logging.info(f"After 24h coverage filtering: {len(df)} days remaining")
+    df = apply_24h_coverage_filter_from_args(df, args)
 
     # --- Trend Plots ---
-    logging.info("Generating trend plots...")
+    logger.info("Generating trend plots...")
     plot_columns(df, ["steps", "calories_total", "hr_min", "hr_max", "distance"], "Daily Activity Trends")
     plot_columns(df, ["score", "total_sleep_min", "rem_sleep_min", "deep_sleep_min"], "Sleep Quality Trends")
     plot_columns(df, ["stress_avg", "stress_max", "stress_duration"], "Stress Trends")

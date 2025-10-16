@@ -4,9 +4,9 @@ from pathlib import Path
 import argparse
 from garmin_analysis.utils.data_loading import load_master_dataframe
 from garmin_analysis.utils_cleaning import clean_data
-from garmin_analysis.features.coverage import filter_by_24h_coverage
+from garmin_analysis.utils.cli_helpers import add_24h_coverage_args, apply_24h_coverage_filter_from_args
 
-# Logging is configured at package level
+logger = logging.getLogger(__name__)
 
 def log_top_correlations(corr_df, threshold=0.5, max_pairs=20):
     seen = set()
@@ -26,19 +26,20 @@ def log_top_correlations(corr_df, threshold=0.5, max_pairs=20):
 
     top_corrs.sort(key=lambda x: abs(x[2]), reverse=True)
 
-    logging.info(f"Top {min(max_pairs, len(top_corrs))} correlated pairs with |r| ≥ {threshold}:")
+    logger.info(f"Top {min(max_pairs, len(top_corrs))} correlated pairs with |r| ≥ {threshold}:")
     for x, y, r in top_corrs[:max_pairs]:
-        logging.info(f"  • {x} ↔ {y}: {r:.2f}")
+        logger.info(f"  • {x} ↔ {y}: {r:.2f}")
 
 def generate_trend_summary(df, date_col='day', output_dir='reports', filter_24h_coverage=False, max_gap_minutes=2, day_edge_tolerance_minutes=2, coverage_allowance_minutes=0, timestamp=None):
-    # Apply 24-hour coverage filtering if requested
+    # Apply 24-hour coverage filtering if requested (using internal logic for function API compatibility)
     if filter_24h_coverage:
-        logging.info("Filtering to days with 24-hour continuous coverage...")
+        from garmin_analysis.features.coverage import filter_by_24h_coverage
+        logger.info("Filtering to days with 24-hour continuous coverage...")
         max_gap = pd.Timedelta(minutes=max_gap_minutes)
         day_edge_tolerance = pd.Timedelta(minutes=day_edge_tolerance_minutes)
         total_missing_allowance = pd.Timedelta(minutes=max(0, min(coverage_allowance_minutes, 300)))
         df = filter_by_24h_coverage(df, max_gap=max_gap, day_edge_tolerance=day_edge_tolerance, total_missing_allowance=total_missing_allowance)
-        logging.info(f"After 24h coverage filtering: {len(df)} days remaining")
+        logger.info(f"After 24h coverage filtering: {len(df)} days remaining")
     
     df = clean_data(df)
     numeric_df = df.select_dtypes(include="number").dropna(axis=1, how="all")
@@ -76,19 +77,12 @@ def generate_trend_summary(df, date_col='day', output_dir='reports', filter_24h_
         f.write(top_missing.to_string())
         f.write("\n\n")
 
-    logging.info(f"Saved trend summary markdown to {output_path}")
+    logger.info(f"Saved trend summary markdown to {output_path}")
     return str(output_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate trend summary from Garmin data')
-    parser.add_argument('--filter-24h-coverage', action='store_true', 
-                       help='Filter to only days with 24-hour continuous coverage')
-    parser.add_argument('--max-gap', type=int, default=2,
-                       help='Maximum gap in minutes for continuous coverage (default: 2)')
-    parser.add_argument('--day-edge-tolerance', type=int, default=2,
-                       help='Day edge tolerance in minutes for continuous coverage (default: 2)')
-    parser.add_argument('--coverage-allowance-minutes', type=int, default=0,
-                        help='Total allowed missing minutes within a day (0-300, default: 0)')
+    add_24h_coverage_args(parser)
     
     args = parser.parse_args()
     

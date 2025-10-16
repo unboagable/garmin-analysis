@@ -5,9 +5,9 @@ import logging
 import argparse
 from garmin_analysis.reporting.generate_trend_summary import generate_trend_summary
 from garmin_analysis.modeling.anomaly_detection import run_anomaly_detection
-from garmin_analysis.features.coverage import filter_by_24h_coverage
+from garmin_analysis.utils.cli_helpers import add_24h_coverage_args, apply_24h_coverage_filter_from_args
 
-# Logging is configured at package level
+logger = logging.getLogger(__name__)
 
 def run_all_analytics(df: pd.DataFrame, date_col='day', output_dir='reports', as_html=False, monthly=False, filter_24h_coverage=False, max_gap_minutes=2, day_edge_tolerance_minutes=2, coverage_allowance_minutes=0):
     os.makedirs(output_dir, exist_ok=True)
@@ -23,16 +23,17 @@ def run_all_analytics(df: pd.DataFrame, date_col='day', output_dir='reports', as
         last_month = (df[date_col].max().replace(day=1) - pd.Timedelta(days=1)).replace(day=1)
         this_month = last_month + pd.DateOffset(months=1)
         df = df[(df[date_col] >= last_month) & (df[date_col] < this_month)]
-        logging.info(f"Filtered data to monthly range: {last_month.date()} - {this_month.date()}")
+        logger.info(f"Filtered data to monthly range: {last_month.date()} - {this_month.date()}")
 
-    # Apply 24-hour coverage filtering if requested
+    # Apply 24-hour coverage filtering if requested (using internal logic for function API compatibility)
     if filter_24h_coverage:
-        logging.info("Filtering to days with 24-hour continuous coverage...")
+        from garmin_analysis.features.coverage import filter_by_24h_coverage
+        logger.info("Filtering to days with 24-hour continuous coverage...")
         max_gap = pd.Timedelta(minutes=max_gap_minutes)
         day_edge_tolerance = pd.Timedelta(minutes=day_edge_tolerance_minutes)
         total_missing_allowance = pd.Timedelta(minutes=max(0, min(coverage_allowance_minutes, 300)))
         df = filter_by_24h_coverage(df, max_gap=max_gap, day_edge_tolerance=day_edge_tolerance, total_missing_allowance=total_missing_allowance)
-        logging.info(f"After 24h coverage filtering: {len(df)} days remaining")
+        logger.info(f"After 24h coverage filtering: {len(df)} days remaining")
 
     # Step 1: Trend Summary
     trend_path = generate_trend_summary(df, date_col=date_col, output_dir=output_dir, 
@@ -63,7 +64,7 @@ def run_all_analytics(df: pd.DataFrame, date_col='day', output_dir='reports', as
             f.write(f"Detected {len(anomalies_df)} anomalies.\n")
             f.write(f"- Plot: `{anomaly_plot_path}`\n\n")
 
-    logging.info(f"✅ {report_type.capitalize()} report saved to {report_path}")
+    logger.info(f"✅ {report_type.capitalize()} report saved to {report_path}")
     return report_path
 
 # Example usage:
@@ -73,14 +74,7 @@ if __name__ == "__main__":
                        help='Generate monthly report instead of full report')
     parser.add_argument('--as-html', action='store_true', 
                        help='Generate HTML report instead of Markdown')
-    parser.add_argument('--filter-24h-coverage', action='store_true', 
-                       help='Filter to only days with 24-hour continuous coverage')
-    parser.add_argument('--max-gap', type=int, default=2,
-                       help='Maximum gap in minutes for continuous coverage (default: 2)')
-    parser.add_argument('--day-edge-tolerance', type=int, default=2,
-                       help='Day edge tolerance in minutes for continuous coverage (default: 2)')
-    parser.add_argument('--coverage-allowance-minutes', type=int, default=0,
-                       help='Total allowed missing minutes within a day (0-300, default: 0)')
+    add_24h_coverage_args(parser)
     
     args = parser.parse_args()
     
@@ -99,4 +93,4 @@ if __name__ == "__main__":
         coverage_allowance_minutes=args.coverage_allowance_minutes
     )
     
-    logging.info(f"Report generated: {report_path}")
+    logger.info(f"Report generated: {report_path}")

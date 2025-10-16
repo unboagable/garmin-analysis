@@ -7,6 +7,8 @@ from datetime import datetime
 from garmin_analysis.config import PLOTS_DIR
 from garmin_analysis.utils.data_loading import load_master_dataframe
 
+
+logger = logging.getLogger(__name__)
 # Logging is configured at package level
 
 def get_day_order():
@@ -24,7 +26,7 @@ def calculate_day_of_week_averages(df):
         pd.DataFrame: DataFrame with day-of-week averages
     """
     if df.empty:
-        logging.warning("DataFrame is empty")
+        logger.warning("DataFrame is empty")
         return pd.DataFrame()
     
     # Ensure day column is datetime
@@ -49,14 +51,14 @@ def calculate_day_of_week_averages(df):
     
     for metric_name, column_name in metrics.items():
         if column_name not in df.columns:
-            logging.warning(f"Column '{column_name}' not found in dataframe for {metric_name}")
+            logger.warning(f"Column '{column_name}' not found in dataframe for {metric_name}")
             continue
             
         # Filter out null values for this metric
         metric_data = df[df[column_name].notna()].copy()
         
         if metric_data.empty:
-            logging.warning(f"No valid data found for {metric_name}")
+            logger.warning(f"No valid data found for {metric_name}")
             continue
             
         # Calculate averages by day of week
@@ -69,7 +71,7 @@ def calculate_day_of_week_averages(df):
         results.append(day_averages)
     
     if not results:
-        logging.warning("No valid metrics found to analyze")
+        logger.warning("No valid metrics found to analyze")
         return pd.DataFrame()
     
     # Combine all results
@@ -101,14 +103,14 @@ def plot_day_of_week_averages(df, save_plots=True, show_plots=False):
         dict: Dictionary with plot filenames
     """
     if df.empty:
-        logging.warning("DataFrame is empty")
+        logger.warning("DataFrame is empty")
         return {}
     
     # Calculate day-of-week averages
     day_averages = calculate_day_of_week_averages(df)
     
     if day_averages.empty:
-        logging.warning("No day-of-week averages calculated")
+        logger.warning("No day-of-week averages calculated")
         return {}
     
     # Set up the plotting style
@@ -162,7 +164,7 @@ def plot_day_of_week_averages(df, save_plots=True, show_plots=False):
             filepath = PLOTS_DIR / filename
             plt.savefig(filepath, dpi=300, bbox_inches='tight')
             plot_files[metric] = str(filepath)
-            logging.info(f"Saved {metric} plot to {filepath}")
+            logger.info(f"Saved {metric} plot to {filepath}")
         
         if show_plots:
             plt.show()
@@ -193,7 +195,7 @@ def plot_day_of_week_averages(df, save_plots=True, show_plots=False):
             filepath = PLOTS_DIR / filename
             plt.savefig(filepath, dpi=300, bbox_inches='tight')
             plot_files['combined'] = str(filepath)
-            logging.info(f"Saved combined plot to {filepath}")
+            logger.info(f"Saved combined plot to {filepath}")
         
         if show_plots:
             plt.show()
@@ -212,57 +214,57 @@ def print_day_of_week_summary(df):
     day_averages = calculate_day_of_week_averages(df)
     
     if day_averages.empty:
-        logging.warning("No day-of-week averages to summarize")
+        logger.warning("No day-of-week averages to summarize")
         return
     
-    logging.info("\n" + "="*60)
-    logging.info("DAY-OF-WEEK AVERAGES SUMMARY")
-    logging.info("="*60)
+    logger.info("\n" + "="*60)
+    logger.info("DAY-OF-WEEK AVERAGES SUMMARY")
+    logger.info("="*60)
     
     for metric in day_averages['metric'].unique():
         metric_data = day_averages[day_averages['metric'] == metric]
         
-        logging.info(f"\n{metric.replace('_', ' ').title()}:")
-        logging.info("-" * 40)
+        logger.info(f"\n{metric.replace('_', ' ').title()}:")
+        logger.info("-" * 40)
         
         for _, row in metric_data.iterrows():
-            logging.info(f"{row['day_of_week']:>12}: {row['mean']:6.1f} ± {row['std']:5.1f} (n={row['count']})")
+            logger.info(f"{row['day_of_week']:>12}: {row['mean']:6.1f} ± {row['std']:5.1f} (n={row['count']})")
         
         # Find best and worst days
         best_day = metric_data.loc[metric_data['mean'].idxmax()]
         worst_day = metric_data.loc[metric_data['mean'].idxmin()]
         
-        logging.info(f"\nBest day:  {best_day['day_of_week']} ({best_day['mean']:.1f})")
-        logging.info(f"Worst day: {worst_day['day_of_week']} ({worst_day['mean']:.1f})")
-        logging.info(f"Difference: {best_day['mean'] - worst_day['mean']:.1f}")
+        logger.info(f"\nBest day:  {best_day['day_of_week']} ({best_day['mean']:.1f})")
+        logger.info(f"Worst day: {worst_day['day_of_week']} ({worst_day['mean']:.1f})")
+        logger.info(f"Difference: {best_day['mean'] - worst_day['mean']:.1f}")
 
 def main():
     """Main function to run day-of-week analysis."""
     try:
         # Load the master dataframe
-        logging.info("Loading master daily summary data...")
+        logger.info("Loading master daily summary data...")
         df = load_master_dataframe()
         
         if df.empty:
-            logging.error("No data loaded")
+            logger.error("No data loaded")
             return
         
-        logging.info(f"Loaded {len(df)} days of data")
+        logger.info(f"Loaded {len(df)} days of data")
         
         # Print summary
         print_day_of_week_summary(df)
         
         # Create visualizations
-        logging.info("\nGenerating day-of-week visualizations...")
+        logger.info("\nGenerating day-of-week visualizations...")
         plot_files = plot_day_of_week_averages(df, save_plots=True, show_plots=False)
         
         if plot_files:
-            logging.info(f"\nGenerated {len(plot_files)} plots:")
+            logger.info(f"\nGenerated {len(plot_files)} plots:")
             for metric, filepath in plot_files.items():
-                logging.info(f"  {metric}: {filepath}")
+                logger.info(f"  {metric}: {filepath}")
         
     except Exception as e:
-        logging.exception("Error in day-of-week analysis: %s", e)
+        logger.exception("Error in day-of-week analysis: %s", e)
         raise
 
 if __name__ == "__main__":

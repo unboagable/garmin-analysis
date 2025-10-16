@@ -9,6 +9,8 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
+
+logger = logging.getLogger(__name__)
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -112,23 +114,23 @@ Examples:
     
     # Validate database path
     if not Path(args.db_path).exists():
-        logging.error(f"Database not found at {args.db_path}")
+        logger.error(f"Database not found at {args.db_path}")
         sys.exit(1)
     
     try:
         # Load activities data
-        logging.info(f"Loading activities data from {args.db_path}")
+        logger.info(f"Loading activities data from {args.db_path}")
         activities_df = load_activities_data(args.db_path)
         
         if activities_df.empty:
-            logging.warning("No activities found in the database")
+            logger.warning("No activities found in the database")
             sys.exit(1)
         
-        logging.info(f"Loaded {len(activities_df)} activities")
+        logger.info(f"Loaded {len(activities_df)} activities")
         
         # Handle mapping suggestions
         if args.suggest_mappings:
-            logging.info("Analyzing activity types for mapping suggestions...")
+            logger.info("Analyzing activity types for mapping suggestions...")
             suggest_activity_mappings(activities_df, args.mappings_config)
             return
         
@@ -140,13 +142,13 @@ Examples:
             # Calculate start date based on months back
             end_date = datetime.now().strftime('%Y-%m-%d')
             start_date = (datetime.now() - timedelta(days=args.months * 30)).strftime('%Y-%m-%d')
-            logging.info(f"Using {args.months} months back: {start_date} to {end_date}")
+            logger.info(f"Using {args.months} months back: {start_date} to {end_date}")
         
         # Create output directory
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
         
         # Create the calendar plot
-        logging.info("Creating activity calendar...")
+        logger.info("Creating activity calendar...")
         plot_activity_calendar(
             activities_df,
             start_date=start_date,
@@ -157,12 +159,12 @@ Examples:
             mappings_config_path=args.mappings_config
         )
         
-        logging.info("Activity calendar created successfully!")
+        logger.info("Activity calendar created successfully!")
         
     except Exception as e:
-        logging.error(f"Error creating activity calendar: {e}")
+        logger.error(f"Error creating activity calendar: {e}")
         if args.verbose:
-            logging.exception("Full traceback:")
+            logger.exception("Full traceback:")
         sys.exit(1)
 
 if __name__ == "__main__":

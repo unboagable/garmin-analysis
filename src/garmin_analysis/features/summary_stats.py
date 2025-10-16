@@ -4,26 +4,28 @@ from garmin_analysis.utils.data_loading import load_garmin_tables
 
 # Logging is configured at package level
 
+
+logger = logging.getLogger(__name__)
 def preview_table(df, name, cols=None, max_rows=3):
     if df.empty:
-        logging.warning("Table '%s' is empty.", name)
+        logger.warning("Table '%s' is empty.", name)
         return
-    logging.info("\n📌 %s — %d rows", name, len(df))
+    logger.info("\n📌 %s — %d rows", name, len(df))
     if cols:
-        logging.info(f"\n{df[cols].head(max_rows)}")
+        logger.info(f"\n{df[cols].head(max_rows)}")
     else:
-        logging.info(f"\n{df.head(max_rows)}")
+        logger.info(f"\n{df.head(max_rows)}")
 
 def main():
     tables = load_garmin_tables()
 
     if not tables:
-        logging.error("No tables were loaded. Exiting.")
+        logger.error("No tables were loaded. Exiting.")
         return
 
-    logging.info("\n📂 Available tables:")
+    logger.info("\n📂 Available tables:")
     for name in tables:
-        logging.info("- %s (%d rows)", name, len(tables[name]))
+        logger.info("- %s (%d rows)", name, len(tables[name]))
 
     preview_table(tables["daily"], "daily_summary", ["day", "steps", "calories_total", "hr_min", "hr_max", "rhr"])
     preview_table(tables["sleep"], "sleep", ["day", "total_sleep", "deep_sleep", "rem_sleep", "score"])

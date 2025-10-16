@@ -6,6 +6,14 @@ from pathlib import Path
 from datetime import datetime
 from garmin_analysis.config import DB_PATHS, MASTER_CSV
 from garmin_analysis.utils.data_processing import normalize_day_column, convert_time_to_minutes, ensure_datetime_sorted
+from garmin_analysis.utils.error_handling import (
+    handle_database_errors,
+    handle_data_loading_errors,
+    validate_dataframe,
+    DataValidationError
+)
+
+logger = logging.getLogger(__name__)
 
 # Logging is configured at package level
 
@@ -144,18 +152,30 @@ def _create_synthetic_dataframes(num_days: int = 14) -> dict:
         "steps_activities": steps_activities,
     }
 
+@handle_database_errors(default_return=pd.DataFrame())
 def load_table(db_path: Path, table_name: str, parse_dates=None) -> pd.DataFrame:
+    """
+    Load a table from SQLite database.
+    
+    Args:
+        db_path: Path to database file
+        table_name: Name of table to load
+        parse_dates: List of columns to parse as dates
+    
+    Returns:
+        DataFrame with table contents, or empty DataFrame if error
+    
+    Raises:
+        DatabaseError: If reraise=True (currently returns empty DataFrame)
+    """
     if not db_path.exists():
-        logging.warning(f"Database not found: {db_path}")
+        logger.warning(f"Database not found: {db_path}")
         return pd.DataFrame()
+    
     with sqlite3.connect(db_path) as conn:
-        try:
-            df = pd.read_sql(f"SELECT * FROM {table_name}", conn, parse_dates=parse_dates)
-            logging.info(f"Loaded {table_name} from {db_path.name} ({len(df)} rows)")
-            return df
-        except Exception as e:
-            logging.warning(f"Failed to load {table_name} from {db_path.name}: {e}")
-            return pd.DataFrame()
+        df = pd.read_sql(f"SELECT * FROM {table_name}", conn, parse_dates=parse_dates)
+        logger.info(f"Loaded {table_name} from {db_path.name} ({len(df)} rows)")
+        return df
 
 def aggregate_stress(stress: pd.DataFrame) -> pd.DataFrame:
     if stress.empty or "timestamp" not in stress.columns:
@@ -173,7 +193,7 @@ def aggregate_stress(stress: pd.DataFrame) -> pd.DataFrame:
 
 def preprocess_sleep(sleep: pd.DataFrame) -> pd.DataFrame:
     if sleep.empty:
-        logging.warning("Sleep dataframe is empty.")
+        logger.warning("Sleep dataframe is empty.")
         return sleep
 
     original_rows = len(sleep)
@@ -182,7 +202,7 @@ def preprocess_sleep(sleep: pd.DataFrame) -> pd.DataFrame:
         if col in sleep.columns:
             sleep[col + "_min"] = sleep[col].apply(convert_time_to_minutes)
         else:
-            logging.warning("Missing sleep column: %s", col)
+            logger.warning("Missing sleep column: %s", col)
 
     sleep.drop(columns=["total_sleep", "deep_sleep", "rem_sleep"], inplace=True, errors="ignore")
 
@@ -192,13 +212,13 @@ def preprocess_sleep(sleep: pd.DataFrame) -> pd.DataFrame:
         sleep = sleep[sleep["score"] > 0]
         after_filter = len(sleep)
         dropped = before_filter - after_filter
-        logging.info("Dropped %d rows from sleep data where score was missing or ≤ 0 (%d → %d)", dropped, before_filter, after_filter)
+        logger.info("Dropped %d rows from sleep data where score was missing or ≤ 0 (%d → %d)", dropped, before_filter, after_filter)
     else:
-        logging.warning("No 'score' column found in sleep data.")
+        logger.warning("No 'score' column found in sleep data.")
 
     final_rows = len(sleep)
     total_dropped = original_rows - final_rows
-    logging.info("Total dropped rows during sleep preprocessing: %d of %d (%.1f%%)", total_dropped, original_rows, 100 * total_dropped / original_rows if original_rows > 0 else 0)
+    logger.info("Total dropped rows during sleep preprocessing: %d of %d (%.1f%%)", total_dropped, original_rows, 100 * total_dropped / original_rows if original_rows > 0 else 0)
 
     return sleep
 
@@ -214,9 +234,9 @@ def summarize_and_merge(return_df: bool = False):
     if daily is None or daily.empty:
         global USING_SYNTHETIC_DATA
         USING_SYNTHETIC_DATA = True
-        logging.warning("No daily_summary data available from databases.")
-        logging.warning("Generating synthetic sample data for tests/local usage WITHOUT real DBs.")
-        logging.warning("This dataset is NOT real and should NOT be used for analysis.")
+        logger.warning("No daily_summary data available from databases.")
+        logger.warning("Generating synthetic sample data for tests/local usage WITHOUT real DBs.")
+        logger.warning("This dataset is NOT real and should NOT be used for analysis.")
         synth = _create_synthetic_dataframes(num_days=14)
         daily = synth["daily_summary"]
         sleep = synth["sleep"]
@@ -228,9 +248,9 @@ def summarize_and_merge(return_df: bool = False):
 
     if "steps" in daily.columns:
         null_steps_count = daily["steps"].isnull().sum()
-        logging.info(f"{null_steps_count} rows in daily_summary have null 'steps' — keeping for continuity")
+        logger.info(f"{null_steps_count} rows in daily_summary have null 'steps' — keeping for continuity")
     else:
-        logging.warning("Column 'steps' not found in daily_summary — will affect downstream features")
+        logger.warning("Column 'steps' not found in daily_summary — will affect downstream features")
 
     daily = normalize_day_column(daily, "daily")
     daily["day"] = to_naive_day(daily["day"])
@@ -284,11 +304,11 @@ def summarize_and_merge(return_df: bool = False):
             merged[f"yesterday_{col}"] = merged[col].shift(1)
 
     if "steps" not in merged.columns:
-        logging.warning("Column 'steps' missing after all merges — injecting placeholder")
+        logger.warning("Column 'steps' missing after all merges — injecting placeholder")
         merged["steps"] = pd.Series(dtype="float")
 
     if merged["steps"].isna().all():
-        logging.warning("Column 'steps' has no valid data — will result in null steps_avg_7d")
+        logger.warning("Column 'steps' has no valid data — will result in null steps_avg_7d")
         merged["steps_avg_7d"] = None
     else:
         merged["steps_avg_7d"] = merged["steps"].rolling(window=7, min_periods=1).mean()
@@ -305,14 +325,14 @@ def summarize_and_merge(return_df: bool = False):
 
     merged = ensure_datetime_sorted(merged, ("day",))
 
-    logging.info(f"Final merged shape: {merged.shape}")
+    logger.info(f"Final merged shape: {merged.shape}")
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     if USING_SYNTHETIC_DATA:
-        logging.warning("Saving SYNTHETIC master dataset to %s", OUTPUT_PATH)
-        logging.warning("This file contains synthetic data generated due to missing databases.")
-        logging.warning("Replace with real DBs in `db/` to produce real data.")
+        logger.warning("Saving SYNTHETIC master dataset to %s", OUTPUT_PATH)
+        logger.warning("This file contains synthetic data generated due to missing databases.")
+        logger.warning("Replace with real DBs in `db/` to produce real data.")
     merged.to_csv(OUTPUT_PATH, index=False)
-    logging.info(f"Saved master dataset to {OUTPUT_PATH}")
+    logger.info(f"Saved master dataset to {OUTPUT_PATH}")
 
     if return_df:
         return merged

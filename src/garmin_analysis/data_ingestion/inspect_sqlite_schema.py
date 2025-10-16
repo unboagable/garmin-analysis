@@ -5,32 +5,34 @@ from typing import Dict, List, Tuple
 
 # Logging is configured at package level
 
+
+logger = logging.getLogger(__name__)
 def inspect_sqlite_db(db_path):
     if not Path(db_path).exists():
-        logging.warning(f"Database not found at {db_path}")
+        logger.warning(f"Database not found at {db_path}")
         return
 
-    logging.info(f"Inspecting database: {db_path}")
+    logger.info(f"Inspecting database: {db_path}")
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
 
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
         tables = [row[0] for row in cursor.fetchall()]
-        logging.info(f"Found {len(tables)} tables.")
+        logger.info(f"Found {len(tables)} tables.")
 
         for table in tables:
-            logging.info(f"Table: {table}")
+            logger.info(f"Table: {table}")
             try:
                 cursor.execute(f"PRAGMA table_info({table});")
                 columns = cursor.fetchall()
                 if columns:
                     for col in columns:
                         cid, name, dtype, notnull, dflt, pk = col
-                        logging.info(f"  - {name} ({dtype})")
+                        logger.info(f"  - {name} ({dtype})")
                 else:
-                    logging.warning("  (No columns found)")
+                    logger.warning("  (No columns found)")
             except Exception as e:
-                logging.error(f"Error retrieving columns for {table}: {e}")
+                logger.error(f"Error retrieving columns for {table}: {e}")
 
 def extract_schema(db_path: str) -> Dict[str, List[Tuple[str, str]]]:
     """
@@ -82,7 +84,7 @@ def detect_schema_drift(expected: Dict[str, List[Tuple[str, str]]], actual: Dict
 def inspect_all_dbs(directory="db"):
     db_paths = sorted(Path(directory).glob("*.db"))
     if not db_paths:
-        logging.warning(f"No .db files found in '{directory}'")
+        logger.warning(f"No .db files found in '{directory}'")
     for db_path in db_paths:
         inspect_sqlite_db(db_path)
 
@@ -112,25 +114,25 @@ if __name__ == "__main__":
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         with open(args.out, "w") as f:
             json.dump(schema, f, indent=2)
-        logging.info("Exported schema for %s to %s", args.db, args.out)
+        logger.info("Exported schema for %s to %s", args.db, args.out)
     elif args.command == "compare":
         with open(args.expected) as f:
             expected = json.load(f)
         actual = extract_schema(args.db)
         drift = detect_schema_drift(expected, actual)
         if not drift:
-            logging.info("No schema drift detected.")
+            logger.info("No schema drift detected.")
             sys.exit(0)
         # Pretty print drift
-        logging.warning("Schema drift detected:")
+        logger.warning("Schema drift detected:")
         for table, info in drift.items():
-            logging.warning("- %s", table)
+            logger.warning("- %s", table)
             if info["missing_columns"]:
-                logging.warning("  missing: %s", info["missing_columns"])
+                logger.warning("  missing: %s", info["missing_columns"])
             if info["extra_columns"]:
-                logging.warning("  extra: %s", info["extra_columns"])
+                logger.warning("  extra: %s", info["extra_columns"])
             if info["type_mismatches"]:
-                logging.warning("  type_mismatches: %s", info["type_mismatches"])
+                logger.warning("  type_mismatches: %s", info["type_mismatches"])
         if args.fail_on_drift:
             sys.exit(1)
     else:

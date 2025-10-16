@@ -7,6 +7,8 @@ from datetime import datetime
 
 from garmin_analysis.config import PLOTS_DIR, MASTER_CSV
 
+
+logger = logging.getLogger(__name__)
 # Logging is configured at package level
 
 def plot_feature_correlation(df: pd.DataFrame, output_path: str = None,
@@ -50,7 +52,7 @@ def plot_feature_correlation(df: pd.DataFrame, output_path: str = None,
     plt.savefig(output_path)
     plt.close()
 
-    logging.info(f"Saved correlation matrix to {output_path}")
+    logger.info(f"Saved correlation matrix to {output_path}")
 
 # Example usage:
 if __name__ == "__main__":

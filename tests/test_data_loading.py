@@ -191,8 +191,9 @@ def test_load_master_dataframe_auto_build_fails(tmp_path):
         # Make summarize_and_merge raise an exception
         mock_summarize.side_effect = RuntimeError("Database connection failed")
         
-        # Should raise FileNotFoundError with details
-        with pytest.raises(FileNotFoundError, match="not found and auto-build failed"):
+        # Should raise DataLoadingError (wrapped by error handling decorator)
+        from garmin_analysis.utils.error_handling import DataLoadingError
+        with pytest.raises(DataLoadingError):
             load_master_dataframe()
 
 
@@ -383,8 +384,8 @@ def test_load_garmin_tables_returns_empty_on_connection_error(tmp_path, caplog):
     # Should return empty dict
     assert tables == {}
     
-    # Should log the exception
-    assert 'Failed to load' in caplog.text or 'exception' in caplog.text.lower()
+    # Should log the exception (error handling decorator logs "Database operational error")
+    assert 'Database operational error' in caplog.text or 'database' in caplog.text.lower()
 
 
 def test_load_master_dataframe_logging_on_success(sample_master_csv, caplog):

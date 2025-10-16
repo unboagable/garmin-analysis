@@ -10,6 +10,8 @@ from garmin_analysis.utils.data_filtering import filter_required_columns
 
 # Logging is configured at package level
 
+
+logger = logging.getLogger(__name__)
 def load_data():
     if not MASTER_CSV.exists():
         raise FileNotFoundError(f"Merged dataset not found: {MASTER_CSV}")
@@ -27,7 +29,7 @@ def plot_correlations(df, show=False):
     timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_path = PLOTS_DIR / f"{timestamp_str}_correlation_matrix.png"
     plt.savefig(out_path)
-    logging.info(f"Saved heatmap to {out_path}")
+    logger.info(f"Saved heatmap to {out_path}")
     if show:
         plt.show()
     else:
@@ -53,7 +55,7 @@ def scatter_plot(df, x_col, y_col, show=False):
     df_clean = df_clean[df_clean.apply(lambda row: is_numeric(row[x_col]) and is_numeric(row[y_col]), axis=1)]
 
     if df_clean.empty:
-        logging.warning(f"No valid data to plot for {x_col} vs {y_col}")
+        logger.warning(f"No valid data to plot for {x_col} vs {y_col}")
         return
 
     plt.figure(figsize=(8, 6))
@@ -64,7 +66,7 @@ def scatter_plot(df, x_col, y_col, show=False):
     timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_path = PLOTS_DIR / f"{timestamp_str}_scatter_{x_col}_vs_{y_col}.png"
     plt.savefig(out_path)
-    logging.info(f"Saved scatter plot to {out_path}")
+    logger.info(f"Saved scatter plot to {out_path}")
     if show:
         plt.show()
     else:
@@ -73,12 +75,12 @@ def scatter_plot(df, x_col, y_col, show=False):
 def grouped_box_plot(df, activity_col, target_col, show=False):
     col_data = df[activity_col].dropna()
     if col_data.nunique() < 4:
-        logging.warning(f"Not enough unique values to create quartiles for {activity_col}")
+        logger.warning(f"Not enough unique values to create quartiles for {activity_col}")
         return
     try:
         df["activity_level"] = pd.qcut(df[activity_col], q=4, labels=["Low", "Med-Low", "Med-High", "High"], duplicates='drop')
     except ValueError as e:
-        logging.warning(f"Failed to compute quartiles for {activity_col}: {e}")
+        logger.warning(f"Failed to compute quartiles for {activity_col}: {e}")
         return
 
     plt.figure(figsize=(8, 6))
@@ -88,7 +90,7 @@ def grouped_box_plot(df, activity_col, target_col, show=False):
     timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_path = PLOTS_DIR / f"{timestamp_str}_box_{target_col}_by_{activity_col}_quartiles.png"
     plt.savefig(out_path)
-    logging.info(f"Saved box plot to {out_path}")
+    logger.info(f"Saved box plot to {out_path}")
     if show:
         plt.show()
     else:
@@ -97,7 +99,7 @@ def grouped_box_plot(df, activity_col, target_col, show=False):
 def main():
     df = load_data()
 
-    logging.info(f"Available columns: {df.columns.tolist()}")
+    logger.info(f"Available columns: {df.columns.tolist()}")
     df = df.rename(columns={"stress_avg_y": "stress_avg"})
 
     # Filter out rows missing key predictors
@@ -106,7 +108,7 @@ def main():
     # Warn early if all-NaN in key features
     for col in ["steps", "yesterday_activity_minutes", "yesterday_training_effect"]:
         if col in df.columns and df[col].isna().all():
-            logging.warning(f"Column '{col}' contains only NaNs")
+            logger.warning(f"Column '{col}' contains only NaNs")
 
     # Heatmap
     plot_correlations(df)
@@ -120,19 +122,19 @@ def main():
     ]
     for x_col, y_col in scatter_pairs:
         if x_col in df.columns and y_col in df.columns:
-            logging.info(f"Plotting: {x_col} vs {y_col}")
+            logger.info(f"Plotting: {x_col} vs {y_col}")
             scatter_plot(df, x_col, y_col)
         else:
-            logging.warning(f"Skipping scatter plot: '{x_col}' or '{y_col}' not in data")
+            logger.warning(f"Skipping scatter plot: '{x_col}' or '{y_col}' not in data")
 
     # Box plots
     activity_cols = ["steps", "yesterday_activity_minutes", "yesterday_training_effect"]
     for activity_col in activity_cols:
         if activity_col in df.columns and "score" in df.columns:
-            logging.info(f"Box plot: {activity_col} by score quartiles")
+            logger.info(f"Box plot: {activity_col} by score quartiles")
             grouped_box_plot(df, activity_col, "score")
         else:
-            logging.warning(f"Skipping box plot: '{activity_col}' or 'score' not in data")
+            logger.warning(f"Skipping box plot: '{activity_col}' or 'score' not in data")
 
 if __name__ == "__main__":
     main()

@@ -7,8 +7,15 @@ import logging
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
-# Logging is configured at package level
+from garmin_analysis.utils.error_handling import (
+    handle_data_loading_errors,
+    ConfigurationError,
+    safe_return
+)
 
+logger = logging.getLogger(__name__)
+
+@handle_data_loading_errors(default_return={"unknown_activity_mappings": {}})
 def load_activity_mappings(config_path: str = "config/activity_type_mappings.json") -> Dict:
     """
     Load activity type mappings from the configuration file.
@@ -18,21 +25,25 @@ def load_activity_mappings(config_path: str = "config/activity_type_mappings.jso
         
     Returns:
         Dict: Activity mappings configuration.
+    
+    Raises:
+        ConfigurationError: If configuration file is invalid JSON
     """
     config_file = Path(config_path)
     
     if not config_file.exists():
-        logging.warning(f"Activity mappings config not found at {config_path}")
+        logger.warning(f"Activity mappings config not found at {config_path}")
         return {"unknown_activity_mappings": {}}
     
-    try:
-        with open(config_file, 'r') as f:
-            mappings = json.load(f)
-        logging.info(f"Loaded activity mappings from {config_path}")
-        return mappings
-    except Exception as e:
-        logging.error(f"Error loading activity mappings from {config_path}: {e}")
-        return {"unknown_activity_mappings": {}}
+    with open(config_file, 'r') as f:
+        mappings = json.load(f)
+    
+    # Validate structure
+    if not isinstance(mappings, dict):
+        raise ConfigurationError(f"Invalid config format: expected dict, got {type(mappings)}")
+    
+    logger.info(f"Loaded activity mappings from {config_path}")
+    return mappings
 
 def get_display_name(activity_type: str, mappings: Dict) -> Tuple[str, Optional[str]]:
     """
@@ -51,7 +62,7 @@ def get_display_name(activity_type: str, mappings: Dict) -> Tuple[str, Optional[
         mapping = unknown_mappings[activity_type]
         display_name = mapping.get("display_name", activity_type)
         description = mapping.get("description")
-        logging.debug(f"Mapped '{activity_type}' to '{display_name}'")
+        logger.debug(f"Mapped '{activity_type}' to '{display_name}'")
         return display_name, description
     
     # If no mapping found, return the original name formatted nicely
@@ -122,14 +133,14 @@ def add_activity_mapping(activity_type: str, display_name: str,
     # Ensure config directory exists
     config_file.parent.mkdir(parents=True, exist_ok=True)
     
-    try:
+    # Use safe_return for file write operation
+    def save_file():
         with open(config_file, 'w') as f:
             json.dump(mappings, f, indent=2)
-        logging.info(f"Added mapping for '{activity_type}' -> '{display_name}'")
+        logger.info(f"Added mapping for '{activity_type}' -> '{display_name}'")
         return True
-    except Exception as e:
-        logging.error(f"Error saving activity mappings to {config_path}: {e}")
-        return False
+    
+    return safe_return(save_file, default=False, log_errors=True)
 
 def list_unknown_activities(df, mappings: Dict) -> Dict[str, int]:
     """
@@ -168,12 +179,12 @@ def suggest_mappings(df, mappings: Dict) -> None:
     unmapped_counts = list_unknown_activities(df, mappings)
     
     if unmapped_counts:
-        logging.info("Found unmapped activity types:")
+        logger.info("Found unmapped activity types:")
         for activity_type, count in sorted(unmapped_counts.items(), key=lambda x: x[1], reverse=True):
-            logging.info(f"  - {activity_type}: {count} activities")
-            logging.info(f"    Consider adding mapping: add_activity_mapping('{activity_type}', 'Your Display Name')")
+            logger.info(f"  - {activity_type}: {count} activities")
+            logger.info(f"    Consider adding mapping: add_activity_mapping('{activity_type}', 'Your Display Name')")
     else:
-        logging.info("All activity types have mappings!")
+        logger.info("All activity types have mappings!")
 
 # Example usage functions
 def map_activity_dataframe(df, mappings: Dict) -> 'pd.DataFrame':
@@ -196,13 +207,18 @@ def map_activity_dataframe(df, mappings: Dict) -> 'pd.DataFrame':
     descriptions = []
     
     for activity_type in df['sport']:
-        if pd.isna(activity_type):
-            display_names.append(None)
+        try:
+            if pd.isna(activity_type):
+                display_names.append(None)
+                descriptions.append(None)
+            else:
+                display_name, description = get_display_name(activity_type, mappings)
+                display_names.append(display_name)
+                descriptions.append(description)
+        except (KeyError, AttributeError) as e:
+            logger.warning(f"Error mapping activity type '{activity_type}': {e}")
+            display_names.append(str(activity_type) if activity_type else None)
             descriptions.append(None)
-        else:
-            display_name, description = get_display_name(activity_type, mappings)
-            display_names.append(display_name)
-            descriptions.append(description)
     
     df['display_name'] = display_names
     df['description'] = descriptions

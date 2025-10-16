@@ -8,6 +8,8 @@ import logging
 from pathlib import Path
 from garmin_analysis.logging_config import setup_logging
 from garmin_analysis.features.day_of_week_analysis import (
+
+logger = logging.getLogger(__name__)
     calculate_day_of_week_averages,
     plot_day_of_week_averages,
     print_day_of_week_summary
@@ -70,14 +72,14 @@ def main():
     
     try:
         # Load data
-        logging.info("Loading master daily summary data...")
+        logger.info("Loading master daily summary data...")
         df = load_master_dataframe()
         # Optional 24h coverage filtering
         if args.filter_24h_coverage:
             max_gap = max(1, int(args.max_gap))
             edge_tol = max(0, int(args.day_edge_tolerance))
             allowance = max(0, int(args.coverage_allowance_minutes))
-            logging.info(
+            logger.info(
                 "Applying 24h coverage filter (max_gap=%sm, edge_tol=%sm, allowance=%sm)",
                 max_gap, edge_tol, allowance
             )
@@ -89,17 +91,17 @@ def main():
             )
         
         if df.empty:
-            logging.error("No data loaded")
+            logger.error("No data loaded")
             return 1
         
-        logging.info(f"Loaded {len(df)} days of data")
+        logger.info(f"Loaded {len(df)} days of data")
         
         # Print summary
         print_day_of_week_summary(df)
         
         # Create visualizations
         if not args.no_save or args.show_plots:
-            logging.info("Generating day-of-week visualizations...")
+            logger.info("Generating day-of-week visualizations...")
             plot_files = plot_day_of_week_averages(
                 df, 
                 save_plots=not args.no_save, 
@@ -107,14 +109,14 @@ def main():
             )
             
             if plot_files and not args.no_save:
-                logging.info(f"Generated {len(plot_files)} plots:")
+                logger.info(f"Generated {len(plot_files)} plots:")
                 for metric, filepath in plot_files.items():
-                    logging.info(f"  {metric}: {filepath}")
+                    logger.info(f"  {metric}: {filepath}")
         
         return 0
         
     except Exception as e:
-        logging.exception("Error in day-of-week analysis: %s", e)
+        logger.exception("Error in day-of-week analysis: %s", e)
         return 1
 
 if __name__ == "__main__":

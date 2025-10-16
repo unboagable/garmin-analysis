@@ -6,6 +6,8 @@ from datetime import datetime
 
 from garmin_analysis.config import PLOTS_DIR, MASTER_CSV
 
+
+logger = logging.getLogger(__name__)
 # Logging is configured at package level
 
 def plot_feature_trend(df: pd.DataFrame, feature: str,
@@ -35,7 +37,7 @@ def plot_feature_trend(df: pd.DataFrame, feature: str,
         if not candidate_cols:
             raise ValueError("Could not auto-detect a date column. Please specify 'date_col'.")
         date_col = candidate_cols[0]  # choose the first candidate
-        logging.info(f"Auto-detected date column: '{date_col}'")
+        logger.info(f"Auto-detected date column: '{date_col}'")
 
     df[date_col] = pd.to_datetime(df[date_col])
     df = df.sort_values(date_col)
@@ -70,7 +72,7 @@ def plot_feature_trend(df: pd.DataFrame, feature: str,
     plt.savefig(out_path)
     plt.close()
 
-    logging.info(f"Saved trend plot to {out_path}")
+    logger.info(f"Saved trend plot to {out_path}")
 
 # Example usage:
 if __name__ == "__main__":

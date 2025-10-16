@@ -10,6 +10,8 @@ from typing import Dict, List, Optional
 
 # Logging is configured at package level
 
+
+logger = logging.getLogger(__name__)
 # Import activity mapping utilities
 from garmin_analysis.utils.activity_mappings import (
     load_activity_mappings, 
@@ -58,7 +60,7 @@ def plot_activity_calendar(activities_df: pd.DataFrame,
         activities_df = activities_df[activities_df['start_time'] <= end_date]
     
     if activities_df.empty:
-        logging.warning("No activities found in the specified date range")
+        logger.warning("No activities found in the specified date range")
         return
     
     # Create date column for grouping
@@ -209,21 +211,21 @@ def plot_activity_calendar(activities_df: pd.DataFrame,
     plt.savefig(out_path, dpi=300, bbox_inches='tight')
     plt.close()
     
-    logging.info(f"Saved activity calendar to {out_path}")
+    logger.info(f"Saved activity calendar to {out_path}")
     
     # Print summary statistics
     total_days = len(date_range)
     active_days = len(daily_activities)
-    logging.info(f"Activity summary: {active_days}/{total_days} days with activities ({active_days/total_days*100:.1f}%)")
+    logger.info(f"Activity summary: {active_days}/{total_days} days with activities ({active_days/total_days*100:.1f}%)")
     
     sport_summary = daily_activities['sport'].value_counts()
-    logging.info("Activities by sport:")
+    logger.info("Activities by sport:")
     for sport, count in sport_summary.items():
         if use_mappings:
             display_name, _ = get_display_name(sport, mappings)
-            logging.info(f"  - {display_name}: {count} days")
+            logger.info(f"  - {display_name}: {count} days")
         else:
-            logging.info(f"  - {sport.replace('_', ' ').title()}: {count} days")
+            logger.info(f"  - {sport.replace('_', ' ').title()}: {count} days")
 
 
 def _get_sport_colors(sports: List[str]) -> Dict[str, str]:
@@ -285,7 +287,7 @@ def load_activities_data(db_path: str = "db/garmin_activities.db") -> pd.DataFra
         """
         df = pd.read_sql_query(query, conn)
     
-    logging.info(f"Loaded {len(df)} activities from database")
+    logger.info(f"Loaded {len(df)} activities from database")
     return df
 
 def suggest_activity_mappings(activities_df: pd.DataFrame, 
@@ -303,12 +305,12 @@ def suggest_activity_mappings(activities_df: pd.DataFrame,
     unmapped_counts = list_unknown_activities(activities_df, mappings)
     
     if unmapped_counts:
-        logging.info("Found unmapped activity types:")
+        logger.info("Found unmapped activity types:")
         for activity_type, count in sorted(unmapped_counts.items(), key=lambda x: x[1], reverse=True):
-            logging.info(f"  - {activity_type}: {count} activities")
-            logging.info(f"    Consider adding mapping: add_activity_mapping('{activity_type}', 'Your Display Name')")
+            logger.info(f"  - {activity_type}: {count} activities")
+            logger.info(f"    Consider adding mapping: add_activity_mapping('{activity_type}', 'Your Display Name')")
     else:
-        logging.info("All activity types have mappings!")
+        logger.info("All activity types have mappings!")
 
 
 # Example usage
@@ -327,4 +329,4 @@ if __name__ == "__main__":
             end_date=end_date.strftime('%Y-%m-%d')
         )
     else:
-        logging.warning("No activities data found")
+        logger.warning("No activities data found")

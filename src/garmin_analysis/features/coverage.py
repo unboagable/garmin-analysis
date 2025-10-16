@@ -3,6 +3,11 @@ from typing import Iterable, List, Optional, Sequence, Set, Tuple
 
 import pandas as pd
 
+from garmin_analysis.utils.error_handling import (
+    handle_data_loading_errors,
+    validate_dataframe,
+    DataValidationError
+)
 
 logger = logging.getLogger(__name__)
 
@@ -137,6 +142,7 @@ def filter_master_by_days(
     return df[df[day_col].isin(days_set)].copy()
 
 
+@handle_data_loading_errors(reraise=False)
 def filter_by_24h_coverage(
     master_df: pd.DataFrame,
     *,
@@ -164,58 +170,55 @@ def filter_by_24h_coverage(
 
     Returns:
         Filtered dataframe containing only days with 24-hour coverage
+    
+    Note:
+        On error, returns original dataframe rather than raising exception.
     """
     if master_df is None or master_df.empty:
         logger.warning("filter_by_24h_coverage received empty dataframe")
         return master_df
     
-    try:
-        # Get stress timeseries data for coverage analysis
-        if stress_df is not None:
-            # Use pre-loaded DataFrame
-            stress = stress_df
-            logger.info("Using pre-loaded stress DataFrame for coverage analysis")
+    # Get stress timeseries data for coverage analysis
+    if stress_df is not None:
+        # Use pre-loaded DataFrame
+        stress = stress_df
+        logger.info("Using pre-loaded stress DataFrame for coverage analysis")
+    else:
+        # Load from database
+        from garmin_analysis.data_ingestion.load_all_garmin_dbs import load_table, DB_PATHS
+        
+        if db_path is not None:
+            # Use custom database path
+            stress = load_table(db_path, "stress", parse_dates=["timestamp"])
+            logger.info(f"Loading stress data from custom path: {db_path}")
         else:
-            # Load from database
-            from garmin_analysis.data_ingestion.load_all_garmin_dbs import load_table, DB_PATHS
-            
-            if db_path is not None:
-                # Use custom database path
-                stress = load_table(db_path, "stress", parse_dates=["timestamp"])
-                logger.info(f"Loading stress data from custom path: {db_path}")
-            else:
-                # Use default database path
-                stress = load_table(DB_PATHS["garmin"], "stress", parse_dates=["timestamp"])
-                logger.info("Loading stress data from default database path")
-        
-        if stress is None or stress.empty:
-            logger.warning("No stress timeseries data available for coverage analysis")
-            return master_df
-        
-        # Get days with continuous coverage
-        qualifying_days = days_with_continuous_coverage(
-            stress, 
-            timestamp_col="timestamp",
-            max_gap=max_gap,
-            day_edge_tolerance=day_edge_tolerance,
-            total_missing_allowance=total_missing_allowance,
-        )
-        
-        if not qualifying_days:
-            logger.warning("No days found with 24-hour continuous coverage")
-            return master_df
-        
-        logger.info(f"Found {len(qualifying_days)} days with 24-hour continuous coverage")
-        
-        # Filter master dataframe
-        filtered_df = filter_master_by_days(master_df, qualifying_days, day_col=day_col)
-        
-        logger.info(f"Filtered dataset from {len(master_df)} to {len(filtered_df)} days")
-        return filtered_df
-        
-    except Exception as e:
-        logger.error(f"Error filtering by 24h coverage: {e}")
-        logger.warning("Returning original dataframe due to error")
+            # Use default database path
+            stress = load_table(DB_PATHS["garmin"], "stress", parse_dates=["timestamp"])
+            logger.info("Loading stress data from default database path")
+    
+    if stress is None or stress.empty:
+        logger.warning("No stress timeseries data available for coverage analysis")
         return master_df
+    
+    # Get days with continuous coverage
+    qualifying_days = days_with_continuous_coverage(
+        stress, 
+        timestamp_col="timestamp",
+        max_gap=max_gap,
+        day_edge_tolerance=day_edge_tolerance,
+        total_missing_allowance=total_missing_allowance,
+    )
+    
+    if not qualifying_days:
+        logger.warning("No days found with 24-hour continuous coverage")
+        return master_df
+    
+    logger.info(f"Found {len(qualifying_days)} days with 24-hour continuous coverage")
+    
+    # Filter master dataframe
+    filtered_df = filter_master_by_days(master_df, qualifying_days, day_col=day_col)
+    
+    logger.info(f"Filtered dataset from {len(master_df)} to {len(filtered_df)} days")
+    return filtered_df
 
 

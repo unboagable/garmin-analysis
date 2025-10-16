@@ -3,6 +3,8 @@ import numpy as np
 import logging
 from typing import Iterable, Optional
 
+logger = logging.getLogger(__name__)
+
 
 def convert_time_to_minutes(time_str):
     try:
@@ -29,7 +31,7 @@ def normalize_day_column(df: pd.DataFrame, source_name: str = "unknown") -> pd.D
     elif "timestamp" in df.columns:
         df = df.assign(day=pd.to_datetime(df["timestamp"]).dt.normalize())
     else:
-        logging.warning(f"[{source_name}] could not normalize 'day' column (missing day/calendarDate/timestamp)")
+        logger.warning(f"[{source_name}] could not normalize 'day' column (missing day/calendarDate/timestamp)")
     return df
 
 

@@ -47,7 +47,7 @@ def run_all_analytics(df: pd.DataFrame, date_col='day', output_dir=None, as_html
                                       timestamp=timestamp)
 
     # Step 2: Anomaly Detection
-    logging.info("Running anomaly detection...")
+    logger.info("Running anomaly detection...")
     anomalies_df, anomaly_plot_path = run_anomaly_detection(df)
 
     # Build Report

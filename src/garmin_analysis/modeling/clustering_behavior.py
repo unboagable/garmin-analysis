@@ -9,6 +9,8 @@ from garmin_analysis.config import PLOTS_DIR
 from garmin_analysis.utils.data_loading import load_master_dataframe
 from garmin_analysis.utils.data_filtering import standardize_features
 
+
+logger = logging.getLogger(__name__)
 # Logging is configured at package level
 
 def main():
@@ -22,7 +24,7 @@ def main():
 
     X_scaled = standardize_features(df, features)
     if X_scaled.size == 0:
-        logging.warning("No usable data available for clustering after dropping NaNs. Exiting.")
+        logger.warning("No usable data available for clustering after dropping NaNs. Exiting.")
         return
 
     # Perform KMeans clustering
@@ -44,7 +46,7 @@ def main():
 
     out_path = PLOTS_DIR / "behavioral_clusters.png"
     plt.savefig(out_path)
-    logging.info(f"Saved cluster plot to {out_path}")
+    logger.info(f"Saved cluster plot to {out_path}")
     plt.close()
 
 if __name__ == "__main__":

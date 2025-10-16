@@ -792,19 +792,19 @@ def main():
     results = model.run_analysis(use_lag_features=True)
     
     # Log summary
-    logging.info("\n" + "="*80)
-    logging.info("SUMMARY")
-    logging.info("="*80)
-    logging.info(f"Best Model: {results['best_model']}")
-    logging.info(f"Test R² Score: {results['best_r2']:.4f}")
-    logging.info(f"Test MAE: {results['best_mae']:.2f} points")
-    logging.info(f"Samples: {results['n_samples']}")
-    logging.info(f"Features: {results['n_features']}")
-    logging.info(f"\nTop 5 Most Important Features:")
+    logger.info("\n" + "="*80)
+    logger.info("SUMMARY")
+    logger.info("="*80)
+    logger.info(f"Best Model: {results['best_model']}")
+    logger.info(f"Test R² Score: {results['best_r2']:.4f}")
+    logger.info(f"Test MAE: {results['best_mae']:.2f} points")
+    logger.info(f"Samples: {results['n_samples']}")
+    logger.info(f"Features: {results['n_features']}")
+    logger.info(f"\nTop 5 Most Important Features:")
     for rank, (idx, row) in enumerate(results['feature_importance'].head(5).iterrows(), start=1):
-        logging.info(f"  {rank}. {row['feature']}: {row['importance']:.6f}")
-    logging.info(f"\nReport: {results['report_path']}")
-    logging.info("="*80)
+        logger.info(f"  {rank}. {row['feature']}: {row['importance']:.6f}")
+    logger.info(f"\nReport: {results['report_path']}")
+    logger.info("="*80)
 
 
 if __name__ == "__main__":

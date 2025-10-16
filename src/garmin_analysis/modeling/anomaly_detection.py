@@ -10,6 +10,8 @@ from garmin_analysis.utils.data_loading import load_master_dataframe
 from garmin_analysis.utils.data_filtering import standardize_features
 from garmin_analysis.utils_cleaning import clean_data
 
+
+logger = logging.getLogger(__name__)
 # Logging is configured at package level
 
 def run_anomaly_detection(df):
@@ -23,7 +25,7 @@ def run_anomaly_detection(df):
 
     df_clean = df.dropna(subset=features, how='any')
     if df_clean.empty or len(df_clean) < 10:
-        logging.warning("Not enough complete rows for anomaly detection. Skipping.")
+        logger.warning("Not enough complete rows for anomaly detection. Skipping.")
         return pd.DataFrame(), None
 
     X_scaled = standardize_features(df_clean, features)
@@ -44,7 +46,7 @@ def run_anomaly_detection(df):
 
     out_path = PLOTS_DIR / "anomaly_detection.png"
     plt.savefig(out_path)
-    logging.info(f"Saved anomaly plot to {out_path}")
+    logger.info(f"Saved anomaly plot to {out_path}")
     plt.close()
 
     df_result = df_clean.copy()
@@ -56,9 +58,9 @@ def main():
     df = load_master_dataframe()
     anomalies_df, plot_path = run_anomaly_detection(df)
     if not anomalies_df.empty:
-        logging.info(f"Detected {len(anomalies_df)} anomalies. Plot saved to {plot_path}")
+        logger.info(f"Detected {len(anomalies_df)} anomalies. Plot saved to {plot_path}")
     else:
-        logging.info("No anomalies detected.")
+        logger.info("No anomalies detected.")
 
 if __name__ == "__main__":
     main()

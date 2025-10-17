@@ -110,7 +110,7 @@ def calculate_hourly_stress_by_weekday(df: pd.DataFrame) -> pd.DataFrame:
     df['day_of_week_num'] = (df['timestamp'].dt.dayofweek + 1) % 7  # Sunday = 0
     
     # Calculate statistics by hour and day of week
-    hourly_weekday_stats = df.groupby(['hour', 'day_of_week', 'day_of_week_num'])['stress'].agg([
+    hourly_weekday_stats = df.groupby(['hour', 'day_of_week', 'day_of_week_num'], observed=False)['stress'].agg([
         'mean', 'std', 'count'
     ]).reset_index()
     
@@ -402,7 +402,7 @@ def print_stress_summary(hourly_stats: pd.DataFrame,
         logger.info("\n📅 Average Stress by Day of Week:")
         logger.info("-" * 70)
         
-        day_averages = hourly_weekday_stats.groupby('day_of_week')['mean'].mean()
+        day_averages = hourly_weekday_stats.groupby('day_of_week', observed=False)['mean'].mean()
         day_order = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
         
         for day in day_order:

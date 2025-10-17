@@ -62,7 +62,7 @@ def calculate_day_of_week_averages(df):
             continue
             
         # Calculate averages by day of week
-        day_averages = metric_data.groupby(['day_of_week', 'day_of_week_num'])[column_name].agg([
+        day_averages = metric_data.groupby(['day_of_week', 'day_of_week_num'], observed=False)[column_name].agg([
             'mean', 'median', 'std', 'count'
         ]).reset_index()
         

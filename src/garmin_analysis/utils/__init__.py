@@ -5,7 +5,6 @@ from .data_processing import (
     convert_time_to_minutes,
     normalize_day_column,
     ensure_datetime_sorted,
-    aggregate_stress,
 )
 
 from .data_loading import (
@@ -33,6 +32,5 @@ __all__ = [
     'normalize_dates',  # Deprecated, kept for backward compatibility
     'filter_by_date',
     'convert_time_columns',
-    'aggregate_stress',
     'standardize_features',
 ]

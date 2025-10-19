@@ -80,15 +80,3 @@ def ensure_datetime_sorted(
         df = df.drop_duplicates(subset=[date_col], keep="first")
 
     return df
-
-
-def aggregate_stress(stress_df):
-    stress_df["timestamp"] = pd.to_datetime(stress_df["timestamp"])
-    stress_df["day"] = stress_df["timestamp"].dt.date
-    daily = stress_df.groupby("day").agg(
-        stress_avg=("stress", "mean"),
-        stress_max=("stress", "max"),
-        stress_duration=("stress", lambda x: (x > 0).sum())
-    ).reset_index()
-    daily["day"] = pd.to_datetime(daily["day"])
-    return daily

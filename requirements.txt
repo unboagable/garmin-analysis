@@ -18,6 +18,13 @@ tsfresh
 statsmodels
 prophet
 
+# Garmin Integration (Optional)
+# GarminDB by Tom Goetz (https://github.com/tcgoetz/GarminDB)
+# Licensed under GPL-2.0
+# NOTE: GarminDB must be installed from source with git submodules
+# See docs/garmin_connect_integration.md for installation instructions
+# garmindb>=3.6.0 is NOT available via PyPI (requires git submodules)
+
 # Utilities
 tabulate
 

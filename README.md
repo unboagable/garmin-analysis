@@ -26,12 +26,41 @@ A comprehensive Garmin health data analysis platform with interactive dashboard,
 
 ## Quick Start (in 5 minutes)
 
+**Option A: Automated sync with Garmin Connect** (requires GarminDB from source):
 ```bash
 # 1. Install dependencies
 pipx install poetry
 poetry install
 
-# 2. Set up your Garmin data (requires GarminDB export)
+# 2. Install GarminDB from source (required for automated sync)
+git clone --recursive https://github.com/tcgoetz/GarminDB.git ~/GarminDB
+cd ~/GarminDB && make setup
+
+# 3. Configure Garmin Connect credentials
+cd ~/Code/garmin-analysis
+poetry run python -m garmin_analysis.cli_garmin_sync --setup \
+  --username your@email.com \
+  --password yourpassword \
+  --start-date 01/01/2024
+
+# 4. Download your Garmin data
+poetry run python -m garmin_analysis.cli_garmin_sync --sync --all
+
+# 5. Generate unified dataset
+poetry run python -m garmin_analysis.data_ingestion.load_all_garmin_dbs
+
+# 6. Launch the dashboard
+poetry run python run_dashboard.py
+# Open http://localhost:8050 in your browser
+```
+
+**Option B: Manual setup** (if you already have garmin.db):
+```bash
+# 1. Install dependencies
+pipx install poetry
+poetry install
+
+# 2. Set up your Garmin data
 mkdir -p db
 cp /path/to/GarminDB/garmin.db db/garmin.db
 
@@ -41,9 +70,6 @@ poetry run python -m garmin_analysis.data_ingestion.load_all_garmin_dbs
 # 4. Launch the dashboard
 poetry run python run_dashboard.py
 # Open http://localhost:8050 in your browser
-
-# 5. (Optional) Run your first analysis
-poetry run python -m garmin_analysis.viz.plot_trends_range
 ```
 
 For detailed setup instructions, see [Getting Started](#getting-started).
@@ -114,6 +140,7 @@ Analyze sleep score, body battery, and water intake patterns by day of the week 
 
 ## Features
 
+- **🔄 Garmin Connect Integration**: **NEW!** CLI tools for [GarminDB](https://github.com/tcgoetz/GarminDB) to automate data download and configuration
 - **🌙 HR & Activity → Sleep Model**: **NEW!** Analyze how heart rate and activities affect sleep quality with 6 ML algorithms
 - **🔧 Flexible Imputation**: **NEW!** 6 strategies for handling missing data (median, mean, drop, forward/backward fill, none)
 - **📅 Day-of-Week Analysis**: Analyze sleep score, body battery, and water intake patterns by day of the week
@@ -126,7 +153,7 @@ Analyze sleep score, body battery, and water intake patterns by day of the week 
 - **📋 Reporting**: Automated summaries and comprehensive analytics reports
 - **🔍 Data Quality**: Advanced data quality analysis and coverage assessment tools
 - **🗄️ Data Ingestion**: Unified data loading from multiple Garmin databases with schema validation
-- **🧪 Testing**: Comprehensive test suite with 381 tests (unit and integration)
+- **🧪 Testing**: Comprehensive test suite with 435 tests (unit and integration)
 - **📓 Notebooks**: Interactive Jupyter notebooks for exploratory analysis
 
 ## Getting Started
@@ -135,7 +162,8 @@ Analyze sleep score, body battery, and water intake patterns by day of the week 
 
 - Python 3.11 or 3.12 or 3.13 (required)
 - [Poetry](https://python-poetry.org/) for dependency management
-- Garmin health data exported using [GarminDB](https://github.com/tcgoetz/GarminDB)
+- **Garmin Connect account** (for automated data sync via GarminDB)
+- OR a pre-existing `garmin.db` file from [GarminDB](https://github.com/tcgoetz/GarminDB)
 
 ### Installation
 
@@ -157,6 +185,35 @@ poetry install
 
 ### Data Setup
 
+**NEW!** Automated sync with Garmin Connect (requires GarminDB from source):
+
+1. **Install GarminDB** (one-time setup):
+```bash
+git clone --recursive https://github.com/tcgoetz/GarminDB.git ~/GarminDB
+cd ~/GarminDB && make setup
+```
+
+2. **Set up your Garmin Connect credentials**:
+```bash
+cd ~/Code/garmin-analysis
+poetry run python -m garmin_analysis.cli_garmin_sync --setup \
+  --username your@email.com \
+  --password yourpassword \
+  --start-date 01/01/2024
+```
+
+3. **Download all your Garmin data** (first time only):
+```bash
+poetry run python -m garmin_analysis.cli_garmin_sync --sync --all
+```
+
+4. **Generate the unified dataset**:
+```bash
+poetry run python -m garmin_analysis.data_ingestion.load_all_garmin_dbs
+```
+
+**Alternative:** Manual export (if you prefer):
+
 1. **Export your Garmin data** using [GarminDB](https://github.com/tcgoetz/GarminDB) to produce a `garmin.db` file.
 
 2. **Copy the database** to this project:
@@ -169,6 +226,7 @@ cp /path/to/GarminDB/garmin.db db/garmin.db
 ```bash
 poetry run python -m garmin_analysis.data_ingestion.load_all_garmin_dbs
 ```
+
 This creates `data/master_daily_summary.csv` combining all your Garmin data.
 
 ### Quick Verification
@@ -185,6 +243,84 @@ poetry run python -m garmin_analysis.features.quick_data_check --summary
 - **Explore visualizations**: Check the [Visualization utilities](#visualization-utilities) section
 
 ## Common Commands
+
+### Garmin Connect Sync (NEW!)
+
+**First-time setup:**
+```bash
+# Install GarminDB from source (one-time)
+git clone --recursive https://github.com/tcgoetz/GarminDB.git ~/GarminDB
+cd ~/GarminDB && make setup
+
+# Configure your Garmin Connect credentials
+cd ~/Code/garmin-analysis
+poetry run python -m garmin_analysis.cli_garmin_sync --setup \
+  --username your@email.com \
+  --password yourpassword \
+  --start-date 01/01/2024
+
+# Download all historical data (do this once)
+poetry run python -m garmin_analysis.cli_garmin_sync --sync --all
+```
+
+**Daily updates:**
+```bash
+# Download only the latest data (fast, run daily)
+poetry run python -m garmin_analysis.cli_garmin_sync --sync --latest
+
+# Then regenerate your unified dataset
+poetry run python -m garmin_analysis.data_ingestion.load_all_garmin_dbs
+```
+
+**Equivalent to running GarminDB directly:**
+```bash
+# Our wrapper runs this for you:
+garmindb_cli.py --all --download --import --analyze --latest
+```
+
+**Setup options:**
+```bash
+# Full setup command with all options
+poetry run python -m garmin_analysis.cli_garmin_sync --setup \
+  --username your@email.com \
+  --password yourpassword \
+  --start-date 01/01/2024 \
+  --download-latest-activities 50 \
+  --download-all-activities 2000
+```
+
+**Other operations:**
+```bash
+# Backup your databases
+poetry run python -m garmin_analysis.cli_garmin_sync --backup
+
+# View statistics about your data
+poetry run python -m garmin_analysis.cli_garmin_sync --stats
+```
+
+**Copy databases to project:**
+```bash
+# Find GarminDB databases (located in ~/HealthData/DBs/)
+poetry run python -m garmin_analysis.cli_garmin_sync --find-dbs
+
+# Copy databases to project db/ directory
+poetry run python -m garmin_analysis.cli_garmin_sync --copy-dbs
+```
+
+**Automation script:**
+```bash
+# Use the provided script for daily updates
+./examples/daily_update.sh
+
+# Or with dashboard restart
+./examples/daily_update.sh --restart
+
+# Add to cron for automatic daily updates (6 AM)
+crontab -e
+# Add: 0 6 * * * /path/to/garmin-analysis/examples/daily_update.sh >> ~/garmin-update.log 2>&1
+```
+
+**Note:** See `docs/garmin_connect_integration.md` for complete GarminDB integration guide and troubleshooting.
 
 ### Data Ingestion & Preparation
 - **Generate unified dataset:**
@@ -833,7 +969,7 @@ This platform is designed for comprehensive Garmin health data analysis:
 - **🔍 Data Quality Assurance**: Advanced tools for data validation and quality assessment
 - **📋 Automated Reporting**: Generate comprehensive health reports automatically
 - **⚡ Performance Optimization**: 24-hour coverage filtering for faster, more reliable analysis
-- **🧪 Comprehensive Testing**: 381 tests with full coverage (unit and integration)
+- **🧪 Comprehensive Testing**: 435 tests with full coverage (unit and integration)
 - **📓 Interactive Analysis**: Jupyter notebooks for exploratory data analysis
 
 ## 24-Hour Coverage Filtering
@@ -985,7 +1121,7 @@ poetry run python -m garmin_analysis.data_ingestion.inspect_sqlite_schema compar
 
 ## Testing
 
-The project has a comprehensive test suite with **381 tests** covering unit and integration scenarios.
+The project has a comprehensive test suite with **435 tests** across 29 test modules covering unit and integration scenarios.
 
 ### Run All Tests
 ```bash
@@ -1034,7 +1170,7 @@ poetry run pytest tests/test_day_of_week_analysis.py -v
 
 ### Test Coverage
 
-- **381 total tests** across 26 test modules
+- **435 total tests** across 29 test modules
 - **42 tests** for HR & Activity Sleep Model
 - **32 tests** for imputation strategies
 - Full coverage of unit and integration scenarios
@@ -1122,7 +1258,7 @@ garmin-analysis/
 ├── examples/                     # Example scripts
 │   └── activity_calendar_example.py # Activity calendar example
 ├── run_dashboard.py              # Convenient dashboard launcher script
-├── tests/                        # Test suite (381 tests total)
+├── tests/                        # Test suite (435 tests total)
 │   ├── test_imputation.py        # NEW! Imputation utility tests (32 tests)
 │   ├── test_hr_activity_sleep_model.py  # NEW! Sleep model tests (42 tests)
 │   └── ...                       # Other test files (26 modules)
@@ -1155,11 +1291,12 @@ pip install -r requirements.txt
 - **Data**: pandas, numpy
 - **ML**: scikit-learn, tsfresh, statsmodels, prophet  
 - **Visualization**: matplotlib, seaborn, plotly, dash
+- **Garmin Integration**: [GarminDB](https://github.com/tcgoetz/GarminDB) - For Garmin Connect data export (see [Credits](#credits--acknowledgments))
 - **Development**: pytest, jupyter
 
 See `pyproject.toml` for version constraints.
 
-Test fixtures:
+### Test Fixtures
 - `mem_db` (unit): In-memory SQLite with minimal schema and seed data for pure SQL/transform functions.
 - `tmp_db` (integration): Temp file-backed SQLite DBs with realistic seeds; test code patches `garmin_analysis.data_ingestion.load_all_garmin_dbs.DB_PATHS` to point to these files.
 
@@ -1172,12 +1309,22 @@ Notes on data sources:
 This project uses:
 - **Python 3.11+**: Required for compatibility
 - **Poetry**: Dependency management
-- **pytest**: Testing framework with 381 tests
+- **pytest**: Testing framework with 435 tests
 - **Black/Flake8**: Code formatting (if configured)
 
 ## License
 
 See the [LICENSE](LICENSE) file for details.
+
+## Credits & Acknowledgments
+
+This project builds upon and integrates with several excellent open-source projects:
+
+- **[GarminDB](https://github.com/tcgoetz/GarminDB)** by Tom Goetz - Provides the core functionality for downloading and parsing Garmin Connect data. Licensed under GPL-2.0.
+- **[Python Garmin Connect API](https://github.com/cyberjunky/python-garmin-connect)** - Used by GarminDB for Garmin Connect authentication.
+- **scikit-learn**, **pandas**, **matplotlib** and other open-source libraries that make this analysis possible.
+
+Special thanks to the Garmin developer community for their work on reverse-engineering and documenting Garmin's data formats.
 
 ## Notes
 

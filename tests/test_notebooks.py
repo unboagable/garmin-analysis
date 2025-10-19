@@ -43,7 +43,8 @@ KERNEL_NAME = "python3"
 # Notebooks that require external dependencies or special setup
 # These will be skipped or handled differently
 NOTEBOOKS_WITH_EXTERNAL_DEPS = {
-    "hr_daily.ipynb": "Requires garmindb package not in standard dependencies"
+    "hr_daily.ipynb": "Requires garmindb package not in standard dependencies",
+    "stress_time_of_day_analysis.ipynb": "Requires real garmin.db database file"
 }
 
 

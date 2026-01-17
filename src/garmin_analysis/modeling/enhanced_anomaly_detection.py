@@ -286,12 +286,14 @@ class EnhancedAnomalyDetector:
         
         try:
             silhouette = silhouette_score(X, labels)
-        except:
+        except Exception as e:
+            logger.debug(f"Error calculating silhouette score: {e}")
             silhouette = -1
         
         try:
             calinski_harabasz = calinski_harabasz_score(X, labels)
-        except:
+        except Exception as e:
+            logger.debug(f"Error calculating Calinski-Harabasz score: {e}")
             calinski_harabasz = -1
         
         return {

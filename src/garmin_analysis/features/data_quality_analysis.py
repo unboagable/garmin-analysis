@@ -147,7 +147,8 @@ class GarminDataQualityAnalyzer:
                             'end_date': str(max_date),
                             'duration_days': (max_date - min_date).days
                         }
-                except:
+                except Exception as e:
+                    logger.debug(f"Error analyzing date range for column {col}: {e}")
                     continue
         
         return {'column': None, 'start_date': None, 'end_date': None, 'duration_days': None}
@@ -160,7 +161,8 @@ class GarminDataQualityAnalyzer:
             try:
                 if pd.api.types.is_datetime64_any_dtype(df[col]):
                     return df[col].nunique()
-            except:
+            except Exception as e:
+                logger.debug(f"Error counting unique days for column {col}: {e}")
                 continue
         
         return 0

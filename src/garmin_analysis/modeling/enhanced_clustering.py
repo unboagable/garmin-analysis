@@ -335,17 +335,20 @@ class EnhancedClusterer:
         
         try:
             silhouette = silhouette_score(X, labels)
-        except:
+        except Exception as e:
+            logger.debug(f"Error calculating silhouette score: {e}")
             silhouette = -1
         
         try:
             calinski_harabasz = calinski_harabasz_score(X, labels)
-        except:
+        except Exception as e:
+            logger.debug(f"Error calculating Calinski-Harabasz score: {e}")
             calinski_harabasz = -1
         
         try:
             davies_bouldin = davies_bouldin_score(X, labels)
-        except:
+        except Exception as e:
+            logger.debug(f"Error calculating Davies-Bouldin score: {e}")
             davies_bouldin = -1
         
         return {

@@ -129,7 +129,8 @@ def quick_summary(df):
                     unique_days = df[col].nunique()
                     logger.info(f"Date range: {min_date} to {max_date} ({unique_days} unique days)")
                     break
-            except:
+            except Exception as e:
+                logger.debug(f"Error processing datetime column {col}: {e}")
                 continue
     
     # Data types

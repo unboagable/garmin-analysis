@@ -981,4 +981,10 @@ except Exception as e:
     ])
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    import os
+    # Use environment variable for debug mode (default: False for security)
+    # Set DASH_DEBUG=1 or DASH_DEBUG=true to enable debug mode
+    debug_mode = os.getenv('DASH_DEBUG', 'false').lower() in ('1', 'true', 'yes')
+    if debug_mode:
+        logger.warning("Running dashboard in DEBUG mode. Do not use in production!")
+    app.run(debug=debug_mode)

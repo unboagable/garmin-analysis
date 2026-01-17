@@ -15,39 +15,40 @@ def test_filter_by_24h_coverage_with_empty_dataframe():
 
 
 def test_filter_by_24h_coverage_with_no_stress_data():
-    """Test that missing stress data is handled gracefully"""
+    """Test that missing HR data is handled gracefully"""
     # Create a simple dataframe with day column
     df = pd.DataFrame({
         'day': pd.date_range('2024-01-01', periods=5),
         'steps': [1000, 2000, 3000, 4000, 5000]
     })
     
-    # Test with empty stress DataFrame
-    empty_stress_df = pd.DataFrame()
-    result = filter_by_24h_coverage(df, stress_df=empty_stress_df)
-    # Should return original dataframe when no stress data
+    # Test with empty HR DataFrame
+    empty_hr_df = pd.DataFrame()
+    result = filter_by_24h_coverage(df, hr_df=empty_hr_df)
+    # Should return original dataframe when no HR data (cannot determine watch wear)
     assert len(result) == len(df)
     assert result.equals(df)
 
 
 def test_filter_by_24h_coverage_with_stress_data():
-    """Test filtering with pre-loaded stress data"""
+    """Test filtering with pre-loaded HR data (heart rate indicates watch wear)"""
     # Create master dataframe
     master_df = pd.DataFrame({
         'day': pd.date_range('2024-01-01', periods=3),
         'steps': [1000, 2000, 3000]
     })
     
-    # Create stress data with continuous coverage for first day only
+    # Create HR data with continuous coverage for first day only (heart rate indicates watch wear)
     start_time = pd.Timestamp('2024-01-01 00:00:00')
     timestamps = [start_time + timedelta(minutes=i) for i in range(1440)]  # 24 hours of 1-minute intervals
     
-    stress_df = pd.DataFrame({
+    # HR data requires heart_rate column with valid values (20-250 bpm)
+    hr_df = pd.DataFrame({
         'timestamp': timestamps,
-        'stress_level': [50] * len(timestamps)
+        'heart_rate': [70] * len(timestamps)  # Valid HR values (20-250 bpm)
     })
     
-    result = filter_by_24h_coverage(master_df, stress_df=stress_df)
+    result = filter_by_24h_coverage(master_df, hr_df=hr_df)
     
     # Should only include the first day (2024-01-01) which has continuous coverage
     assert len(result) == 1
@@ -144,24 +145,28 @@ def test_days_with_continuous_coverage_with_allowance_edge_deficit():
 
 
 def test_filter_by_24h_coverage_with_total_allowance():
-    """Master df is filtered when stress coverage meets total allowance but violates max_gap."""
+    """Master df is filtered when HR coverage meets total allowance but violates max_gap."""
     master_df = pd.DataFrame({
         'day': pd.date_range('2024-01-01', periods=2),
         'steps': [1000, 2000]
     })
 
-    # Build stress with one 15-minute internal gap on the first day
+    # Build HR data with one 15-minute internal gap on the first day
+    # HR data requires heart_rate column with valid values (20-250 bpm)
     day = pd.Timestamp('2024-01-01')
     ts1a = pd.date_range(day, day + pd.Timedelta(hours=6), freq='1min', inclusive='left')
     ts1b = pd.date_range(day + pd.Timedelta(hours=6, minutes=15), day + pd.Timedelta(days=1), freq='1min', inclusive='left')
-    stress_day1 = ts1a.append(ts1b)
+    hr_timestamps = ts1a.append(ts1b)
 
     # Second day has no data; should not pass
-    stress_df = pd.DataFrame({'timestamp': stress_day1})
+    hr_df = pd.DataFrame({
+        'timestamp': hr_timestamps,
+        'heart_rate': [70] * len(hr_timestamps)  # Valid HR values (20-250 bpm)
+    })
 
     filtered = filter_by_24h_coverage(
         master_df,
-        stress_df=stress_df,
+        hr_df=hr_df,
         max_gap=pd.Timedelta(minutes=2),
         day_edge_tolerance=pd.Timedelta(minutes=2),
         total_missing_allowance=pd.Timedelta(minutes=15),

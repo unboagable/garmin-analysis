@@ -232,7 +232,12 @@ def summarize_and_merge(return_df: bool = False):
     activities = ensure_datetime_sorted(load_table(DB_PATHS["activities"], "activities", parse_dates=["start_time"]), ("start_time",))
     steps_activities = ensure_datetime_sorted(load_table(DB_PATHS["activities"], "steps_activities"), ("timestamp", "start_time", "day"))
     # Load monitoring_hr for coverage calculation (more reliable indicator of watch wear)
-    monitoring_hr = ensure_datetime_sorted(load_table(DB_PATHS["monitoring"], "monitoring_hr", parse_dates=["timestamp"]), ("timestamp",))
+    # Handle case where monitoring database may not be available (e.g., in tests)
+    monitoring_hr = pd.DataFrame()
+    if "monitoring" in DB_PATHS:
+        monitoring_hr = ensure_datetime_sorted(load_table(DB_PATHS["monitoring"], "monitoring_hr", parse_dates=["timestamp"]), ("timestamp",))
+    else:
+        logger.debug("monitoring database not in DB_PATHS, skipping monitoring_hr loading")
 
     if daily is None or daily.empty:
         global USING_SYNTHETIC_DATA

@@ -59,7 +59,8 @@ def add_24h_coverage_args(parser: argparse.ArgumentParser) -> argparse.ArgumentP
 def apply_24h_coverage_filter_from_args(
     df: pd.DataFrame,
     args: argparse.Namespace,
-    stress_df: Optional[pd.DataFrame] = None,
+    hr_df: Optional[pd.DataFrame] = None,
+    stress_df: Optional[pd.DataFrame] = None,  # Deprecated - no longer used
     db_path: Optional[str] = None
 ) -> pd.DataFrame:
     """
@@ -73,11 +74,14 @@ def apply_24h_coverage_filter_from_args(
         df: The DataFrame to filter.
         args: Parsed command-line arguments (must have filter_24h_coverage,
               max_gap, day_edge_tolerance, and coverage_allowance_minutes attributes).
-        stress_df: Optional pre-loaded stress DataFrame for coverage analysis.
-        db_path: Optional custom database path for loading stress data.
+        hr_df: Optional pre-loaded monitoring_hr DataFrame for coverage analysis.
+               Heart rate data is required to determine watch wear.
+        stress_df: DEPRECATED - no longer used. Heart rate data is required.
+        db_path: Optional custom database path for loading HR data.
     
     Returns:
         Filtered DataFrame if filtering was requested, otherwise original DataFrame.
+        Returns original DataFrame if HR data is not available (cannot determine watch wear).
     
     Raises:
         AttributeError: If args is missing required attributes.
@@ -114,13 +118,13 @@ def apply_24h_coverage_filter_from_args(
     allowance_minutes = max(0, min(args.coverage_allowance_minutes, 300))
     total_missing_allowance = pd.Timedelta(minutes=allowance_minutes)
     
-    # Apply filtering
+    # Apply filtering (use hr_df if provided, otherwise let function load from database)
     df_filtered = filter_by_24h_coverage(
         df,
         max_gap=max_gap,
         day_edge_tolerance=day_edge_tolerance,
         total_missing_allowance=total_missing_allowance,
-        stress_df=stress_df,
+        hr_df=hr_df,
         db_path=db_path
     )
     

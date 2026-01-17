@@ -324,7 +324,61 @@ def update_plot(metric, start, end, coverage_filter, coverage_gap_minutes=None, 
         if 'filter' in coverage_filter:
             title += " (24h Coverage Only)"
         
-        fig = px.line(filtered, x="day", y=metric, title=title)
+        # Check if coverage data is available to distinguish watch wear status
+        has_coverage_data = 'coverage_pct' in filtered.columns or 'has_24h_coverage' in filtered.columns
+        
+        if has_coverage_data and metric in filtered.columns:
+            # Create figure with go.Scatter to have more control over colors
+            fig = go.Figure()
+            
+            # Determine watch wear status
+            if 'has_24h_coverage' in filtered.columns:
+                # Use has_24h_coverage if available (more strict)
+                watch_worn = filtered[filtered['has_24h_coverage'] == True]
+                watch_not_worn = filtered[filtered['has_24h_coverage'] != True]
+            elif 'coverage_pct' in filtered.columns:
+                # Use coverage_pct threshold (e.g., >= 80% means watch was worn)
+                watch_worn = filtered[filtered['coverage_pct'] >= 80]
+                watch_not_worn = filtered[filtered['coverage_pct'] < 80]
+            else:
+                watch_worn = filtered
+                watch_not_worn = pd.DataFrame()
+            
+            # Add trace for data when watch was worn (normal color)
+            if not watch_worn.empty and watch_worn[metric].notna().any():
+                fig.add_trace(go.Scatter(
+                    x=watch_worn['day'],
+                    y=watch_worn[metric],
+                    mode='lines+markers',
+                    name=f'{metric} (Watch Worn)',
+                    line=dict(color='#1f77b4', width=2),
+                    marker=dict(size=6, color='#1f77b4'),
+                    hovertemplate='Date: %{x}<br>Value: %{y:.2f}<br>Watch: Worn<extra></extra>'
+                ))
+            
+            # Add trace for data when watch was not worn (lighter/grayed color)
+            if not watch_not_worn.empty and watch_not_worn[metric].notna().any():
+                fig.add_trace(go.Scatter(
+                    x=watch_not_worn['day'],
+                    y=watch_not_worn[metric],
+                    mode='lines+markers',
+                    name=f'{metric} (Watch Not Worn)',
+                    line=dict(color='#cccccc', width=1.5, dash='dot'),
+                    marker=dict(size=5, color='#cccccc', opacity=0.6),
+                    hovertemplate='Date: %{x}<br>Value: %{y:.2f}<br>Watch: Not Worn<extra></extra>'
+                ))
+            
+            fig.update_layout(
+                title=title,
+                xaxis_title="Date",
+                yaxis_title=metric.replace('_', ' ').title(),
+                hovermode='x unified',
+                showlegend=True
+            )
+        else:
+            # Fallback to simple line chart if no coverage data
+            fig = px.line(filtered, x="day", y=metric, title=title)
+        
         return fig
     except Exception as e:
         logger.error(f"Error updating plot: {e}")
@@ -541,18 +595,57 @@ def update_30day_charts(start_date, end_date, selected_metrics, coverage_filter,
             'score': '#1f77b4'
         }
         
+        # Check if coverage data is available
+        has_coverage_data = 'coverage_pct' in df.columns or 'has_24h_coverage' in df.columns
+        
         # Add traces for each metric
         for metric in available_metrics:
             metric_data = df[df[metric].notna()]
             if not metric_data.empty:
-                combined_fig.add_trace(go.Scatter(
-                    name=metric.replace('_', ' ').title(),
-                    x=metric_data['day'],
-                    y=metric_data[metric],
-                    mode='lines+markers',
-                    line=dict(color=colors.get(metric, '#888888'), width=2),
-                    marker=dict(size=6)
-                ))
+                if has_coverage_data:
+                    # Split data by watch wear status
+                    if 'has_24h_coverage' in df.columns:
+                        worn_data = metric_data[metric_data['has_24h_coverage'] == True]
+                        not_worn_data = metric_data[metric_data['has_24h_coverage'] != True]
+                    else:
+                        worn_data = metric_data[metric_data['coverage_pct'] >= 80]
+                        not_worn_data = metric_data[metric_data['coverage_pct'] < 80]
+                    
+                    # Add trace for watch worn (normal color)
+                    if not worn_data.empty:
+                        combined_fig.add_trace(go.Scatter(
+                            name=metric.replace('_', ' ').title() + ' (Worn)',
+                            x=worn_data['day'],
+                            y=worn_data[metric],
+                            mode='lines+markers',
+                            line=dict(color=colors.get(metric, '#888888'), width=2),
+                            marker=dict(size=6),
+                            hovertemplate=f'{metric.replace("_", " ").title()}: %{{y:.2f}}<br>Watch: Worn<extra></extra>'
+                        ))
+                    
+                    # Add trace for watch not worn (lighter color)
+                    if not not_worn_data.empty:
+                        # Use lighter version of the color
+                        base_color = colors.get(metric, '#888888')
+                        combined_fig.add_trace(go.Scatter(
+                            name=metric.replace('_', ' ').title() + ' (Not Worn)',
+                            x=not_worn_data['day'],
+                            y=not_worn_data[metric],
+                            mode='lines+markers',
+                            line=dict(color='#cccccc', width=1.5, dash='dot'),
+                            marker=dict(size=5, color='#cccccc', opacity=0.6),
+                            hovertemplate=f'{metric.replace("_", " ").title()}: %{{y:.2f}}<br>Watch: Not Worn<extra></extra>'
+                        ))
+                else:
+                    # No coverage data - use original behavior
+                    combined_fig.add_trace(go.Scatter(
+                        name=metric.replace('_', ' ').title(),
+                        x=metric_data['day'],
+                        y=metric_data[metric],
+                        mode='lines+markers',
+                        line=dict(color=colors.get(metric, '#888888'), width=2),
+                        marker=dict(size=6)
+                    ))
         
         combined_fig.update_layout(
             title=f"30-Day Health Overview ({start_date} to {end_date})",
@@ -573,21 +666,66 @@ def update_30day_charts(start_date, end_date, selected_metrics, coverage_filter,
                 vertical_spacing=0.1
             )
             
+            # Check if coverage data is available
+            has_coverage_data = 'coverage_pct' in df.columns or 'has_24h_coverage' in df.columns
+            
             for i, metric in enumerate(available_metrics, 1):
                 metric_data = df[df[metric].notna()]
                 if not metric_data.empty:
-                    individual_fig.add_trace(
-                        go.Scatter(
-                            name=metric.replace('_', ' ').title(),
-                            x=metric_data['day'],
-                            y=metric_data[metric],
-                            mode='lines+markers',
-                            line=dict(color=colors.get(metric, '#888888'), width=2),
-                            marker=dict(size=6),
-                            showlegend=False
-                        ),
-                        row=i, col=1
-                    )
+                    if has_coverage_data:
+                        # Split data by watch wear status
+                        if 'has_24h_coverage' in df.columns:
+                            worn_data = metric_data[metric_data['has_24h_coverage'] == True]
+                            not_worn_data = metric_data[metric_data['has_24h_coverage'] != True]
+                        else:
+                            worn_data = metric_data[metric_data['coverage_pct'] >= 80]
+                            not_worn_data = metric_data[metric_data['coverage_pct'] < 80]
+                        
+                        # Add trace for watch worn (normal color)
+                        if not worn_data.empty:
+                            individual_fig.add_trace(
+                                go.Scatter(
+                                    name=metric.replace('_', ' ').title() + ' (Worn)',
+                                    x=worn_data['day'],
+                                    y=worn_data[metric],
+                                    mode='lines+markers',
+                                    line=dict(color=colors.get(metric, '#888888'), width=2),
+                                    marker=dict(size=6),
+                                    showlegend=False,
+                                    hovertemplate=f'{metric.replace("_", " ").title()}: %{{y:.2f}}<br>Watch: Worn<extra></extra>'
+                                ),
+                                row=i, col=1
+                            )
+                        
+                        # Add trace for watch not worn (lighter color)
+                        if not not_worn_data.empty:
+                            individual_fig.add_trace(
+                                go.Scatter(
+                                    name=metric.replace('_', ' ').title() + ' (Not Worn)',
+                                    x=not_worn_data['day'],
+                                    y=not_worn_data[metric],
+                                    mode='lines+markers',
+                                    line=dict(color='#cccccc', width=1.5, dash='dot'),
+                                    marker=dict(size=5, color='#cccccc', opacity=0.6),
+                                    showlegend=False,
+                                    hovertemplate=f'{metric.replace("_", " ").title()}: %{{y:.2f}}<br>Watch: Not Worn<extra></extra>'
+                                ),
+                                row=i, col=1
+                            )
+                    else:
+                        # No coverage data - use original behavior
+                        individual_fig.add_trace(
+                            go.Scatter(
+                                name=metric.replace('_', ' ').title(),
+                                x=metric_data['day'],
+                                y=metric_data[metric],
+                                mode='lines+markers',
+                                line=dict(color=colors.get(metric, '#888888'), width=2),
+                                marker=dict(size=6),
+                                showlegend=False
+                            ),
+                            row=i, col=1
+                        )
             
             individual_fig.update_layout(
                 title=f"Individual Health Metrics ({start_date} to {end_date})",

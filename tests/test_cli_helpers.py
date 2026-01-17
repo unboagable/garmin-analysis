@@ -41,6 +41,18 @@ def sample_stress_df():
     })
 
 
+@pytest.fixture
+def sample_hr_df():
+    """Create sample HR data with 24h coverage for one day (heart rate indicates watch wear)."""
+    # Create continuous coverage for 2024-01-01
+    start_time = pd.Timestamp('2024-01-01 00:00:00')
+    timestamps = [start_time + pd.Timedelta(minutes=i) for i in range(1440)]
+    return pd.DataFrame({
+        'timestamp': timestamps,
+        'heart_rate': [70] * len(timestamps)  # Valid HR values (20-250 bpm)
+    })
+
+
 class TestAdd24hCoverageArgs:
     """Test add_24h_coverage_args function."""
     
@@ -136,7 +148,7 @@ class TestApply24hCoverageFilterFromArgs:
         assert len(result) == len(sample_dataframe)
         assert result.equals(sample_dataframe)
     
-    def test_apply_24h_coverage_filter_from_args_with_flag_true(self, sample_dataframe, sample_stress_df):
+    def test_apply_24h_coverage_filter_from_args_with_flag_true(self, sample_dataframe, sample_hr_df):
         """Test that filtering occurs when flag is True."""
         parser = argparse.ArgumentParser()
         add_24h_coverage_args(parser)
@@ -145,14 +157,14 @@ class TestApply24hCoverageFilterFromArgs:
         result = apply_24h_coverage_filter_from_args(
             sample_dataframe,
             args,
-            stress_df=sample_stress_df
+            hr_df=sample_hr_df
         )
         
         # Should filter the dataframe (likely to fewer rows)
         # With our sample data, only 2024-01-01 has coverage
         assert len(result) <= len(sample_dataframe)
     
-    def test_apply_24h_coverage_filter_from_args_with_custom_parameters(self, sample_dataframe, sample_stress_df):
+    def test_apply_24h_coverage_filter_from_args_with_custom_parameters(self, sample_dataframe, sample_hr_df):
         """Test that custom parameters are passed through."""
         parser = argparse.ArgumentParser()
         add_24h_coverage_args(parser)
@@ -167,7 +179,7 @@ class TestApply24hCoverageFilterFromArgs:
         result = apply_24h_coverage_filter_from_args(
             sample_dataframe,
             args,
-            stress_df=sample_stress_df
+            hr_df=sample_hr_df
         )
         
         assert isinstance(result, pd.DataFrame)
@@ -185,10 +197,10 @@ class TestApply24hCoverageFilterFromArgs:
         result = apply_24h_coverage_filter_from_args(
             sample_dataframe,
             args,
-            stress_df=pd.DataFrame()  # Empty stress df
+            hr_df=pd.DataFrame()  # Empty HR df - should return original since no HR data
         )
         
-        # With empty stress, should return original
+        # With empty HR data, should return original (cannot determine watch wear without HR)
         assert len(result) == len(sample_dataframe)
     
     def test_apply_24h_coverage_filter_from_args_clamps_to_min(self, sample_dataframe):
@@ -340,7 +352,7 @@ class TestIntegration:
     """Integration tests for combined usage."""
     
     @pytest.mark.integration
-    def test_cli_helpers_end_to_end(self, sample_dataframe, sample_stress_df):
+    def test_cli_helpers_end_to_end(self, sample_dataframe, sample_hr_df):
         """Test typical CLI tool pattern."""
         # Create parser with both argument groups
         parser = argparse.ArgumentParser(description='Test tool')
@@ -364,7 +376,7 @@ class TestIntegration:
         result = apply_24h_coverage_filter_from_args(
             sample_dataframe,
             args,
-            stress_df=sample_stress_df
+            hr_df=sample_hr_df
         )
         
         # Verify all components worked

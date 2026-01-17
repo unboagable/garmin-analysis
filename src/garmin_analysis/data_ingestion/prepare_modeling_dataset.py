@@ -12,7 +12,9 @@ def prepare_modeling_dataset(
     input_path: str = None,
     output_path: str = None,
     required_features: list = None,
-    missing_threshold: float = 0.5
+    missing_threshold: float = 0.5,
+    min_coverage_pct: float = None,
+    require_24h_coverage: bool = False
 ):
     if input_path is None:
         input_path = str(MASTER_CSV)
@@ -32,6 +34,18 @@ def prepare_modeling_dataset(
 
     df = pd.read_csv(input_path, parse_dates=["day"])
     logger.info(f"Loaded dataset with shape: {df.shape}")
+
+    # Filter by 24-hour coverage if requested
+    if require_24h_coverage and "has_24h_coverage" in df.columns:
+        before_rows = len(df)
+        df = df[df["has_24h_coverage"] == True]
+        after_rows = len(df)
+        logger.info(f"Dropped {before_rows - after_rows} rows without 24-hour coverage")
+    elif min_coverage_pct is not None and "coverage_pct" in df.columns:
+        before_rows = len(df)
+        df = df[df["coverage_pct"] >= min_coverage_pct]
+        after_rows = len(df)
+        logger.info(f"Dropped {before_rows - after_rows} rows with coverage < {min_coverage_pct}%")
 
     # Drop rows missing critical features
     before_rows = len(df)

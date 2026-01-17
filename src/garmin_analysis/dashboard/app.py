@@ -165,6 +165,34 @@ def create_layout(df):
                     ], style={'display': 'flex', 'flex-direction': 'column', 'gap': '20px'})
                 ])
             ]),
+            dcc.Tab(label='📊 24-Hour Coverage Analysis', children=[
+                html.Div([
+                    html.Div([
+                        html.H3("Watch Wear Time & 24-Hour Coverage Analysis"),
+                        html.P("Analyze which days have complete 24-hour heart rate monitoring coverage (indicates watch was worn continuously)"),
+                    ], style={'margin': '10px'}),
+                    html.Div([
+                        html.Label("Date Range:"),
+                        dcc.DatePickerRange(
+                            id='coverage-date-picker',
+                            min_date_allowed=df['day'].min(),
+                            max_date_allowed=df['day'].max(),
+                            start_date=df['day'].min(),
+                            end_date=df['day'].max(),
+                            display_format='YYYY-MM-DD'
+                        )
+                    ], style={'margin': '10px'}),
+                    html.Div([
+                        dcc.Graph(id='coverage-timeline'),
+                        dcc.Graph(id='coverage-percentage-chart'),
+                        dcc.Graph(id='coverage-heatmap')
+                    ], style={'display': 'flex', 'flex-direction': 'column', 'gap': '20px'}),
+                    html.Div([
+                        html.H4("Coverage Statistics"),
+                        html.Div(id='coverage-stats')
+                    ], style={'margin': '20px'})
+                ])
+            ]),
             dcc.Tab(label='😰 Stress by Time of Day', children=[
                 html.Div([
                     html.Div([
@@ -581,6 +609,196 @@ def update_30day_charts(start_date, end_date, selected_metrics, coverage_filter,
         error_fig = go.Figure()
         error_fig.update_layout(title=f"Error loading data: {str(e)}")
         return error_fig, error_fig
+
+@app.callback(
+    [Output('coverage-timeline', 'figure'),
+     Output('coverage-percentage-chart', 'figure'),
+     Output('coverage-heatmap', 'figure'),
+     Output('coverage-stats', 'children')],
+    [Input('coverage-date-picker', 'start_date'),
+     Input('coverage-date-picker', 'end_date')]
+)
+def update_coverage_charts(start_date, end_date):
+    """Update 24-hour coverage analysis charts"""
+    try:
+        df = load_master_dataframe()
+        
+        # Check if coverage columns exist
+        coverage_cols = ['coverage_pct', 'coverage_hours', 'has_24h_coverage', 'gap_count', 'total_missing_minutes']
+        has_coverage_data = any(col in df.columns for col in coverage_cols)
+        
+        if not has_coverage_data:
+            error_fig = go.Figure()
+            error_fig.update_layout(
+                title="Coverage data not available. Please run data ingestion to calculate coverage metrics.",
+                height=400
+            )
+            empty_stats = html.P("Coverage metrics not available in dataset. Run data ingestion to calculate.")
+            return error_fig, error_fig, error_fig, empty_stats
+        
+        # Filter to date range
+        if start_date and end_date:
+            df = df[(df['day'] >= start_date) & (df['day'] <= end_date)].copy()
+        
+        if df.empty:
+            empty_fig = go.Figure()
+            empty_fig.update_layout(title="No data available for selected date range", height=400)
+            return empty_fig, empty_fig, empty_fig, html.P("No data available")
+        
+        # Timeline chart showing coverage hours over time
+        timeline_fig = go.Figure()
+        
+        if 'coverage_hours' in df.columns:
+            timeline_fig.add_trace(go.Scatter(
+                name='Coverage Hours',
+                x=df['day'],
+                y=df['coverage_hours'],
+                mode='lines+markers',
+                line=dict(color='#1f77b4', width=2),
+                marker=dict(size=6),
+                fill='tozeroy',
+                fillcolor='rgba(31, 119, 180, 0.2)'
+            ))
+        
+        timeline_fig.add_hline(y=24, line_dash="dash", line_color="green", 
+                              annotation_text="24 hours (full coverage)")
+        
+        timeline_fig.update_layout(
+            title='Daily Coverage Hours Over Time',
+            xaxis_title='Date',
+            yaxis_title='Coverage Hours',
+            height=400,
+            hovermode='x unified',
+            showlegend=True
+        )
+        
+        # Coverage percentage chart
+        pct_fig = go.Figure()
+        
+        if 'coverage_pct' in df.columns:
+            valid_pct = df[df['coverage_pct'].notna()]
+            if not valid_pct.empty:
+                # Color by coverage level
+                colors = []
+                for pct in valid_pct['coverage_pct']:
+                    if pct >= 95:
+                        colors.append('#2ca02c')  # Green - excellent
+                    elif pct >= 80:
+                        colors.append('#ff7f0e')  # Orange - good
+                    elif pct >= 50:
+                        colors.append('#ffbb78')  # Light orange - fair
+                    else:
+                        colors.append('#d62728')  # Red - poor
+                
+                pct_fig.add_trace(go.Bar(
+                    x=valid_pct['day'],
+                    y=valid_pct['coverage_pct'],
+                    marker_color=colors,
+                    text=[f"{val:.1f}%" for val in valid_pct['coverage_pct']],
+                    textposition='outside',
+                    hovertemplate='Date: %{x}<br>Coverage: %{y:.1f}%<extra></extra>'
+                ))
+        
+        pct_fig.add_hline(y=95, line_dash="dash", line_color="green", 
+                         annotation_text="95% (excellent)")
+        pct_fig.add_hline(y=80, line_dash="dash", line_color="orange", 
+                         annotation_text="80% (good)")
+        
+        pct_fig.update_layout(
+            title='Daily Coverage Percentage',
+            xaxis_title='Date',
+            yaxis_title='Coverage Percentage (%)',
+            height=400,
+            yaxis=dict(range=[0, 105])
+        )
+        
+        # Monthly heatmap showing coverage by month
+        heatmap_fig = go.Figure()
+        
+        if 'coverage_pct' in df.columns and 'has_24h_coverage' in df.columns:
+            df['year'] = pd.to_datetime(df['day']).dt.year
+            df['month'] = pd.to_datetime(df['day']).dt.month
+            df['month_name'] = pd.to_datetime(df['day']).dt.strftime('%B')
+            
+            # Create monthly aggregates
+            monthly_coverage = df.groupby(['year', 'month', 'month_name']).agg({
+                'coverage_pct': 'mean',
+                'has_24h_coverage': 'sum',
+                'day': 'count'
+            }).reset_index()
+            monthly_coverage.columns = ['year', 'month', 'month_name', 'avg_coverage_pct', 'days_24h', 'total_days']
+            monthly_coverage['pct_24h'] = (monthly_coverage['days_24h'] / monthly_coverage['total_days'] * 100).round(1)
+            
+            if not monthly_coverage.empty:
+                # Create label for heatmap
+                monthly_coverage['label'] = monthly_coverage.apply(
+                    lambda row: f"{row['month_name']} {int(row['year'])}", axis=1
+                )
+                
+                # Create pivot for heatmap
+                heatmap_data = monthly_coverage.pivot(
+                    index='year',
+                    columns='month',
+                    values='avg_coverage_pct'
+                )
+                
+                month_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                
+                if not heatmap_data.empty:
+                    heatmap_fig = go.Figure(data=go.Heatmap(
+                        z=heatmap_data.values,
+                        x=[month_labels[i-1] for i in heatmap_data.columns],
+                        y=[str(int(y)) for y in heatmap_data.index],
+                        colorscale='RdYlGn',
+                        colorbar=dict(title='Avg Coverage %'),
+                        hovertemplate='Year: %{y}<br>Month: %{x}<br>Avg Coverage: %{z:.1f}%<extra></extra>'
+                    ))
+                    
+                    heatmap_fig.update_layout(
+                        title='Average Coverage Percentage by Month',
+                        xaxis_title='Month',
+                        yaxis_title='Year',
+                        height=400
+                    )
+        
+        # Coverage statistics summary
+        stats_html = []
+        if 'coverage_pct' in df.columns and 'has_24h_coverage' in df.columns:
+            valid_coverage = df[df['coverage_pct'].notna()]
+            if not valid_coverage.empty:
+                avg_coverage = valid_coverage['coverage_pct'].mean()
+                days_with_24h = valid_coverage['has_24h_coverage'].sum() if 'has_24h_coverage' in valid_coverage.columns else 0
+                total_days = len(valid_coverage)
+                pct_24h = (days_with_24h / total_days * 100) if total_days > 0 else 0
+                
+                stats_html = [
+                    html.Div([
+                        html.Div([
+                            html.H5(f"{avg_coverage:.1f}%", style={'margin': '0', 'fontSize': '24px', 'color': '#1f77b4'}),
+                            html.P("Average Daily Coverage", style={'margin': '0', 'fontSize': '12px'})
+                        ], style={'display': 'inline-block', 'margin': '10px', 'padding': '15px', 'border': '1px solid #ddd', 'borderRadius': '5px'}),
+                        html.Div([
+                            html.H5(f"{days_with_24h}", style={'margin': '0', 'fontSize': '24px', 'color': '#2ca02c'}),
+                            html.P(f"Days with 24h Coverage ({pct_24h:.1f}%)", style={'margin': '0', 'fontSize': '12px'})
+                        ], style={'display': 'inline-block', 'margin': '10px', 'padding': '15px', 'border': '1px solid #ddd', 'borderRadius': '5px'}),
+                        html.Div([
+                            html.H5(f"{total_days}", style={'margin': '0', 'fontSize': '24px', 'color': '#888888'}),
+                            html.P("Total Days Analyzed", style={'margin': '0', 'fontSize': '12px'})
+                        ], style={'display': 'inline-block', 'margin': '10px', 'padding': '15px', 'border': '1px solid #ddd', 'borderRadius': '5px'})
+                    ])
+                ]
+        
+        if not stats_html:
+            stats_html = [html.P("Coverage statistics not available")]
+        
+        return timeline_fig, pct_fig, heatmap_fig, stats_html
+        
+    except Exception as e:
+        logger.error(f"Error updating coverage charts: {e}")
+        error_fig = go.Figure()
+        error_fig.update_layout(title=f"Error loading coverage data: {str(e)}", height=400)
+        return error_fig, error_fig, error_fig, html.P(f"Error: {str(e)}")
 
 @app.callback(
     [Output('stress-hourly-line', 'figure'),

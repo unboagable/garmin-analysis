@@ -12,6 +12,7 @@ from garmin_analysis.utils.error_handling import (
     validate_dataframe,
     DataValidationError
 )
+from garmin_analysis.features.coverage import calculate_daily_coverage_metrics
 
 logger = logging.getLogger(__name__)
 
@@ -230,6 +231,8 @@ def summarize_and_merge(return_df: bool = False):
     days_summary = ensure_datetime_sorted(load_table(DB_PATHS["summary"], "days_summary", parse_dates=["day"]), ("day",))
     activities = ensure_datetime_sorted(load_table(DB_PATHS["activities"], "activities", parse_dates=["start_time"]), ("start_time",))
     steps_activities = ensure_datetime_sorted(load_table(DB_PATHS["activities"], "steps_activities"), ("timestamp", "start_time", "day"))
+    # Load monitoring_hr for coverage calculation (more reliable indicator of watch wear)
+    monitoring_hr = ensure_datetime_sorted(load_table(DB_PATHS["monitoring"], "monitoring_hr", parse_dates=["timestamp"]), ("timestamp",))
 
     if daily is None or daily.empty:
         global USING_SYNTHETIC_DATA
@@ -322,6 +325,57 @@ def summarize_and_merge(return_df: bool = False):
         merged["missing_training_effect"] = merged["training_effect"].isna()
     else:
         merged["missing_training_effect"] = True
+
+    # Calculate 24-hour coverage metrics from monitoring_hr data (heart rate is the definitive indicator of watch wear)
+    # HR data requires continuous skin contact, making it the most reliable indicator that the watch is actually being worn
+    # Filter for valid HR values (20-250 bpm, non-null) to ensure watch was actually worn
+    if monitoring_hr is not None and not monitoring_hr.empty:
+        try:
+            # Filter for valid heart rate readings (indicates watch was actually worn and on)
+            original_rows = len(monitoring_hr)
+            if "heart_rate" in monitoring_hr.columns:
+                # Filter out invalid HR values: null, 0, or outside reasonable range (20-250 bpm)
+                # Only valid HR readings indicate the watch is being worn with proper sensor contact
+                valid_hr = monitoring_hr[
+                    (monitoring_hr["heart_rate"].notna()) &
+                    (monitoring_hr["heart_rate"] > 0) &
+                    (monitoring_hr["heart_rate"] >= 20) &
+                    (monitoring_hr["heart_rate"] <= 250)
+                ].copy()
+                filtered_rows = len(valid_hr)
+                if filtered_rows < original_rows:
+                    logger.info(f"Filtered monitoring_hr: {original_rows} → {filtered_rows} rows with valid HR values (20-250 bpm)")
+                    logger.info(f"Removed {original_rows - filtered_rows} rows with invalid/missing HR (watch likely not worn)")
+            else:
+                logger.warning("monitoring_hr table missing 'heart_rate' column, cannot determine watch wear without HR data")
+                valid_hr = pd.DataFrame()  # Empty DataFrame - cannot determine coverage without HR column
+            
+            if not valid_hr.empty:
+                hr_coverage = calculate_daily_coverage_metrics(
+                    valid_hr,
+                    timestamp_col="timestamp",
+                    day_col="day",
+                    max_gap=pd.Timedelta(minutes=2),
+                    day_edge_tolerance=pd.Timedelta(minutes=2),
+                )
+                if not hr_coverage.empty:
+                    # Merge coverage metrics, keeping only numeric columns
+                    coverage_cols = [col for col in hr_coverage.columns 
+                                   if col not in ["first_sample", "last_sample"]]
+                    merged = merged.merge(
+                        hr_coverage[coverage_cols],
+                        on="day",
+                        how="left"
+                    )
+                    logger.info(f"Added 24-hour coverage metrics from monitoring_hr (heart rate) data ({len(hr_coverage)} days with valid HR)")
+                else:
+                    logger.warning("Coverage metrics calculation from monitoring_hr returned empty DataFrame")
+            else:
+                logger.warning("No valid heart rate readings found - cannot determine watch wear time without HR data")
+        except Exception as e:
+            logger.warning(f"Failed to calculate coverage metrics from monitoring_hr: {e}")
+    else:
+        logger.warning("monitoring_hr data not available - cannot calculate watch wear coverage metrics without heart rate data")
 
     merged = ensure_datetime_sorted(merged, ("day",))
 

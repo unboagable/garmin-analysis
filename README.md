@@ -1250,11 +1250,9 @@ garmin-analysis/
 ├── config/                       # Configuration files
 │   └── activity_type_mappings.json # Activity type mappings
 ├── docs/                         # Documentation
-│   ├── imputation_strategies.md  # NEW! Imputation guide
-│   ├── missing_value_analysis.md # NEW! Repository analysis
-│   ├── imputation_migration_guide.md  # NEW! Migration guide
-│   ├── IMPUTATION_QUICK_REFERENCE.md  # NEW! Quick reference
-│   └── activity_type_mappings.md # Activity mapping documentation
+│   ├── activity_type_mappings.md # Activity mapping documentation
+│   ├── garmin_connect_integration.md # GarminDB setup and troubleshooting
+│   └── imputation_strategies.md  # Imputation guide
 ├── examples/                     # Example scripts
 │   └── activity_calendar_example.py # Activity calendar example
 ├── run_dashboard.py              # Convenient dashboard launcher script

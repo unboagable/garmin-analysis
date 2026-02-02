@@ -58,6 +58,13 @@ def clean_data(df: pd.DataFrame, remove_outliers: bool = False) -> pd.DataFrame:
     if placeholders_replaced > 0:
         logger.info(f"Replaced {placeholders_replaced} placeholder values with NaN")
 
+    # 1b. Coerce object columns that are numeric (e.g. mixed int/placeholders) so step 2 can standardize them
+    for col in list(df.columns):
+        if df[col].dtype == object:
+            coerced = pd.to_numeric(df[col], errors="coerce")
+            if coerced.notna().any():
+                df[col] = coerced
+
     # 2. Convert all numeric columns to float32 or int64 as appropriate
     conversions = {'int': 0, 'float': 0}
     for col in df.columns:

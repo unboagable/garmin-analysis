@@ -13,8 +13,8 @@ def test_convert_time_to_minutes_ms():
 
 
 def test_convert_time_to_minutes_with_invalid_format():
-    assert convert_time_to_minutes("nonsense") is None
-    assert convert_time_to_minutes("") is None
+    assert pd.isna(convert_time_to_minutes("nonsense"))
+    assert pd.isna(convert_time_to_minutes(""))
 
 
 def test_normalize_day_column_with_day():

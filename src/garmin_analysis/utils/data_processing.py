@@ -7,8 +7,11 @@ logger = logging.getLogger(__name__)
 
 
 def convert_time_to_minutes(time_str):
+    """Convert a time string (HH:MM:SS, MM:SS, or numeric) to minutes. Returns np.nan on invalid input."""
+    if time_str is None or (isinstance(time_str, (str, bytes)) and not str(time_str).strip()):
+        return np.nan
     try:
-        parts = time_str.split(":")
+        parts = str(time_str).strip().split(":")
         if len(parts) == 3:
             h, m, s = map(int, parts)
             return h * 60 + m + s / 60
@@ -18,7 +21,7 @@ def convert_time_to_minutes(time_str):
         else:
             return float(time_str)
     except Exception:
-        return None
+        return np.nan
 
 
 def normalize_day_column(df: pd.DataFrame, source_name: str = "unknown") -> pd.DataFrame:

@@ -116,7 +116,8 @@ class TestDataTypeConversion:
         """Test that string columns remain unchanged."""
         df = pd.DataFrame({'col': ['a', 'b', 'c']})
         result = clean_data(df)
-        assert result['col'].dtype == object
+        # pandas may use object or StringDtype for string columns
+        assert pd.api.types.is_string_dtype(result['col']) or result['col'].dtype == object
     
     def test_handles_mixed_types(self):
         """Test DataFrame with multiple data types."""
@@ -128,7 +129,8 @@ class TestDataTypeConversion:
         result = clean_data(df)
         assert result['int_col'].dtype == 'Int64'
         assert result['float_col'].dtype == 'float32'
-        assert result['str_col'].dtype == object
+        # pandas may use object or StringDtype for string columns
+        assert pd.api.types.is_string_dtype(result['str_col']) or result['str_col'].dtype == object
     
     def test_handles_integer_like_floats(self):
         """Test that floats with only integer values are converted to Int64."""

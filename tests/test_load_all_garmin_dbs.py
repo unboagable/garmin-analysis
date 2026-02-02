@@ -109,7 +109,7 @@ def test_preprocess_sleep_converts_time():
 def test_convert_time_to_minutes():
     assert convert_time_to_minutes("1:30:00") == 90
     assert convert_time_to_minutes("45:00") == 45
-    assert convert_time_to_minutes("bad") is None
+    assert pd.isna(convert_time_to_minutes("bad"))
 
 
 def test_aggregate_stress_output():

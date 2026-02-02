@@ -110,10 +110,15 @@ def convert_time_columns(df, columns):
         >>> df = convert_time_columns(df, ['total_sleep', 'deep_sleep'])
     """
     from garmin_analysis.utils.data_processing import convert_time_to_minutes
-    
+
+    df = df.copy()
     for col in columns:
-        if col in df.columns and df[col].dtype == object:
-            df[col] = df[col].apply(convert_time_to_minutes)
+        if col not in df.columns:
+            continue
+        # Accept both object and string dtypes (pandas 2.x uses StringDtype for strings)
+        if pd.api.types.is_object_dtype(df[col]) or pd.api.types.is_string_dtype(df[col]):
+            converted = df[col].apply(convert_time_to_minutes)
+            df[col] = pd.to_numeric(converted, errors="coerce")
     return df
 
 

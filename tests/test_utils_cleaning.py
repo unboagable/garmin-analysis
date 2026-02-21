@@ -240,7 +240,7 @@ class TestColumnNameNormalization:
         assert 'col_b' in result.columns
 
 
-class TestIntegration:
+class TestCleanDataIntegration:
     """Integration tests combining multiple cleaning operations."""
     
     def test_full_cleaning_pipeline(self):
@@ -311,7 +311,7 @@ class TestIntegration:
         assert 3000 in result['steps'].values  # Recovery day preserved
 
 
-class TestEdgeCases:
+class TestCleanDataEdgeCases:
     """Test edge cases and error handling."""
     
     def test_all_nan_column(self):
@@ -359,7 +359,7 @@ class TestEdgeCases:
         assert 'тест' in result['col'].values
 
 
-class TestLogging:
+class TestCleanDataLogging:
     """Test that function logs appropriate information."""
     
     def test_logs_cleaning_operations(self, caplog):

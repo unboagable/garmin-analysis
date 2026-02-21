@@ -23,12 +23,20 @@ def run_anomaly_detection(df):
         "stress_avg", "stress_max", "stress_duration"
     ]
 
-    df_clean = df.dropna(subset=features, how='any')
+    available_features = [f for f in features if f in df.columns]
+    if len(available_features) < len(features):
+        missing = set(features) - set(available_features)
+        logger.warning("Missing features for anomaly detection: %s", missing)
+    if not available_features:
+        logger.warning("No required features found. Skipping anomaly detection.")
+        return pd.DataFrame(), None
+
+    df_clean = df.dropna(subset=available_features, how='any')
     if df_clean.empty or len(df_clean) < 10:
         logger.warning("Not enough complete rows for anomaly detection. Skipping.")
         return pd.DataFrame(), None
 
-    X_scaled = standardize_features(df_clean, features)
+    X_scaled = standardize_features(df_clean, available_features)
 
     # Use IsolationForest for anomaly detection
     model = IsolationForest(n_estimators=100, contamination=0.05, random_state=42)

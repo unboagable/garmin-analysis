@@ -29,18 +29,20 @@ logger = logging.getLogger(__name__)
 class HRActivitySleepModel:
     """Model to analyze HR and activity impact on sleep score."""
     
-    def __init__(self, data_path: str = None, random_state: int = 42):
+    def __init__(self, data_path: str = None, random_state: int = 42, n_jobs: int = 1):
         """
         Initialize the model.
         
         Args:
             data_path: Path to the modeling dataset
             random_state: Random state for reproducibility
+            n_jobs: Number of parallel jobs for model training (-1 for all cores)
         """
         if data_path is None:
             data_path = str(MODELING_CSV)
         self.data_path = data_path
         self.random_state = random_state
+        self.n_jobs = n_jobs
         self.df = None
         self.models = {}
         self.scaler = StandardScaler()
@@ -266,7 +268,7 @@ class HRActivitySleepModel:
                 max_depth=10, 
                 min_samples_split=5,
                 random_state=self.random_state,
-                n_jobs=-1
+                n_jobs=self.n_jobs
             ),
             'Gradient Boosting': GradientBoostingRegressor(
                 n_estimators=100,
@@ -300,7 +302,7 @@ class HRActivitySleepModel:
             # Cross-validation with time series split
             tscv = TimeSeriesSplit(n_splits=5)
             cv_scores = cross_val_score(model, X_train, y_train, cv=tscv, 
-                                       scoring='neg_mean_squared_error', n_jobs=-1)
+                                       scoring='neg_mean_squared_error', n_jobs=self.n_jobs)
             cv_mse = -cv_scores.mean()
             cv_std = cv_scores.std()
             

@@ -258,49 +258,48 @@ class TestNotebooks:
             
             logger.info(f"✓ {notebook_path.name} has proper description")
 
-
-@pytest.mark.integration
-def test_analysis_notebook_comprehensive(notebooks_dir):
-    """
-    Comprehensive test for the main analysis notebook.
-    
-    This is a more detailed test specifically for analysis.ipynb
-    since it's the entry point for users.
-    """
-    if not NBCONVERT_AVAILABLE:
-        pytest.skip("nbconvert not available")
-    
-    analysis_nb = notebooks_dir / "analysis.ipynb"
-    
-    if not analysis_nb.exists():
-        pytest.skip("analysis.ipynb not found")
-    
-    # Read notebook
-    with open(analysis_nb, 'r', encoding='utf-8') as f:
-        notebook = nbformat.read(f, as_version=4)
-    
-    # Check it has substantial content (at least 10 cells)
-    assert len(notebook.cells) >= 10, (
-        "analysis.ipynb should have at least 10 cells for comprehensive analysis"
-    )
-    
-    # Check for key sections (by looking for markdown headers)
-    markdown_cells = [cell for cell in notebook.cells if cell.cell_type == 'markdown']
-    markdown_content = '\n'.join([cell.source for cell in markdown_cells])
-    
-    expected_sections = [
-        'Load Data',
-        'Data',
-        'Summary',
-        'Trend'
-    ]
-    
-    for section in expected_sections:
-        assert section in markdown_content, (
-            f"analysis.ipynb should have a '{section}' section"
+    @pytest.mark.integration
+    def test_analysis_notebook_comprehensive(self, notebooks_dir):
+        """
+        Comprehensive test for the main analysis notebook.
+        
+        This is a more detailed test specifically for analysis.ipynb
+        since it's the entry point for users.
+        """
+        if not NBCONVERT_AVAILABLE:
+            pytest.skip("nbconvert not available")
+        
+        analysis_nb = notebooks_dir / "analysis.ipynb"
+        
+        if not analysis_nb.exists():
+            pytest.skip("analysis.ipynb not found")
+        
+        # Read notebook
+        with open(analysis_nb, 'r', encoding='utf-8') as f:
+            notebook = nbformat.read(f, as_version=4)
+        
+        # Check it has substantial content (at least 10 cells)
+        assert len(notebook.cells) >= 10, (
+            "analysis.ipynb should have at least 10 cells for comprehensive analysis"
         )
-    
-    logger.info("✓ analysis.ipynb has comprehensive structure")
+        
+        # Check for key sections (by looking for markdown headers)
+        markdown_cells = [cell for cell in notebook.cells if cell.cell_type == 'markdown']
+        markdown_content = '\n'.join([cell.source for cell in markdown_cells])
+        
+        expected_sections = [
+            'Load Data',
+            'Data',
+            'Summary',
+            'Trend'
+        ]
+        
+        for section in expected_sections:
+            assert section in markdown_content, (
+                f"analysis.ipynb should have a '{section}' section"
+            )
+        
+        logger.info("✓ analysis.ipynb has comprehensive structure")
 
 
 # Utility function for manual testing
@@ -346,4 +345,3 @@ if __name__ == "__main__":
             print(f"  ✗ FAILED: {error}")
         else:
             print(f"  ✓ PASSED")
-

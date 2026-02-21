@@ -44,7 +44,7 @@ def df_with_outliers():
 class TestImputeMissingValues:
     """Test impute_missing_values function."""
     
-    def test_impute_missing_values_median_strategy(self, sample_df):
+    def test_median_strategy(self, sample_df):
         """Test median imputation strategy."""
         result = impute_missing_values(sample_df, ['a', 'b'], strategy='median')
         
@@ -56,7 +56,7 @@ class TestImputeMissingValues:
         assert result.loc[1, 'a'] == 3.5  # median of [1, 3, 4, 5]
         assert result.loc[2, 'b'] == 30.0  # median of [10, 20, 40, 50]
     
-    def test_impute_missing_values_mean_strategy(self, sample_df):
+    def test_mean_strategy(self, sample_df):
         """Test mean imputation strategy."""
         result = impute_missing_values(sample_df, ['a', 'b'], strategy='mean')
         
@@ -68,7 +68,7 @@ class TestImputeMissingValues:
         assert result.loc[1, 'a'] == 3.25  # mean of [1, 3, 4, 5]
         assert result.loc[2, 'b'] == 30.0  # mean of [10, 20, 40, 50]
     
-    def test_impute_missing_values_drop_strategy(self, sample_df):
+    def test_drop_strategy(self, sample_df):
         """Test drop rows strategy."""
         result = impute_missing_values(sample_df, ['a', 'b'], strategy='drop')
         
@@ -77,21 +77,21 @@ class TestImputeMissingValues:
         assert not result['a'].isna().any()
         assert not result['b'].isna().any()
     
-    def test_impute_missing_values_forward_fill_strategy(self, sample_df):
+    def test_forward_fill_strategy(self, sample_df):
         """Test forward fill strategy."""
         result = impute_missing_values(sample_df, ['a'], strategy='forward_fill')
         
         # Should forward fill
         assert result.loc[1, 'a'] == 1.0  # Filled from previous value
     
-    def test_impute_missing_values_backward_fill_strategy(self, sample_df):
+    def test_backward_fill_strategy(self, sample_df):
         """Test backward fill strategy."""
         result = impute_missing_values(sample_df, ['a'], strategy='backward_fill')
         
         # Should backward fill
         assert result.loc[1, 'a'] == 3.0  # Filled from next value
     
-    def test_impute_missing_values_none_strategy(self, sample_df):
+    def test_none_strategy(self, sample_df):
         """Test no imputation strategy."""
         result = impute_missing_values(sample_df, ['a', 'b'], strategy='none')
         
@@ -99,7 +99,7 @@ class TestImputeMissingValues:
         assert result['a'].isna().sum() == 1
         assert result['b'].isna().sum() == 1
     
-    def test_impute_missing_values_with_copy_parameter(self, sample_df):
+    def test_copy_parameter(self, sample_df):
         """Test that copy parameter works correctly."""
         # With copy=True (default)
         result = impute_missing_values(sample_df, ['a'], strategy='median', copy=True)
@@ -110,22 +110,22 @@ class TestImputeMissingValues:
         result = impute_missing_values(df_copy, ['a'], strategy='median', copy=False)
         assert result is df_copy  # Same object
     
-    def test_impute_missing_values_raises_value_error(self, sample_df):
+    def test_raises_for_invalid_strategy(self, sample_df):
         """Test that invalid strategy raises ValueError."""
         with pytest.raises(ValueError, match="Invalid imputation strategy"):
             impute_missing_values(sample_df, ['a'], strategy='invalid')
     
-    def test_impute_missing_values_raises_value_error_missing_columns(self, sample_df):
+    def test_raises_for_missing_columns(self, sample_df):
         """Test that missing columns raise ValueError."""
         with pytest.raises(ValueError, match="Columns not found"):
             impute_missing_values(sample_df, ['nonexistent'], strategy='median')
     
-    def test_impute_missing_values_raises_value_error_empty_columns(self, sample_df):
+    def test_raises_for_empty_columns(self, sample_df):
         """Test that empty columns list raises ValueError."""
         with pytest.raises(ValueError, match="columns list cannot be empty"):
             impute_missing_values(sample_df, [], strategy='median')
     
-    def test_impute_missing_values_raises_type_error(self):
+    def test_raises_for_non_dataframe(self):
         """Test that non-DataFrame input raises TypeError."""
         with pytest.raises(TypeError, match="must be a pandas DataFrame"):
             impute_missing_values([1, 2, 3], ['a'], strategy='median')
@@ -209,7 +209,7 @@ class TestRecommendImputationStrategy:
         assert recommendations['empty']['strategy'] == 'drop'
 
 
-class TestConvenienceFunctions:
+class TestImputationConvenience:
     """Test convenience functions."""
     
     def test_impute_median(self, sample_df):
@@ -233,10 +233,10 @@ class TestConvenienceFunctions:
         assert len(result) == 3  # Dropped 2 rows
 
 
-class TestEdgeCases:
+class TestImputationEdgeCases:
     """Test edge cases."""
     
-    def test_impute_missing_values_edge_case_all_missing(self):
+    def test_all_missing(self):
         """Test with column that's all missing."""
         df = pd.DataFrame({
             'all_nan': [np.nan, np.nan, np.nan]
@@ -286,7 +286,7 @@ class TestEdgeCases:
         # Should have no missing values
         assert not result.isna().any().any()
     
-    def test_impute_missing_values_edge_case_very_large_dataset(self):
+    def test_very_large_dataset(self):
         """Test with very large dataset (> 1M rows)."""
         np.random.seed(42)
         n = 1_100_000  # Just over 1 million rows
@@ -310,7 +310,7 @@ class TestEdgeCases:
         assert not result['col2'].isna().any()
         assert len(result) == n
     
-    def test_impute_missing_values_edge_case_zero_variance(self):
+    def test_zero_variance_median(self):
         """Test with all values identical (zero variance)."""
         # All values are the same
         df = pd.DataFrame({
@@ -328,7 +328,7 @@ class TestEdgeCases:
         # Verify all values are still the same
         assert (result['constant'] == 5.0).all()
     
-    def test_impute_missing_values_edge_case_zero_variance_mean(self):
+    def test_zero_variance_mean(self):
         """Test zero variance with mean strategy."""
         df = pd.DataFrame({
             'constant': [10.0, 10.0, np.nan, 10.0, 10.0]
@@ -340,7 +340,7 @@ class TestEdgeCases:
         assert result['constant'].iloc[2] == 10.0
         assert not result['constant'].isna().any()
     
-    def test_impute_missing_values_edge_case_mixed_positive_negative_outliers(self):
+    def test_mixed_positive_negative_outliers(self):
         """Test with mixed positive/negative values including outliers."""
         df = pd.DataFrame({
             'mixed': [
@@ -368,7 +368,7 @@ class TestEdgeCases:
         assert not median_result['mixed'].isna().any()
         assert not mean_result['mixed'].isna().any()
     
-    def test_impute_missing_values_edge_case_extreme_outliers(self):
+    def test_extreme_outliers(self):
         """Test with extreme outliers that could cause numerical issues."""
         df = pd.DataFrame({
             'extreme': [
@@ -391,7 +391,7 @@ class TestEdgeCases:
         filled_values = result.loc[result.index[[3, 7, 9]], 'extreme']
         assert all(np.isfinite(filled_values))
     
-    def test_impute_missing_values_edge_case_alternating_signs(self):
+    def test_alternating_signs(self):
         """Test with alternating positive and negative values."""
         df = pd.DataFrame({
             'alternating': [
@@ -409,7 +409,7 @@ class TestEdgeCases:
         assert np.isfinite(median_val)
 
 
-class TestIntegrationWithRealData:
+class TestImputationIntegration:
     """Test with realistic health data patterns."""
     
     def test_heart_rate_data(self):

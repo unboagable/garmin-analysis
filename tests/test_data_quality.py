@@ -301,93 +301,92 @@ class DataQualityChecker:
         print("="*60)
 
 
-# Test functions
-def test_data_quality_checker_analyze_dataframe():
-    """Test the DataQualityChecker class."""
-    # Create sample data with various quality issues
-    data = {
-        'good_feature': np.random.randn(100),
-        'missing_feature': [np.nan] * 80 + list(np.random.randn(20)),
-        'mixed_types': [1, 2, 'three', 4, 5] * 20,
-        'time_strings': ['00:00:00'] * 50 + ['12:00:00'] * 50,
-        'outliers': [1, 2, 3, 4, 5, 1000] * 16 + [6, 7, 8, 9, 10] * 2
-    }
-    
-    # Ensure all arrays have the same length
-    max_length = max(len(v) for v in data.values())
-    for key in data:
-        if len(data[key]) < max_length:
-            # Pad with NaN or repeat values
-            if isinstance(data[key][0], (int, float)):
-                data[key] = list(data[key]) + [np.nan] * (max_length - len(data[key]))
-            else:
-                data[key] = list(data[key]) + [data[key][-1]] * (max_length - len(data[key]))
-    
-    df = pd.DataFrame(data)
-    
-    # Initialize checker
-    checker = DataQualityChecker(completeness_threshold=20, completeness_percentage=0.2)
-    
-    # Run analysis
-    report = checker.analyze_dataframe(df)
-    
-    # Assertions
-    assert 'basic_info' in report
-    assert 'column_completeness' in report
-    assert 'feature_suitability' in report
-    assert 'recommendations' in report
-    
-    # Check specific findings
-    assert report['column_completeness']['good_feature']['is_sufficient'] == True
-    assert report['column_completeness']['missing_feature']['is_sufficient'] == False
-    
-    # Check feature suitability
-    suitable_features = checker.get_modeling_features('anomaly_detection', min_features=2)
-    assert len(suitable_features) >= 1  # At least good_feature should be suitable
-    
-    print("✅ DataQualityChecker tests passed!")
-    
+class TestDataQualityChecker:
 
-
-@pytest.mark.integration
-def test_data_quality_analysis_end_to_end(tmp_db):
-    """Test data quality analysis on real Garmin data."""
-    try:
-        from garmin_analysis.utils.data_loading import load_master_dataframe
+    def test_analyze_dataframe(self):
+        """Test the DataQualityChecker class."""
+        # Create sample data with various quality issues
+        data = {
+            'good_feature': np.random.randn(100),
+            'missing_feature': [np.nan] * 80 + list(np.random.randn(20)),
+            'mixed_types': [1, 2, 'three', 4, 5] * 20,
+            'time_strings': ['00:00:00'] * 50 + ['12:00:00'] * 50,
+            'outliers': [1, 2, 3, 4, 5, 1000] * 16 + [6, 7, 8, 9, 10] * 2
+        }
         
-        # Load real data
-        df = load_master_dataframe()
+        # Ensure all arrays have the same length
+        max_length = max(len(v) for v in data.values())
+        for key in data:
+            if len(data[key]) < max_length:
+                # Pad with NaN or repeat values
+                if isinstance(data[key][0], (int, float)):
+                    data[key] = list(data[key]) + [np.nan] * (max_length - len(data[key]))
+                else:
+                    data[key] = list(data[key]) + [data[key][-1]] * (max_length - len(data[key]))
+        
+        df = pd.DataFrame(data)
         
         # Initialize checker
-        checker = DataQualityChecker()
+        checker = DataQualityChecker(completeness_threshold=20, completeness_percentage=0.2)
         
         # Run analysis
         report = checker.analyze_dataframe(df)
         
-        # Print summary
-        checker.print_summary()
+        # Assertions
+        assert 'basic_info' in report
+        assert 'column_completeness' in report
+        assert 'feature_suitability' in report
+        assert 'recommendations' in report
         
-        # Get modeling features
-        anomaly_features = checker.get_modeling_features('anomaly_detection', min_features=3)
-        clustering_features = checker.get_modeling_features('clustering', min_features=3)
-        predictive_features = checker.get_modeling_features('predictive_modeling', min_features=3)
+        # Check specific findings
+        assert report['column_completeness']['good_feature']['is_sufficient'] == True
+        assert report['column_completeness']['missing_feature']['is_sufficient'] == False
         
-        print(f"\n🎯 Recommended Features:")
-        print(f"   • Anomaly Detection: {anomaly_features}")
-        print(f"   • Clustering: {clustering_features}")
-        print(f"   • Predictive Modeling: {predictive_features}")
+        # Check feature suitability
+        suitable_features = checker.get_modeling_features('anomaly_detection', min_features=2)
+        assert len(suitable_features) >= 1  # At least good_feature should be suitable
         
-        # Assertions for real data
-        assert len(anomaly_features) >= 3, f"Need at least 3 features for anomaly detection, got {len(anomaly_features)}"
-        assert len(clustering_features) >= 3, f"Need at least 3 features for clustering, got {len(clustering_features)}"
-        
-        print("✅ Real data quality analysis completed successfully!")
-        
-        
-    except ImportError:
-        pytest.skip("Cannot import Garmin data modules")
-    except Exception as e:
-        pytest.fail(f"Real data analysis failed: {e}")
+        print("✅ DataQualityChecker tests passed!")
+
+    @pytest.mark.integration
+    def test_end_to_end(self, tmp_db):
+        """Test data quality analysis on real Garmin data."""
+        try:
+            from garmin_analysis.utils.data_loading import load_master_dataframe
+            
+            # Load real data
+            df = load_master_dataframe()
+            
+            # Initialize checker
+            checker = DataQualityChecker()
+            
+            # Run analysis
+            report = checker.analyze_dataframe(df)
+            
+            # Print summary
+            checker.print_summary()
+            
+            # Get modeling features
+            anomaly_features = checker.get_modeling_features('anomaly_detection', min_features=3)
+            clustering_features = checker.get_modeling_features('clustering', min_features=3)
+            predictive_features = checker.get_modeling_features('predictive_modeling', min_features=3)
+            
+            print(f"\n🎯 Recommended Features:")
+            print(f"   • Anomaly Detection: {anomaly_features}")
+            print(f"   • Clustering: {clustering_features}")
+            print(f"   • Predictive Modeling: {predictive_features}")
+            
+            # Assertions for real data
+            assert len(anomaly_features) >= 3, f"Need at least 3 features for anomaly detection, got {len(anomaly_features)}"
+            assert len(clustering_features) >= 3, f"Need at least 3 features for clustering, got {len(clustering_features)}"
+            
+            print("✅ Real data quality analysis completed successfully!")
+            
+            
+        except ImportError:
+            pytest.skip("Cannot import Garmin data modules")
+        except Exception as e:
+            pytest.fail(f"Real data analysis failed: {e}")
 
 
 if __name__ == "__main__":

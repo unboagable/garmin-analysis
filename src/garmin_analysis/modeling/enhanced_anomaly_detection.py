@@ -219,7 +219,6 @@ class EnhancedAnomalyDetector:
             model = OneClassSVM(
                 nu=0.1,
                 gamma='scale',
-                random_state=self.random_state,
                 **kwargs
             )
             model.fit(X)

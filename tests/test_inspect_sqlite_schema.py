@@ -8,7 +8,6 @@ from garmin_analysis.data_ingestion.inspect_sqlite_schema import inspect_sqlite_
 
 @pytest.fixture
 def temp_db():
-    # Create a temporary SQLite DB
     db_fd, db_path = tempfile.mkstemp(suffix=".db")
     os.close(db_fd)
 
@@ -21,22 +20,21 @@ def temp_db():
 
     yield db_path
 
-    # Clean up
     os.remove(db_path)
 
 
-def test_inspect_sqlite_db_prints_output(temp_db, caplog):
-    caplog.set_level(logging.INFO)
+class TestInspectSchema:
 
-    # Run the inspection
-    inspect_sqlite_db(temp_db)
+    def test_prints_output(self, temp_db, caplog):
+        caplog.set_level(logging.INFO)
 
-    # Assertions against logging output
-    text = caplog.text
-    assert "Table: users" in text
-    assert "  - id (INTEGER)" in text
-    assert "  - name (TEXT)" in text
-    assert "  - email (TEXT)" in text
-    assert "Table: logs" in text
-    assert "  - message (TEXT)" in text
-    assert "  - created_at (DATETIME)" in text
+        inspect_sqlite_db(temp_db)
+
+        text = caplog.text
+        assert "Table: users" in text
+        assert "  - id (INTEGER)" in text
+        assert "  - name (TEXT)" in text
+        assert "  - email (TEXT)" in text
+        assert "Table: logs" in text
+        assert "  - message (TEXT)" in text
+        assert "  - created_at (DATETIME)" in text

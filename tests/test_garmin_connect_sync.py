@@ -511,7 +511,7 @@ class TestBackupGarminDB:
 # Test: Integration Scenarios
 # ============================================================================
 
-class TestIntegrationScenarios:
+class TestGarminSyncIntegration:
     """Test complete integration scenarios."""
     
     @pytest.mark.integration
@@ -582,7 +582,7 @@ class TestIntegrationScenarios:
 # Test: Edge Cases
 # ============================================================================
 
-class TestEdgeCases:
+class TestGarminSyncEdgeCases:
     """Test edge cases and error conditions."""
     
     def test_config_with_empty_credentials(self, tmp_path):
@@ -661,7 +661,7 @@ class TestEdgeCases:
 # Test: Logging
 # ============================================================================
 
-class TestLogging:
+class TestGarminSyncLogging:
     """Test logging functionality."""
     
     def test_sync_logs_success(self, tmp_path, mock_garmindb_config_dir, mock_db_dir, caplog):

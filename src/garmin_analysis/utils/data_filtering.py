@@ -74,9 +74,15 @@ def filter_by_date(df, date_col="day", from_date=None, to_date=None, days_back=N
     now = datetime.now()
 
     if days_back:
-        from_date = now - timedelta(days=days_back)
+        try:
+            from_date = now - timedelta(days=days_back)
+        except OverflowError:
+            from_date = datetime(1970, 1, 1)
     elif weeks_back:
-        from_date = now - timedelta(weeks=weeks_back)
+        try:
+            from_date = now - timedelta(weeks=weeks_back)
+        except OverflowError:
+            from_date = datetime(1970, 1, 1)
     elif months_back:
         from_date = now - DateOffset(months=months_back)
 

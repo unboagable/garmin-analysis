@@ -19,7 +19,10 @@ def convert_time_to_minutes(time_str):
             m, s = map(int, parts)
             return m + s / 60
         else:
-            return float(time_str)
+            val = float(time_str)
+            if not np.isfinite(val):
+                return np.nan
+            return val
     except Exception:
         return np.nan
 
@@ -28,11 +31,11 @@ def normalize_day_column(df: pd.DataFrame, source_name: str = "unknown") -> pd.D
     if df is None or df.empty:
         return df
     if "day" in df.columns:
-        df = df.assign(day=pd.to_datetime(df["day"]))
+        df = df.assign(day=pd.to_datetime(df["day"], errors="coerce"))
     elif "calendarDate" in df.columns:
-        df = df.assign(day=pd.to_datetime(df["calendarDate"]))
+        df = df.assign(day=pd.to_datetime(df["calendarDate"], errors="coerce"))
     elif "timestamp" in df.columns:
-        df = df.assign(day=pd.to_datetime(df["timestamp"]).dt.normalize())
+        df = df.assign(day=pd.to_datetime(df["timestamp"], errors="coerce").dt.normalize())
     else:
         logger.warning(f"[{source_name}] could not normalize 'day' column (missing day/calendarDate/timestamp)")
     return df

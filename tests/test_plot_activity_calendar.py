@@ -38,7 +38,7 @@ class TestActivityCalendar:
         assert darkened.startswith('#')
         assert len(darkened) == 7
     
-    def test_plot_activity_calendar_basic(self):
+    def test_basic_plot(self):
         """Test basic calendar plotting functionality."""
         # Create sample data
         base_date = datetime(2024, 1, 1)
@@ -63,7 +63,7 @@ class TestActivityCalendar:
             plot_files = list(Path(temp_dir).glob("activity_calendar_*.png"))
             assert len(plot_files) == 1
     
-    def test_plot_activity_calendar_empty_data(self):
+    def test_empty_data(self):
         """Test handling of empty data."""
         df = pd.DataFrame(columns=['start_time', 'sport'])
         
@@ -75,7 +75,7 @@ class TestActivityCalendar:
             plot_files = list(Path(temp_dir).glob("activity_calendar_*.png"))
             assert len(plot_files) == 0
     
-    def test_plot_activity_calendar_date_filtering(self):
+    def test_date_filtering(self):
         """Test date range filtering."""
         # Create data spanning multiple months
         start_date = datetime(2024, 1, 1)
@@ -103,7 +103,7 @@ class TestActivityCalendar:
             plot_files = list(Path(temp_dir).glob("activity_calendar_*.png"))
             assert len(plot_files) == 1
     
-    def test_plot_activity_calendar_multiple_activities_per_day(self):
+    def test_multiple_activities_per_day(self):
         """Test handling of multiple activities on the same day."""
         date = datetime(2024, 1, 1)
         activities_data = [
@@ -121,14 +121,14 @@ class TestActivityCalendar:
             plot_files = list(Path(temp_dir).glob("activity_calendar_*.png"))
             assert len(plot_files) == 1
     
-    def test_plot_activity_calendar_missing_columns(self):
+    def test_missing_columns(self):
         """Test handling of missing required columns."""
         df = pd.DataFrame({'wrong_column': [1, 2, 3]})
         
         with pytest.raises(ValueError, match="Missing required columns"):
             plot_activity_calendar(df)
     
-    def test_plot_activity_calendar_unknown_sports(self):
+    def test_unknown_sports(self):
         """Test handling of unknown sport types."""
         activities_data = [
             {'start_time': datetime(2024, 1, 1), 'sport': 'running'},
@@ -145,7 +145,7 @@ class TestActivityCalendar:
             plot_files = list(Path(temp_dir).glob("activity_calendar_*.png"))
             assert len(plot_files) == 1
     
-    def test_plot_activity_calendar_edge_case_no_activities_in_date_range(self):
+    def test_no_activities_in_date_range(self):
         """Test with no activities in specified date range."""
         # Create activities in January
         activities_data = [
@@ -171,7 +171,7 @@ class TestActivityCalendar:
             # Either no file or empty plot file
             assert len(plot_files) <= 1
     
-    def test_plot_activity_calendar_edge_case_multiple_activities_same_day_varied(self):
+    def test_many_activities_same_day(self):
         """Test with many activities on the same day."""
         date = datetime(2024, 1, 15)
         activities_data = []
@@ -195,7 +195,7 @@ class TestActivityCalendar:
             plot_files = list(Path(temp_dir).glob("activity_calendar_*.png"))
             assert len(plot_files) == 1
     
-    def test_plot_activity_calendar_edge_case_unknown_activity_types_only(self):
+    def test_only_unknown_activity_types(self):
         """Test with only unknown/unrecognized activity types."""
         activities_data = [
             {'start_time': datetime(2024, 1, 1), 'sport': 'quantum_jumping'},
@@ -214,7 +214,7 @@ class TestActivityCalendar:
             plot_files = list(Path(temp_dir).glob("activity_calendar_*.png"))
             assert len(plot_files) == 1
     
-    def test_plot_activity_calendar_edge_case_invalid_date_range(self):
+    def test_invalid_date_range(self):
         """Test with invalid date range (end before start)."""
         activities_data = [
             {'start_time': datetime(2024, 1, 15), 'sport': 'running'},
@@ -240,7 +240,7 @@ class TestActivityCalendar:
                 # If it raises an error, that's also acceptable
                 assert True
     
-    def test_plot_activity_calendar_edge_case_very_long_date_range(self):
+    def test_very_long_date_range(self):
         """Test with very long date range (> 1 year)."""
         # Create activities over 2 years
         start_date = datetime(2023, 1, 1)
@@ -263,7 +263,7 @@ class TestActivityCalendar:
             plot_files = list(Path(temp_dir).glob("activity_calendar_*.png"))
             assert len(plot_files) == 1
     
-    def test_plot_activity_calendar_edge_case_18_month_range(self):
+    def test_18_month_range(self):
         """Test with 18 month date range."""
         start_date = datetime(2023, 1, 1)
         activities_data = []
@@ -285,7 +285,7 @@ class TestActivityCalendar:
             plot_files = list(Path(temp_dir).glob("activity_calendar_*.png"))
             assert len(plot_files) == 1
     
-    def test_plot_activity_calendar_edge_case_future_dates(self):
+    def test_future_dates(self):
         """Test with activities in the future."""
         future_date = datetime.now() + timedelta(days=30)
         activities_data = [

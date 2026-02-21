@@ -200,7 +200,7 @@ class TestFunctionClarityVsNormalizeDayColumn:
         assert result_processing['day'].iloc[0].hour == 0  # Time stripped
 
 
-class TestEdgeCases:
+class TestDateNormalizationEdgeCases:
     """Test edge cases."""
     
     def test_empty_dataframe(self):

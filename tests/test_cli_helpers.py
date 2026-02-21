@@ -56,7 +56,7 @@ def sample_hr_df():
 class TestAdd24hCoverageArgs:
     """Test add_24h_coverage_args function."""
     
-    def test_add_24h_coverage_args_adds_all_arguments(self):
+    def test_adds_all_arguments(self):
         """Test that all four arguments are added."""
         parser = argparse.ArgumentParser()
         result_parser = add_24h_coverage_args(parser)
@@ -77,7 +77,7 @@ class TestAdd24hCoverageArgs:
         assert args.day_edge_tolerance == 3
         assert args.coverage_allowance_minutes == 10
     
-    def test_add_24h_coverage_args_default_values(self):
+    def test_default_values(self):
         """Test that default values are set correctly."""
         parser = argparse.ArgumentParser()
         add_24h_coverage_args(parser)
@@ -90,7 +90,7 @@ class TestAdd24hCoverageArgs:
         assert args.day_edge_tolerance == 2
         assert args.coverage_allowance_minutes == 0
     
-    def test_add_24h_coverage_args_filter_flag_is_boolean_action(self):
+    def test_filter_flag_is_boolean_action(self):
         """Test that filter flag is a boolean action."""
         parser = argparse.ArgumentParser()
         add_24h_coverage_args(parser)
@@ -103,7 +103,7 @@ class TestAdd24hCoverageArgs:
         args_without = parser.parse_args([])
         assert args_without.filter_24h_coverage is False
     
-    def test_add_24h_coverage_args_accepts_numeric_values(self):
+    def test_accepts_numeric_values(self):
         """Test that integer arguments accept numeric values."""
         parser = argparse.ArgumentParser()
         add_24h_coverage_args(parser)
@@ -118,7 +118,7 @@ class TestAdd24hCoverageArgs:
         assert isinstance(args.day_edge_tolerance, int)
         assert isinstance(args.coverage_allowance_minutes, int)
     
-    def test_add_24h_coverage_args_with_existing_arguments(self):
+    def test_with_existing_arguments(self):
         """Test that function works with existing parser arguments."""
         parser = argparse.ArgumentParser()
         parser.add_argument('--input-file', default='data.csv')
@@ -136,7 +136,7 @@ class TestAdd24hCoverageArgs:
 class TestApply24hCoverageFilterFromArgs:
     """Test apply_24h_coverage_filter_from_args function."""
     
-    def test_apply_24h_coverage_filter_from_args_with_flag_false(self, sample_dataframe):
+    def test_no_filtering_when_flag_false(self, sample_dataframe):
         """Test that no filtering occurs when flag is False."""
         parser = argparse.ArgumentParser()
         add_24h_coverage_args(parser)
@@ -148,7 +148,7 @@ class TestApply24hCoverageFilterFromArgs:
         assert len(result) == len(sample_dataframe)
         assert result.equals(sample_dataframe)
     
-    def test_apply_24h_coverage_filter_from_args_with_flag_true(self, sample_dataframe, sample_hr_df):
+    def test_filters_when_flag_true(self, sample_dataframe, sample_hr_df):
         """Test that filtering occurs when flag is True."""
         parser = argparse.ArgumentParser()
         add_24h_coverage_args(parser)
@@ -164,7 +164,7 @@ class TestApply24hCoverageFilterFromArgs:
         # With our sample data, only 2024-01-01 has coverage
         assert len(result) <= len(sample_dataframe)
     
-    def test_apply_24h_coverage_filter_from_args_with_custom_parameters(self, sample_dataframe, sample_hr_df):
+    def test_custom_parameters(self, sample_dataframe, sample_hr_df):
         """Test that custom parameters are passed through."""
         parser = argparse.ArgumentParser()
         add_24h_coverage_args(parser)
@@ -184,7 +184,7 @@ class TestApply24hCoverageFilterFromArgs:
         
         assert isinstance(result, pd.DataFrame)
     
-    def test_apply_24h_coverage_filter_from_args_clamps_to_max(self, sample_dataframe):
+    def test_clamps_allowance_to_max(self, sample_dataframe):
         """Test that coverage allowance is clamped to 300 minutes."""
         parser = argparse.ArgumentParser()
         add_24h_coverage_args(parser)
@@ -203,7 +203,7 @@ class TestApply24hCoverageFilterFromArgs:
         # With empty HR data, should return original (cannot determine watch wear without HR)
         assert len(result) == len(sample_dataframe)
     
-    def test_apply_24h_coverage_filter_from_args_clamps_to_min(self, sample_dataframe):
+    def test_clamps_allowance_to_min(self, sample_dataframe):
         """Test that coverage allowance is clamped to 0 minutes."""
         parser = argparse.ArgumentParser()
         add_24h_coverage_args(parser)
@@ -221,7 +221,7 @@ class TestApply24hCoverageFilterFromArgs:
         
         assert isinstance(result, pd.DataFrame)
     
-    def test_apply_24h_coverage_filter_from_args_raises_attribute_error(self, sample_dataframe):
+    def test_raises_for_missing_attrs(self, sample_dataframe):
         """Test that error is raised if args missing required attributes."""
         # Create args without the required attributes
         args = argparse.Namespace(some_other_arg=True)
@@ -229,7 +229,7 @@ class TestApply24hCoverageFilterFromArgs:
         with pytest.raises(AttributeError, match="missing required attributes"):
             apply_24h_coverage_filter_from_args(sample_dataframe, args)
     
-    def test_apply_24h_coverage_filter_from_args_with_empty_dataframe(self):
+    def test_empty_dataframe(self):
         """Test handling of empty DataFrame."""
         parser = argparse.ArgumentParser()
         add_24h_coverage_args(parser)
@@ -240,7 +240,7 @@ class TestApply24hCoverageFilterFromArgs:
         
         assert result.empty
     
-    def test_apply_24h_coverage_filter_from_args_with_db_path(self, sample_dataframe):
+    def test_with_db_path(self, sample_dataframe):
         """Test that db_path parameter is passed through."""
         parser = argparse.ArgumentParser()
         add_24h_coverage_args(parser)
@@ -261,7 +261,7 @@ class TestApply24hCoverageFilterFromArgs:
 class TestAddCommonOutputArgs:
     """Test add_common_output_args function."""
     
-    def test_add_common_output_args_adds_output_dir_and_verbose(self):
+    def test_adds_output_dir_and_verbose(self):
         """Test that output-dir and verbose arguments are added."""
         parser = argparse.ArgumentParser()
         result_parser = add_common_output_args(parser)
@@ -274,7 +274,7 @@ class TestAddCommonOutputArgs:
         assert args.output_dir == 'results'
         assert args.verbose is True
     
-    def test_add_common_output_args_default_values(self):
+    def test_default_values(self):
         """Test default values for output arguments."""
         parser = argparse.ArgumentParser()
         add_common_output_args(parser)
@@ -284,7 +284,7 @@ class TestAddCommonOutputArgs:
         assert args.output_dir == 'plots'
         assert args.verbose is False
     
-    def test_add_common_output_args_verbose_short_form(self):
+    def test_verbose_short_form(self):
         """Test that -v short form works."""
         parser = argparse.ArgumentParser()
         add_common_output_args(parser)
@@ -293,7 +293,7 @@ class TestAddCommonOutputArgs:
         
         assert args.verbose is True
     
-    def test_add_common_output_args_verbose_long_form(self):
+    def test_verbose_long_form(self):
         """Test that --verbose long form works."""
         parser = argparse.ArgumentParser()
         add_common_output_args(parser)
@@ -302,7 +302,7 @@ class TestAddCommonOutputArgs:
         
         assert args.verbose is True
     
-    def test_add_common_output_args_with_chaining(self):
+    def test_chaining_with_coverage_args(self):
         """Test chaining with add_24h_coverage_args."""
         parser = argparse.ArgumentParser()
         add_24h_coverage_args(parser)
@@ -322,7 +322,7 @@ class TestAddCommonOutputArgs:
 class TestSetupLoggingFromArgs:
     """Test setup_logging_from_args function."""
     
-    def test_setup_logging_from_args_with_verbose(self):
+    def test_verbose_sets_debug(self):
         """Test that DEBUG level is set when verbose is True."""
         parser = argparse.ArgumentParser()
         add_common_output_args(parser)
@@ -331,7 +331,7 @@ class TestSetupLoggingFromArgs:
         # Should not raise error
         setup_logging_from_args(args)
     
-    def test_setup_logging_from_args_with_not_verbose(self):
+    def test_default_level_when_not_verbose(self):
         """Test that default level is used when verbose is False."""
         parser = argparse.ArgumentParser()
         add_common_output_args(parser)
@@ -340,7 +340,7 @@ class TestSetupLoggingFromArgs:
         # Should not raise error
         setup_logging_from_args(args)
     
-    def test_setup_logging_from_args_with_missing_verbose(self):
+    def test_missing_verbose_attribute(self):
         """Test graceful handling when verbose attribute missing."""
         args = argparse.Namespace()  # No verbose attribute
         
@@ -348,11 +348,11 @@ class TestSetupLoggingFromArgs:
         setup_logging_from_args(args)
 
 
-class TestIntegration:
+class TestCLIHelpersIntegration:
     """Integration tests for combined usage."""
     
     @pytest.mark.integration
-    def test_cli_helpers_end_to_end(self, sample_dataframe, sample_hr_df):
+    def test_end_to_end(self, sample_dataframe, sample_hr_df):
         """Test typical CLI tool pattern."""
         # Create parser with both argument groups
         parser = argparse.ArgumentParser(description='Test tool')
@@ -386,7 +386,7 @@ class TestIntegration:
         assert isinstance(result, pd.DataFrame)
     
     @pytest.mark.integration
-    def test_cli_helpers_minimal_usage_end_to_end(self, sample_dataframe):
+    def test_minimal_usage(self, sample_dataframe):
         """Test minimal usage with defaults."""
         parser = argparse.ArgumentParser()
         add_24h_coverage_args(parser)
@@ -402,10 +402,10 @@ class TestIntegration:
         assert args.verbose is False
 
 
-class TestEdgeCases:
+class TestCLIHelpersEdgeCases:
     """Test edge cases and error conditions."""
     
-    def test_add_24h_coverage_args_edge_case_duplicate_args(self):
+    def test_duplicate_args_raises(self):
         """Test that parser raises error when adding duplicate arguments."""
         parser = argparse.ArgumentParser()
         
@@ -416,7 +416,7 @@ class TestEdgeCases:
         with pytest.raises(argparse.ArgumentError):
             add_24h_coverage_args(parser)
     
-    def test_add_24h_coverage_args_edge_case_conflicting_names(self):
+    def test_conflicting_names_raises(self):
         """Test that conflicting argument names raise error."""
         parser = argparse.ArgumentParser()
         parser.add_argument('--max-gap', type=str, default='custom')
@@ -425,7 +425,7 @@ class TestEdgeCases:
         with pytest.raises(argparse.ArgumentError):
             add_24h_coverage_args(parser)
     
-    def test_apply_24h_coverage_filter_from_args_edge_case_none_dataframe(self):
+    def test_none_dataframe_raises(self):
         """Test handling of None DataFrame."""
         parser = argparse.ArgumentParser()
         add_24h_coverage_args(parser)

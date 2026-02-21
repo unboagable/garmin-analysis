@@ -373,7 +373,7 @@ class TestSafeReturn:
         assert result == 7
 
 
-class TestIntegration:
+class TestErrorHandlingIntegration:
     """Integration tests for error handling."""
     
     def test_decorator_with_validation(self):

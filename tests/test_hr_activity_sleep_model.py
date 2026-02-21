@@ -729,7 +729,7 @@ class TestEndToEndAnalysis:
         assert results['n_features'] > 0
 
 
-class TestEdgeCases:
+class TestHRModelEdgeCases:
     """Test edge cases and error handling."""
     
     def test_minimal_data(self, tmp_path):

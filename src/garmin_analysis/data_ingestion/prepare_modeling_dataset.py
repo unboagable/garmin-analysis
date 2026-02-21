@@ -47,9 +47,14 @@ def prepare_modeling_dataset(
         after_rows = len(df)
         logger.info(f"Dropped {before_rows - after_rows} rows with coverage < {min_coverage_pct}%")
 
-    # Drop rows missing critical features
+    # Drop rows missing critical features (skip features not present in data)
+    available_required = [f for f in required_features if f in df.columns]
+    missing_required = [f for f in required_features if f not in df.columns]
+    if missing_required:
+        logger.warning(f"Required features not found in data: {missing_required}")
     before_rows = len(df)
-    df = df.dropna(subset=required_features)
+    if available_required:
+        df = df.dropna(subset=available_required)
     after_rows = len(df)
     logger.info(f"Dropped {before_rows - after_rows} rows missing required features")
 

@@ -25,33 +25,36 @@ def teardown_module(module):
     Path(TEST_INPUT_PATH).unlink(missing_ok=True)
     Path(TEST_OUTPUT_PATH).unlink(missing_ok=True)
 
-def test_prepare_modeling_dataset_creates_output_file():
-    prepare_modeling_dataset(
-        input_path=TEST_INPUT_PATH,
-        output_path=TEST_OUTPUT_PATH,
-        missing_threshold=0.5
-    )
-    assert Path(TEST_OUTPUT_PATH).exists()
 
-def test_prepare_modeling_dataset_filters_required_features():
-    prepare_modeling_dataset(
-        input_path=TEST_INPUT_PATH,
-        output_path=TEST_OUTPUT_PATH,
-        required_features=["score", "stress_avg", "yesterday_activity_minutes"]
-    )
-    df = pd.read_csv(TEST_OUTPUT_PATH)
-    assert not df[["score", "stress_avg", "yesterday_activity_minutes"]].isnull().any().any()
+class TestPrepareModelingDataset:
 
-def test_prepare_modeling_dataset_drops_metadata():
-    prepare_modeling_dataset(input_path=TEST_INPUT_PATH, output_path=TEST_OUTPUT_PATH)
-    df = pd.read_csv(TEST_OUTPUT_PATH)
-    assert not any("missing_" in col or "Unnamed" in col for col in df.columns)
+    def test_creates_output_file(self):
+        prepare_modeling_dataset(
+            input_path=TEST_INPUT_PATH,
+            output_path=TEST_OUTPUT_PATH,
+            missing_threshold=0.5
+        )
+        assert Path(TEST_OUTPUT_PATH).exists()
 
-def test_prepare_modeling_dataset_drops_high_missingness():
-    prepare_modeling_dataset(
-        input_path=TEST_INPUT_PATH,
-        output_path=TEST_OUTPUT_PATH,
-        missing_threshold=0.5
-    )
-    df = pd.read_csv(TEST_OUTPUT_PATH)
-    assert "mostly_nan" not in df.columns
+    def test_filters_required_features(self):
+        prepare_modeling_dataset(
+            input_path=TEST_INPUT_PATH,
+            output_path=TEST_OUTPUT_PATH,
+            required_features=["score", "stress_avg", "yesterday_activity_minutes"]
+        )
+        df = pd.read_csv(TEST_OUTPUT_PATH)
+        assert not df[["score", "stress_avg", "yesterday_activity_minutes"]].isnull().any().any()
+
+    def test_drops_metadata(self):
+        prepare_modeling_dataset(input_path=TEST_INPUT_PATH, output_path=TEST_OUTPUT_PATH)
+        df = pd.read_csv(TEST_OUTPUT_PATH)
+        assert not any("missing_" in col or "Unnamed" in col for col in df.columns)
+
+    def test_drops_high_missingness(self):
+        prepare_modeling_dataset(
+            input_path=TEST_INPUT_PATH,
+            output_path=TEST_OUTPUT_PATH,
+            missing_threshold=0.5
+        )
+        df = pd.read_csv(TEST_OUTPUT_PATH)
+        assert "mostly_nan" not in df.columns

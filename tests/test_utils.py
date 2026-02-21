@@ -3,42 +3,41 @@ import pandas as pd
 from garmin_analysis.utils.data_processing import convert_time_to_minutes, normalize_day_column
 
 
-def test_convert_time_to_minutes_hms():
-    assert convert_time_to_minutes("01:30:00") == 90
-    assert convert_time_to_minutes("00:45:30") == 45.5
+class TestConvertTimeToMinutes:
+
+    def test_hms_format(self):
+        assert convert_time_to_minutes("01:30:00") == 90
+        assert convert_time_to_minutes("00:45:30") == 45.5
+
+    def test_ms_format(self):
+        assert convert_time_to_minutes("05:30") == 5.5
+
+    def test_invalid_format(self):
+        assert pd.isna(convert_time_to_minutes("nonsense"))
+        assert pd.isna(convert_time_to_minutes(""))
 
 
-def test_convert_time_to_minutes_ms():
-    assert convert_time_to_minutes("05:30") == 5.5
+class TestNormalizeDayColumn:
 
+    def test_day_column(self):
+        df = pd.DataFrame({"day": ["2023-01-01", "2023-01-02"]})
+        result = normalize_day_column(df.copy(), "test")
+        assert pd.api.types.is_datetime64_any_dtype(result["day"])
 
-def test_convert_time_to_minutes_with_invalid_format():
-    assert pd.isna(convert_time_to_minutes("nonsense"))
-    assert pd.isna(convert_time_to_minutes(""))
+    def test_calendar_date_column(self):
+        df = pd.DataFrame({"calendarDate": ["2023-01-01", "2023-01-02"]})
+        result = normalize_day_column(df.copy(), "test")
+        assert "day" in result.columns
+        assert pd.api.types.is_datetime64_any_dtype(result["day"])
 
+    def test_timestamp_column(self):
+        df = pd.DataFrame({"timestamp": ["2023-01-01T14:23:00", "2023-01-02T00:01:00"]})
+        result = normalize_day_column(df.copy(), "test")
+        assert "day" in result.columns
+        assert all(result["day"].dt.hour == 0)
 
-def test_normalize_day_column_with_day():
-    df = pd.DataFrame({"day": ["2023-01-01", "2023-01-02"]})
-    result = normalize_day_column(df.copy(), "test")
-    assert pd.api.types.is_datetime64_any_dtype(result["day"])
-
-
-def test_normalize_day_column_with_calendar_date():
-    df = pd.DataFrame({"calendarDate": ["2023-01-01", "2023-01-02"]})
-    result = normalize_day_column(df.copy(), "test")
-    assert "day" in result.columns
-    assert pd.api.types.is_datetime64_any_dtype(result["day"])
-
-
-def test_normalize_day_column_with_timestamp():
-    df = pd.DataFrame({"timestamp": ["2023-01-01T14:23:00", "2023-01-02T00:01:00"]})
-    result = normalize_day_column(df.copy(), "test")
-    assert "day" in result.columns
-    assert all(result["day"].dt.hour == 0)
-
-
-def test_normalize_day_column_with_missing_column(caplog):
-    df = pd.DataFrame({"value": [1, 2]})
-    result = normalize_day_column(df.copy(), "test_missing")
-    assert "day" not in result.columns
-    assert any("could not normalize" in message for message in caplog.text.splitlines())
+    def test_missing_column(self, caplog):
+        df = pd.DataFrame({"value": [1, 2]})
+        result = normalize_day_column(df.copy(), "test_missing")
+        assert "day" not in result.columns
+        assert any("could not normalize" in message for message in caplog.text.splitlines())

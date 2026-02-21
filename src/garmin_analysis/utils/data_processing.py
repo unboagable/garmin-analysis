@@ -31,11 +31,20 @@ def normalize_day_column(df: pd.DataFrame, source_name: str = "unknown") -> pd.D
     if df is None or df.empty:
         return df
     if "day" in df.columns:
-        df = df.assign(day=pd.to_datetime(df["day"], errors="coerce"))
+        try:
+            df = df.assign(day=pd.to_datetime(df["day"], errors="coerce"))
+        except ValueError:
+            df = df.assign(day=pd.to_datetime(df["day"], errors="coerce", utc=True).dt.tz_localize(None))
     elif "calendarDate" in df.columns:
-        df = df.assign(day=pd.to_datetime(df["calendarDate"], errors="coerce"))
+        try:
+            df = df.assign(day=pd.to_datetime(df["calendarDate"], errors="coerce"))
+        except ValueError:
+            df = df.assign(day=pd.to_datetime(df["calendarDate"], errors="coerce", utc=True).dt.tz_localize(None))
     elif "timestamp" in df.columns:
-        df = df.assign(day=pd.to_datetime(df["timestamp"], errors="coerce").dt.normalize())
+        try:
+            df = df.assign(day=pd.to_datetime(df["timestamp"], errors="coerce").dt.normalize())
+        except ValueError:
+            df = df.assign(day=pd.to_datetime(df["timestamp"], errors="coerce", utc=True).dt.tz_localize(None).dt.normalize())
     else:
         logger.warning(f"[{source_name}] could not normalize 'day' column (missing day/calendarDate/timestamp)")
     return df

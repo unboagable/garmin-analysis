@@ -1063,7 +1063,7 @@ class TestActivityMappingsAdversarial:
         df = pd.DataFrame({"sport": ["running", np.nan, "cycling"]})
         result = map_activity_dataframe(df, {})
         assert len(result) == 3
-        assert result["display_name"].iloc[1] is None
+        assert pd.isna(result["display_name"].iloc[1])
 
     def test_map_activity_injection(self):
         df = pd.DataFrame({"sport": ["'; DROP TABLE activities;--"]})

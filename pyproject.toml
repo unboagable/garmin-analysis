@@ -28,6 +28,12 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8.3.5", "nbconvert>=7.0.0", "nbformat>=5.0.0"]
 
+[project.scripts]
+garmin-weekly-report = "garmin_analysis.cli_weekly_report:main"
+garmin-day-of-week = "garmin_analysis.cli_day_of_week:main"
+garmin-stress-by-time = "garmin_analysis.cli_time_of_day_stress:main"
+garmin-sync = "garmin_analysis.cli_garmin_sync:main"
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"

@@ -15,7 +15,7 @@ A comprehensive Garmin health data analysis platform with interactive dashboard,
 - [Time-of-Day Stress Analysis](#-time-of-day-stress-analysis)
 - [Activity Calendar](#-activity-calendar--type-mappings)
 - [Machine Learning & Modeling](#machine-learning--modeling)
-- [Reporting & Analytics](#reporting--analytics)
+- [Reporting & Analytics](#reporting--analytics) (incl. Weekly Health Report)
 - [Data Quality Tools](#data-quality-tools)
 - [Use Cases](#use-cases)
 - [Testing](#testing)
@@ -75,6 +75,26 @@ poetry run python run_dashboard.py
 For detailed setup instructions, see [Getting Started](#getting-started).
 
 ## 🆕 What's New
+
+### 📅 **Weekly Health Report** (February 2026)
+
+Automated weekly Markdown reports that track three key health metrics over time:
+
+- **Sleep score trend** — weekly average with week-over-week delta and direction
+- **Resting HR delta** — weekly average with delta (lower is better)
+- **Stress minutes delta** — weekly total with delta (lower is better)
+
+```bash
+# Generate a weekly report (last 4 weeks by default)
+poetry run python -m garmin_analysis.cli_weekly_report
+
+# Last 8 weeks, with 24h coverage filtering
+poetry run python -m garmin_analysis.cli_weekly_report --weeks 8 --filter-24h-coverage
+```
+
+Reports are saved to `reports/weekly_report_<timestamp>.md` with a narrative summary, metric tables with trend indicators, and week-over-week deltas.
+
+- 129 comprehensive tests covering helpers, section builders, aggregation, CLI, and edge cases
 
 ### 🌙 **HR & Activity Impact on Sleep Model** (October 2025)
 
@@ -150,7 +170,7 @@ Analyze sleep score, body battery, and water intake patterns by day of the week 
 - **📊 Interactive Dashboard**: Real-time metric trends, correlation analysis, and day-of-week analysis with filtering options
 - **🤖 Machine Learning**: Comprehensive ML pipeline with anomaly detection, clustering, and predictive modeling
 - **📈 Visualization**: Multiple plotting tools for trends, correlations, and feature analysis
-- **📋 Reporting**: Automated summaries and comprehensive analytics reports
+- **📋 Reporting**: Automated summaries, comprehensive analytics reports, and weekly health reports
 - **🔍 Data Quality**: Advanced data quality analysis and coverage assessment tools
 - **🗄️ Data Ingestion**: Unified data loading from multiple Garmin databases with schema validation
 - **🧪 Testing**: Comprehensive test suite with 435 tests (unit and integration)
@@ -883,6 +903,19 @@ See `docs/imputation_strategies.md` for detailed guidance.
 
 ### Reporting & Analytics
 
+#### Weekly Health Report (NEW!)
+Generate automated weekly Markdown reports tracking sleep score, resting HR, and stress minutes:
+```bash
+# Default: last 4 weeks
+poetry run python -m garmin_analysis.cli_weekly_report
+
+# Last 8 weeks with 24h coverage filtering
+poetry run python -m garmin_analysis.cli_weekly_report --weeks 8 --filter-24h-coverage
+
+# Custom output directory
+poetry run python -m garmin_analysis.cli_weekly_report --output-dir reports/weekly
+```
+
 #### Comprehensive Analytics Report
 Run all analytics and generate comprehensive reports:
 ```bash
@@ -1019,7 +1052,8 @@ The system analyzes the stress timeseries data to identify days where:
 | | Comprehensive Audit | `data_quality_analysis` | Detailed data quality reports |
 | | Missing Data | `check_missing_data` | Analyze missing data patterns |
 | | Coverage Analysis | `coverage` | 24-hour coverage assessment |
-| **Reporting** | Full Analytics | `run_all_analytics` | Comprehensive analytics reports |
+| **Reporting** | Weekly Report | `cli_weekly_report` | **NEW!** Weekly sleep, HR, stress Markdown report |
+| | Full Analytics | `run_all_analytics` | Comprehensive analytics reports |
 | | Trend Summary | `generate_trend_summary` | Statistical trend summaries |
 | **Dashboard** | Web Interface | `dashboard.app` | Interactive web dashboard with day-of-week analysis |
 | **Testing** | Unit Tests | `pytest -m "not integration"` | Fast unit tests |
@@ -1150,6 +1184,9 @@ poetry run pytest -m integration
 ### Run Specific Test Modules
 
 ```bash
+# Weekly report tests (129 tests)
+poetry run pytest tests/test_generate_weekly_report.py -v
+
 # Coverage filtering tests
 poetry run pytest tests/test_coverage_filtering.py -v
 
@@ -1238,7 +1275,8 @@ garmin-analysis/
 │   │   ├── predictive_modeling.py      # General predictive models (with imputation)
 │   │   ├── enhanced_clustering.py      # Clustering algorithms (with imputation)
 │   │   └── enhanced_anomaly_detection.py  # Anomaly detection (with imputation)
-│   ├── reporting/                # Automated report generation
+│   ├── reporting/                # Automated report generation (incl. weekly health report)
+│   │   └── generate_weekly_report.py  # NEW! Weekly sleep, HR, stress report
 │   ├── utils/                    # Utility modules
 │   │   ├── data_loading.py       # Database and file loading
 │   │   ├── data_processing.py    # Data transformation and cleaning
@@ -1256,10 +1294,11 @@ garmin-analysis/
 ├── examples/                     # Example scripts
 │   └── activity_calendar_example.py # Activity calendar example
 ├── run_dashboard.py              # Convenient dashboard launcher script
-├── tests/                        # Test suite (435 tests total)
-│   ├── test_imputation.py        # NEW! Imputation utility tests (32 tests)
-│   ├── test_hr_activity_sleep_model.py  # NEW! Sleep model tests (42 tests)
-│   └── ...                       # Other test files (26 modules)
+├── tests/                        # Comprehensive test suite
+│   ├── test_generate_weekly_report.py   # NEW! Weekly report tests (129 tests)
+│   ├── test_imputation.py              # Imputation utility tests (32 tests)
+│   ├── test_hr_activity_sleep_model.py  # Sleep model tests (42 tests)
+│   └── ...                             # Other test files (27+ modules)
 ├── notebooks/                    # Jupyter notebooks
 ├── data/                         # Generated datasets
 ├── plots/                        # Generated plots

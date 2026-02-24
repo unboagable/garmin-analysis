@@ -1196,6 +1196,18 @@ class TestToNaiveDayAdversarial:
         result = to_naive_day(s)
         assert len(result) == 0
 
+    def test_mixed_timezone_offsets_no_crash(self):
+        # Mixed offsets should parse safely and normalize to tz-naive midnight.
+        s = pd.Series([
+            "2024-01-01T23:30:00-0500",
+            "2024-01-02T08:15:00+0900",
+            "2024-01-03T00:00:00Z",
+        ])
+        result = to_naive_day(s)
+        assert result.dt.tz is None
+        assert result.notna().all()
+        assert all(ts.hour == 0 and ts.minute == 0 and ts.second == 0 for ts in result)
+
 
 class TestLoadTableAdversarial:
 
@@ -2010,6 +2022,16 @@ class TestDataQualityAnalysisAdversarial:
         df = pd.DataFrame(columns=["day", "steps"])
         result = analyzer.analyze_garmin_data(df)
         assert isinstance(result, dict)
+
+    def test_empty_df_completeness_is_zero_not_nan(self):
+        analyzer = GarminDataQualityAnalyzer(output_dir="/tmp/test_dqa")
+        df = pd.DataFrame(columns=["day", "steps"])
+        result = analyzer.analyze_garmin_data(df)
+        completeness = result["completeness"]
+        assert completeness["day"]["completeness_percentage"] == 0.0
+        assert completeness["steps"]["completeness_percentage"] == 0.0
+        assert completeness["day"]["is_adequate_for_analysis"] is False
+        assert completeness["steps"]["is_adequate_for_analysis"] is False
 
     def test_single_row(self):
         analyzer = GarminDataQualityAnalyzer(output_dir="/tmp/test_dqa")

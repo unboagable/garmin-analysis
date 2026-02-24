@@ -42,15 +42,10 @@ def to_naive_day(s: pd.Series) -> pd.Series:
     Convert a timestamp series to a tz-naive midnight 'day' (datetime64[ns]).
     Safe for tz-aware or tz-naive inputs.
     """
-    s = pd.to_datetime(s, errors="coerce")  # preserves tz if present
-    # strip timezone if tz-aware
-    try:
-        s = s.dt.tz_localize(None)
-    except (TypeError, AttributeError):
-        # already tz-naive or not datetime-like; ignore
-        pass
-    # normalize to midnight and ensure dtype is datetime64[ns]
-    return pd.to_datetime(s.dt.date)
+    # Parse with UTC to robustly handle mixed timezones and offsets.
+    s = pd.to_datetime(s, errors="coerce", utc=True)
+    # Convert to tz-naive midnight with stable datetime64[ns] dtype.
+    return s.dt.tz_localize(None).dt.normalize()
 
 def _create_synthetic_dataframes(num_days: int = 14) -> dict:
     """

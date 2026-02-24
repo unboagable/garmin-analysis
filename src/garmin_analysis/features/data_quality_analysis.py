@@ -174,7 +174,7 @@ class GarminDataQualityAnalyzer:
         for col in df.columns:
             non_null_count = df[col].notna().sum()
             total_count = len(df)
-            completeness_pct = non_null_count / total_count
+            completeness_pct = (non_null_count / total_count) if total_count > 0 else 0.0
             
             # Fix numpy boolean operation issue
             null_count = total_count - non_null_count

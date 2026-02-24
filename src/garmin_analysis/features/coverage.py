@@ -97,7 +97,14 @@ def days_with_continuous_coverage(
             diffs = stamps.diff().iloc[1:]
             max_consecutive_gap = diffs.max()
 
-        internal_missing = diffs.apply(lambda d: max(pd.Timedelta(0), d - max_gap)).sum() if len(diffs) > 0 else pd.Timedelta(0)
+        if len(diffs) > 0:
+            # Handle NaT in diffs (e.g. from non-monotonic timestamps)
+            safe_diffs = diffs.fillna(pd.Timedelta(0))
+            internal_missing = safe_diffs.apply(
+                lambda d: max(pd.Timedelta(0), d - max_gap)
+            ).sum()
+        else:
+            internal_missing = pd.Timedelta(0)
 
         start_deficit = max(pd.Timedelta(0), (start_ts - (day_start + day_edge_tolerance)))
         end_deficit = max(pd.Timedelta(0), ((day_end - day_edge_tolerance) - end_ts))

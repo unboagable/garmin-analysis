@@ -87,6 +87,12 @@ class HRActivitySleepModel:
             for col in features:
                 if df_result[col].isna().any():
                     median_val = df_result[col].median()
+                    if pd.isna(median_val):
+                        logger.warning(
+                            f"Column '{col}' is all-NaN; cannot compute median. "
+                            "Skipping imputation for this column."
+                        )
+                        continue
                     df_result[col] = df_result[col].fillna(median_val)
                     logger.info(f"Filled {df_model[col].isna().sum()} missing values in {col} with median: {median_val}")
         elif strategy == 'mean':
@@ -94,6 +100,12 @@ class HRActivitySleepModel:
             for col in features:
                 if df_result[col].isna().any():
                     mean_val = df_result[col].mean()
+                    if pd.isna(mean_val):
+                        logger.warning(
+                            f"Column '{col}' is all-NaN; cannot compute mean. "
+                            "Skipping imputation for this column."
+                        )
+                        continue
                     df_result[col] = df_result[col].fillna(mean_val)
                     logger.info(f"Filled {df_model[col].isna().sum()} missing values in {col} with mean: {mean_val}")
         elif strategy == 'none':

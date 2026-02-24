@@ -31,13 +31,13 @@ def quick_completeness_check(df):
     logger.info("=" * 50)
     
     total_cols = len(df.columns)
+    total_count = len(df)
     sufficient_cols = 0
     adequate_cols = 0
     
     for col in df.columns:
         non_null_count = df[col].notna().sum()
-        total_count = len(df)
-        completeness_pct = non_null_count / total_count
+        completeness_pct = non_null_count / total_count if total_count > 0 else 0.0
         
         if non_null_count >= 50:
             sufficient_cols += 1
@@ -45,16 +45,17 @@ def quick_completeness_check(df):
             adequate_cols += 1
     
     logger.info(f"Total columns: {total_cols}")
-    logger.info(f"Columns with ≥50 non-null values: {sufficient_cols} ({sufficient_cols/total_cols:.1%})")
-    logger.info(f"Columns with ≥10% completeness: {adequate_cols} ({adequate_cols/total_cols:.1%})")
+    suf_pct = f"{sufficient_cols/total_cols:.1%}" if total_cols > 0 else "N/A"
+    adeq_pct = f"{adequate_cols/total_cols:.1%}" if total_cols > 0 else "N/A"
+    logger.info(f"Columns with ≥50 non-null values: {sufficient_cols} ({suf_pct})")
+    logger.info(f"Columns with ≥10% completeness: {adequate_cols} ({adeq_pct})")
     
     # Show worst columns
     logger.info("\n🔴 WORST 10 COLUMNS (by completeness):")
     completeness_data = []
     for col in df.columns:
         non_null_count = df[col].notna().sum()
-        total_count = len(df)
-        completeness_pct = non_null_count / total_count
+        completeness_pct = non_null_count / total_count if total_count > 0 else 0.0
         completeness_data.append((col, completeness_pct, non_null_count))
     
     # Sort by completeness (ascending)
@@ -89,10 +90,10 @@ def quick_feature_check(df):
         logger.info(f"\n✅ TOP 10 SUITABLE FEATURES:")
         # Sort by completeness
         feature_completeness = []
+        total_count = len(df)
         for col in suitable_features:
             non_null_count = df[col].notna().sum()
-            total_count = len(df)
-            completeness_pct = non_null_count / total_count
+            completeness_pct = non_null_count / total_count if total_count > 0 else 0.0
             feature_completeness.append((col, completeness_pct))
         
         feature_completeness.sort(key=lambda x: x[1], reverse=True)
@@ -102,10 +103,10 @@ def quick_feature_check(df):
     
     if unsuitable_features:
         logger.info(f"\n❌ SAMPLE UNSUITABLE FEATURES:")
+        total_count = len(df)
         for i, col in enumerate(unsuitable_features[:10]):
             non_null_count = df[col].notna().sum()
-            total_count = len(df)
-            completeness_pct = non_null_count / total_count
+            completeness_pct = non_null_count / total_count if total_count > 0 else 0.0
             dtype = df[col].dtype
             logger.info(f"  {i+1:2d}. {col:<30} {completeness_pct:6.1%} (type: {dtype})")
 
@@ -142,8 +143,8 @@ def quick_summary(df):
     # Missing data overview
     total_cells = len(df) * len(df.columns)
     missing_cells = df.isnull().sum().sum()
-    missing_percentage = missing_cells / total_cells
-    
+    missing_percentage = missing_cells / total_cells if total_cells > 0 else 0.0
+
     logger.info(f"\nMissing data: {missing_cells:,} cells ({missing_percentage:.1%})")
 
 

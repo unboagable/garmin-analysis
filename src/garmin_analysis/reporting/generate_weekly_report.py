@@ -205,7 +205,7 @@ def _stress_section(weekly: pd.DataFrame) -> str:
 
 def _latest_week_summary(weekly: pd.DataFrame) -> str:
     """One-paragraph narrative of the most recent complete week vs prior."""
-    if len(weekly) < 2:
+    if weekly.empty or len(weekly) < 2:
         return ""
 
     curr = weekly.iloc[-1]

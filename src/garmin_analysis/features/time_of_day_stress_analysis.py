@@ -12,6 +12,7 @@ Usage:
 """
 
 import logging
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -82,9 +83,12 @@ def calculate_hourly_stress_averages(df: pd.DataFrame) -> pd.DataFrame:
         'mean', 'median', 'std', 'min', 'max', 'count'
     ]).reset_index()
     
-    # Add confidence interval (95%)
-    hourly_stats['ci_lower'] = hourly_stats['mean'] - 1.96 * hourly_stats['std'] / (hourly_stats['count'] ** 0.5)
-    hourly_stats['ci_upper'] = hourly_stats['mean'] + 1.96 * hourly_stats['std'] / (hourly_stats['count'] ** 0.5)
+    # Add confidence interval (95%) - avoid division by zero when count is 0
+    count = hourly_stats['count']
+    sqrt_count = (count ** 0.5).replace(0, np.nan)
+    ci_margin = (1.96 * hourly_stats['std'] / sqrt_count).fillna(0)
+    hourly_stats['ci_lower'] = hourly_stats['mean'] - ci_margin
+    hourly_stats['ci_upper'] = hourly_stats['mean'] + ci_margin
     
     logger.info(f"Calculated hourly averages for {len(hourly_stats)} hours")
     return hourly_stats

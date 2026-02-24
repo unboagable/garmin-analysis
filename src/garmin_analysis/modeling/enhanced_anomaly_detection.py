@@ -108,10 +108,10 @@ class EnhancedAnomalyDetector:
         
         # Check data completeness for each feature
         feature_completeness = {}
+        total_count = len(df_clean)
         for col in available_features:
             non_null_count = df_clean[col].notna().sum()
-            total_count = len(df_clean)
-            completeness = non_null_count / total_count
+            completeness = non_null_count / total_count if total_count > 0 else 0.0
             feature_completeness[col] = completeness
             logger.info(f"Feature '{col}': {non_null_count}/{total_count} ({completeness:.1%} complete)")
         

@@ -87,10 +87,10 @@ def impute_missing_values(
         df_result = df_result.dropna(subset=columns)
         rows_after = len(df_result)
         rows_dropped = rows_before - rows_after
-        
+        pct_str = f"{rows_after/rows_before*100:.1f}%" if rows_before > 0 else "N/A"
         logger.info(
             f"Dropped {rows_dropped} rows with missing values. "
-            f"Remaining: {rows_after}/{rows_before} ({rows_after/rows_before*100:.1f}%)"
+            f"Remaining: {rows_after}/{rows_before} ({pct_str})"
         )
         
     elif strategy == 'median':
@@ -98,6 +98,12 @@ def impute_missing_values(
         for col in columns:
             if df_result[col].isna().any():
                 median_val = df_result[col].median()
+                if pd.isna(median_val):
+                    logger.warning(
+                        f"Column '{col}' is all-NaN; cannot compute median. "
+                        "Skipping imputation for this column."
+                    )
+                    continue
                 df_result[col] = df_result[col].fillna(median_val)
                 logger.info(
                     f"Filled {missing_before[col]} missing values in '{col}' "
@@ -109,6 +115,12 @@ def impute_missing_values(
         for col in columns:
             if df_result[col].isna().any():
                 mean_val = df_result[col].mean()
+                if pd.isna(mean_val):
+                    logger.warning(
+                        f"Column '{col}' is all-NaN; cannot compute mean. "
+                        "Skipping imputation for this column."
+                    )
+                    continue
                 df_result[col] = df_result[col].fillna(mean_val)
                 logger.info(
                     f"Filled {missing_before[col]} missing values in '{col}' "

@@ -6,27 +6,24 @@ type confusion, injection attempts, and degenerate data designed to expose
 crashes, silent corruption, and unhandled edge cases.
 """
 
-import datetime
 import math
 import os
 import sqlite3
-import tempfile
 import warnings
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # 1. data_processing: convert_time_to_minutes, normalize_day_column, ensure_datetime_sorted
 # ---------------------------------------------------------------------------
 from garmin_analysis.utils.data_processing import (
     convert_time_to_minutes,
-    normalize_day_column,
     ensure_datetime_sorted,
+    normalize_day_column,
 )
 
 
@@ -251,12 +248,12 @@ class TestEnsureDatetimeSortedAdversarial:
 #    convert_time_columns, standardize_features, filter_required_columns
 # ---------------------------------------------------------------------------
 from garmin_analysis.utils.data_filtering import (
-    strip_time_from_dates,
-    normalize_dates,
-    filter_by_date,
     convert_time_columns,
-    standardize_features,
+    filter_by_date,
     filter_required_columns,
+    normalize_dates,
+    standardize_features,
+    strip_time_from_dates,
 )
 
 
@@ -441,8 +438,8 @@ class TestFilterRequiredColumnsAdversarial:
 # 3. imputation: edge cases beyond what existing tests cover
 # ---------------------------------------------------------------------------
 from garmin_analysis.utils.imputation import (
-    impute_missing_values,
     get_missing_value_summary,
+    impute_missing_values,
     recommend_imputation_strategy,
 )
 
@@ -536,22 +533,22 @@ class TestImputationAdversarial:
 # 4. error_handling: exceptions, decorators, validators, context managers
 # ---------------------------------------------------------------------------
 from garmin_analysis.utils.error_handling import (
-    GarminAnalysisError,
-    DataLoadingError,
-    DatabaseError,
-    DataValidationError,
-    ModelingError,
     ConfigurationError,
+    DatabaseError,
+    DataLoadingError,
+    DataValidationError,
+    GarminAnalysisError,
     InsufficientDataError,
+    ModelingError,
     handle_data_loading_errors,
     handle_database_errors,
     handle_modeling_errors,
-    validate_dataframe,
-    validate_file_path,
-    validate_database_connection,
-    suppress_and_log,
     log_and_reraise,
     safe_return,
+    suppress_and_log,
+    validate_database_connection,
+    validate_dataframe,
+    validate_file_path,
 )
 
 
@@ -867,9 +864,9 @@ class TestCleanDataAdversarial:
 #    calculate_daily_coverage_metrics
 # ---------------------------------------------------------------------------
 from garmin_analysis.features.coverage import (
+    calculate_daily_coverage_metrics,
     days_with_continuous_coverage,
     filter_master_by_days,
-    calculate_daily_coverage_metrics,
 )
 
 
@@ -1003,10 +1000,10 @@ class TestCalculateDailyCoverageMetricsAdversarial:
 # 7. activity_mappings
 # ---------------------------------------------------------------------------
 from garmin_analysis.utils.activity_mappings import (
-    load_activity_mappings,
-    get_display_name,
     get_activity_color,
+    get_display_name,
     list_unknown_activities,
+    load_activity_mappings,
     map_activity_dataframe,
 )
 
@@ -1075,8 +1072,8 @@ class TestActivityMappingsAdversarial:
 # 8. inspect_sqlite_schema: extract_schema, detect_schema_drift
 # ---------------------------------------------------------------------------
 from garmin_analysis.data_ingestion.inspect_sqlite_schema import (
-    extract_schema,
     detect_schema_drift,
+    extract_schema,
     inspect_sqlite_db,
 )
 
@@ -1159,12 +1156,12 @@ class TestSchemaInspectionAdversarial:
 # 9. data_ingestion: load_table, aggregate_stress, preprocess_sleep, to_naive_day
 # ---------------------------------------------------------------------------
 from garmin_analysis.data_ingestion.load_all_garmin_dbs import (
-    load_table,
-    aggregate_stress,
-    preprocess_sleep,
-    to_naive_day,
     _coalesce,
     _create_synthetic_dataframes,
+    aggregate_stress,
+    load_table,
+    preprocess_sleep,
+    to_naive_day,
 )
 
 
@@ -1402,8 +1399,8 @@ class TestCreateSyntheticDataframesAdversarial:
 # 10. day_of_week_analysis
 # ---------------------------------------------------------------------------
 from garmin_analysis.features.day_of_week_analysis import (
-    get_day_order,
     calculate_day_of_week_averages,
+    get_day_order,
 )
 
 
@@ -1733,12 +1730,12 @@ class TestBoundaryValues:
 # 15. config module
 # ---------------------------------------------------------------------------
 from garmin_analysis.config import (
-    ensure_directories_exist,
-    get_db_path,
-    PROJECT_ROOT,
     DB_PATHS,
     MASTER_CSV,
     MODELING_CSV,
+    PROJECT_ROOT,
+    ensure_directories_exist,
+    get_db_path,
 )
 
 
@@ -1773,7 +1770,7 @@ class TestConfigAdversarial:
 # ---------------------------------------------------------------------------
 # 16. logging_config module
 # ---------------------------------------------------------------------------
-from garmin_analysis.logging_config import setup_logging, get_logger
+from garmin_analysis.logging_config import get_logger, setup_logging
 
 
 class TestLoggingConfigAdversarial:
@@ -1806,13 +1803,14 @@ class TestLoggingConfigAdversarial:
 # ---------------------------------------------------------------------------
 # 17. utils/cli_helpers
 # ---------------------------------------------------------------------------
+import argparse
+
 from garmin_analysis.utils.cli_helpers import (
     add_24h_coverage_args,
-    apply_24h_coverage_filter_from_args,
     add_common_output_args,
+    apply_24h_coverage_filter_from_args,
     setup_logging_from_args,
 )
-import argparse
 
 
 class TestCLIHelpersAdversarial:
@@ -1903,9 +1901,9 @@ class TestDataLoadingAdversarial:
 from garmin_analysis.features.time_of_day_stress_analysis import (
     calculate_hourly_stress_averages,
     calculate_hourly_stress_by_weekday,
-    print_stress_summary,
     plot_hourly_stress_pattern,
     plot_stress_heatmap_by_weekday,
+    print_stress_summary,
 )
 
 
@@ -2219,9 +2217,9 @@ class TestPlotFeatureTrendAdversarial:
 # 23. viz/plot_activity_calendar
 # ---------------------------------------------------------------------------
 from garmin_analysis.viz.plot_activity_calendar import (
-    plot_activity_calendar,
-    _get_sport_colors,
     _darken_color,
+    _get_sport_colors,
+    plot_activity_calendar,
 )
 
 

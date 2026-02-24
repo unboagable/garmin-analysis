@@ -6,8 +6,8 @@ import logging
 from garmin_analysis.reporting.generate_weekly_report import generate_weekly_report
 from garmin_analysis.utils.cli_helpers import (
     add_24h_coverage_args,
-    apply_24h_coverage_filter_from_args,
     add_common_output_args,
+    apply_24h_coverage_filter_from_args,
     setup_logging_from_args,
 )
 from garmin_analysis.utils.data_loading import load_master_dataframe

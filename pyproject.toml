@@ -26,7 +26,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.3.5", "nbconvert>=7.0.0", "nbformat>=5.0.0", "ruff", "pre-commit"]
+dev = [
+    "pytest>=8.3.5",
+    "nbconvert>=7.0.0",
+    "nbformat>=5.0.0",
+    "ruff",
+    "pre-commit",
+]
 
 [project.scripts]
 garmin-weekly-report = "garmin_analysis.cli_weekly_report:main"
@@ -48,8 +54,21 @@ pre-commit = "*"
 [tool.ruff]
 target-version = "py311"
 line-length = 100
-src = ["src", "tests"]
+src = [
+    "src",
+    "tests",
+]
+include = [
+    "run_dashboard.py",
+    "src/garmin_analysis/cli_*.py",
+    "src/garmin_analysis/viz/cli_*.py",
+]
+extend-exclude = [
+    "notebooks",
+]
 
 [tool.ruff.lint]
-select = ["E4", "E7", "E9", "F", "I"]
+select = [
+    "I",
+]
 

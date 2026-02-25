@@ -8,7 +8,7 @@ from pathlib import Path
 from garmin_analysis.config import PLOTS_DIR
 from garmin_analysis.utils.data_loading import load_master_dataframe
 from garmin_analysis.utils.data_filtering import standardize_features
-from garmin_analysis.utils_cleaning import clean_data
+from garmin_analysis.utils.cleaning import clean_data
 
 
 logger = logging.getLogger(__name__)

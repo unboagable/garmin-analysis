@@ -1,5 +1,5 @@
 """
-Unit tests for utils_cleaning.py
+Unit tests for utils.cleaning
 
 Tests the clean_data() function with various scenarios including:
 - Placeholder replacement
@@ -11,7 +11,7 @@ Tests the clean_data() function with various scenarios including:
 import pytest
 import pandas as pd
 import numpy as np
-from garmin_analysis.utils_cleaning import clean_data
+from garmin_analysis.utils.cleaning import clean_data
 
 
 class TestCleanDataBasics:

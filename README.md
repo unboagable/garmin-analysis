@@ -27,6 +27,12 @@ A comprehensive Garmin health data analysis platform with interactive dashboard,
 
 ## Quick Start (in 5 minutes)
 
+**Bootstrap (single command):**
+```bash
+poetry install
+poetry run garmin init   # or: garmin-init — checks DBs, creates folders, validates schema, prints next commands
+```
+
 **Option A: Automated sync with Garmin Connect** (requires GarminDB from source):
 ```bash
 # 1. Install dependencies
@@ -77,6 +83,13 @@ For detailed setup instructions, see [Getting Started](#getting-started).
 
 ## 🆕 What's New
 
+### 🚀 **Single-Command Bootstrap & Export** (February 2026)
+
+- **`garmin init`** — Checks databases, creates folders, validates schema, prints next commands
+- **Daily data quality score** — Composite 0–100 score (coverage + completeness), persisted to CSV and dashboard tab
+- **Export to Parquet** — `data/export/master_daily_summary.parquet` for faster analytics
+- **Optional DuckDB** — SQL queries on master dataset: `poetry run python -m garmin_analysis.cli_export --duckdb`
+
 ### 📅 **Weekly Health Report** (February 2026)
 
 Automated weekly Markdown reports that track three key health metrics over time:
@@ -112,7 +125,7 @@ Reports are saved to `reports/weekly_report_<timestamp>.md` with a narrative sum
 
 ```bash
 # Run the sleep analysis model
-poetry run python src/garmin_analysis/modeling/hr_activity_sleep_model.py
+poetry run python -m garmin_analysis.modeling.hr_activity_sleep_model
 
 # Or use programmatically
 from garmin_analysis.modeling.hr_activity_sleep_model import HRActivitySleepModel
@@ -174,7 +187,7 @@ Analyze sleep score, body battery, and water intake patterns by day of the week 
 - **📋 Reporting**: Automated summaries, comprehensive analytics reports, and weekly health reports
 - **🔍 Data Quality**: Advanced data quality analysis and coverage assessment tools
 - **🗄️ Data Ingestion**: Unified data loading from multiple Garmin databases with schema validation
-- **🧪 Testing**: Comprehensive test suite with 435 tests (unit and integration)
+- **🧪 Testing**: Comprehensive test suite with 970+ tests (unit and integration)
 - **📓 Notebooks**: Interactive Jupyter notebooks for exploratory analysis
 
 ## Getting Started
@@ -265,6 +278,19 @@ poetry run python -m garmin_analysis.features.quick_data_check --summary
 
 ## Common Commands
 
+### CLI Shortcuts (after `poetry install`)
+
+```bash
+garmin init              # Bootstrap: check DBs, create folders, validate schema
+garmin-export            # Export master to Parquet
+garmin-export --duckdb   # Also export to DuckDB
+garmin-sync --sync --all # Sync from Garmin Connect
+garmin-weekly-report     # Generate weekly health report
+garmin-day-of-week       # Day-of-week analysis
+garmin-stress-by-time    # Time-of-day stress analysis
+garmin-activity-calendar # Activity calendar visualization
+```
+
 ### Garmin Connect Sync (NEW!)
 
 **First-time setup:**
@@ -348,7 +374,7 @@ crontab -e
 ```bash
 poetry run python -m garmin_analysis.data_ingestion.load_all_garmin_dbs
 ```
-Creates `data/master_daily_summary.csv`.
+Creates `data/master_daily_summary.csv` and `data/daily_data_quality.csv`.
 
 - **Prepare modeling-ready dataset:**
 ```bash
@@ -427,6 +453,9 @@ Open `http://localhost:8050`.
 The dashboard now includes:
 - **📅 Day of Week Analysis**: Sleep score, body battery, and water intake by day of week
 - **📊 30-Day Health Overview**: Variable 30-day window for stress, HR, body battery, and sleep
+- **📈 Data Quality**: Daily data quality score timeline, distribution, and coverage vs completeness
+- **📊 24-Hour Coverage Analysis**: Watch wear time and coverage metrics
+- **😰 Stress by Time of Day**: Hourly stress patterns
 - **📈 Metric Trends**: Time series plots with filtering
 
 ### Visualization Tools
@@ -1003,7 +1032,7 @@ This platform is designed for comprehensive Garmin health data analysis:
 - **🔍 Data Quality Assurance**: Advanced tools for data validation and quality assessment
 - **📋 Automated Reporting**: Generate comprehensive health reports automatically
 - **⚡ Performance Optimization**: 24-hour coverage filtering for faster, more reliable analysis
-- **🧪 Comprehensive Testing**: 435 tests with full coverage (unit and integration)
+- **🧪 Comprehensive Testing**: 970+ tests with full coverage (unit and integration)
 - **📓 Interactive Analysis**: Jupyter notebooks for exploratory data analysis
 
 ## 24-Hour Coverage Filtering
@@ -1049,7 +1078,10 @@ The system analyzes the stress timeseries data to identify days where:
 | | Clustering | `enhanced_clustering` | Multiple clustering algorithms |
 | | Predictive Modeling | `predictive_modeling` | Health outcome prediction models |
 | | Activity Analysis | `activity_sleep_stress_analysis` | Correlation analysis between metrics |
+| **Bootstrap** | Init | `garmin init` or `cli_init` | Check DBs, create folders, validate schema |
+| **Export** | Parquet/DuckDB | `cli_export` | Export master to Parquet (and optionally DuckDB) |
 | **Data Quality** | Quick Check | `quick_data_check` | Fast data quality assessment |
+| | Daily Score | (auto in `load_all_garmin_dbs`) | Daily data quality score → CSV + dashboard |
 | | Comprehensive Audit | `data_quality_analysis` | Detailed data quality reports |
 | | Missing Data | `check_missing_data` | Analyze missing data patterns |
 | | Coverage Analysis | `coverage` | 24-hour coverage assessment |
@@ -1099,6 +1131,30 @@ Check which days have 24-hour coverage:
 ```bash
 poetry run python -m garmin_analysis.features.quick_data_check --continuous-24h
 ```
+
+### Daily Data Quality Score (NEW!)
+
+A composite daily data quality score (0–100) combining 24h coverage and metric completeness. Persisted to `data/daily_data_quality.csv` and shown in the dashboard **Data Quality** tab.
+
+- **Computed automatically** when you run `load_all_garmin_dbs`
+- **Dashboard tab**: 📈 Data Quality — timeline, distribution, coverage vs completeness scatter
+- **CSV columns**: `day`, `data_quality_score`, `coverage_score`, `completeness_score`, `key_metrics_count`, `key_metrics_total`
+
+### Export to Parquet & DuckDB (NEW!)
+
+Export the master dataset for faster analytics and downstream use:
+
+```bash
+# Export to Parquet (includes daily data quality)
+poetry run python -m garmin_analysis.cli_export
+
+# Also export to DuckDB (requires: pip install duckdb or poetry add duckdb)
+poetry run python -m garmin_analysis.cli_export --duckdb
+```
+
+Outputs:
+- `data/export/master_daily_summary.parquet` — columnar format for pandas, DuckDB, Spark
+- `data/export/master.duckdb` — SQL database (optional)
 
 ### Performance Benefits
 
@@ -1156,7 +1212,7 @@ poetry run python -m garmin_analysis.data_ingestion.inspect_sqlite_schema compar
 
 ## Testing
 
-The project has a comprehensive test suite with **435 tests** across 29 test modules covering unit and integration scenarios.
+The project has a comprehensive test suite with **970+ tests** across 30+ test modules covering unit and integration scenarios.
 
 ### Run All Tests
 ```bash
@@ -1208,7 +1264,7 @@ poetry run pytest tests/test_day_of_week_analysis.py -v
 
 ### Test Coverage
 
-- **435 total tests** across 29 test modules
+- **970+ total tests** across 30+ test modules
 - **42 tests** for HR & Activity Sleep Model
 - **32 tests** for imputation strategies
 - Full coverage of unit and integration scenarios
@@ -1234,7 +1290,7 @@ poetry run jupyter notebook
 ```
 src/garmin_analysis/
 ├── dashboard/          # Interactive Dash web application
-├── data_ingestion/     # Database loading and CSV generation
+├── data_ingestion/     # Database loading, export, CSV generation
 ├── features/           # Data quality and feature engineering
 ├── modeling/           # Machine learning models
 ├── reporting/          # Automated report generation
@@ -1243,10 +1299,13 @@ src/garmin_analysis/
 │   ├── data_loading.py     # Load data from DB/CSV
 │   ├── data_processing.py  # Transform and clean data
 │   ├── data_filtering.py   # Date filters and feature prep
-│   ├── imputation.py       # Missing value strategies
+│   ├── cleaning.py        # Data cleaning (placeholders, outliers)
+│   ├── imputation.py      # Missing value strategies
 │   └── activity_mappings.py # Activity type customization
-└── config/             # Configuration files
+├── cli_*.py            # CLI entry points (init, export, sync, weekly, etc.)
+└── ...
 ```
+Configuration: `config/activity_type_mappings.json` at project root.
 
 ### Utility Modules
 
@@ -1258,6 +1317,7 @@ src/garmin_analysis/
 | `utils.data_processing` | Date normalization, time conversions | `normalize_day_column()` |
 | `utils.data_filtering` | Date ranges, feature filtering | `filter_by_date()` |
 | `utils.imputation` | Handling missing values | `impute_missing_values()` |
+| `utils.cleaning` | Data cleaning (placeholders, outliers) | `clean_data()` |
 
 ### Configuration Files
 - `config/activity_type_mappings.json` - Customize activity names and colors
@@ -1280,12 +1340,14 @@ garmin-analysis/
 │   │   └── generate_weekly_report.py  # NEW! Weekly sleep, HR, stress report
 │   ├── utils/                    # Utility modules
 │   │   ├── data_loading.py       # Database and file loading
-│   │   ├── data_processing.py    # Data transformation and cleaning
+│   │   ├── data_processing.py    # Data transformation
 │   │   ├── data_filtering.py     # Filtering and feature preparation
+│   │   ├── cleaning.py          # Data cleaning (placeholders, outliers, column names)
 │   │   ├── imputation.py         # Missing value handling strategies
 │   │   └── activity_mappings.py  # Activity type customization
 │   ├── viz/                      # Visualization tools
-│   └── utils_cleaning.py         # Data cleaning utilities
+│   ├── cli_*.py                  # CLI entry points (init, export, sync, weekly, etc.)
+│   └── ...
 ├── config/                       # Configuration files
 │   └── activity_type_mappings.json # Activity type mappings
 ├── docs/                         # Documentation
@@ -1299,9 +1361,12 @@ garmin-analysis/
 │   ├── test_generate_weekly_report.py   # NEW! Weekly report tests (129 tests)
 │   ├── test_imputation.py              # Imputation utility tests (32 tests)
 │   ├── test_hr_activity_sleep_model.py  # Sleep model tests (42 tests)
-│   └── ...                             # Other test files (27+ modules)
+│   └── ...                             # Other test files (30+ modules)
 ├── notebooks/                    # Jupyter notebooks
 ├── data/                         # Generated datasets
+│   ├── master_daily_summary.csv  # Unified daily data
+│   ├── daily_data_quality.csv    # Daily data quality scores
+│   └── export/                   # Parquet and DuckDB exports
 ├── plots/                        # Generated plots
 ├── reports/                      # Generated reports
 ├── modeling_results/             # ML model outputs
@@ -1326,7 +1391,7 @@ pip install -r requirements.txt
 ```
 
 **Core Libraries**:
-- **Data**: pandas, numpy
+- **Data**: pandas, numpy, pyarrow (Parquet export)
 - **ML**: scikit-learn, tsfresh, statsmodels, prophet  
 - **Visualization**: matplotlib, seaborn, plotly, dash
 - **Garmin Integration**: [GarminDB](https://github.com/tcgoetz/GarminDB) - For Garmin Connect data export (see [Credits](#credits--acknowledgments))
@@ -1347,8 +1412,8 @@ Notes on data sources:
 This project uses:
 - **Python 3.11+**: Required for compatibility
 - **Poetry**: Dependency management
-- **pytest**: Testing framework with 435 tests
-- **Black/Flake8**: Code formatting (if configured)
+- **pytest**: Testing framework with 970+ tests
+- **Ruff**: Linting and formatting
 
 ## License
 

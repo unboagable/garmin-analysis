@@ -191,11 +191,12 @@ def tmp_db(tmp_path):
     finally:
         # Restore original DB paths
         ladd.DB_PATHS.update(original_paths)
-        # Clean up any generated master CSV from integration runs
-        from garmin_analysis.config import MASTER_CSV
-        if MASTER_CSV.exists():
-            try:
-                MASTER_CSV.unlink()
-            except Exception:
-                pass
+        # Clean up any generated files from integration runs
+        from garmin_analysis.config import MASTER_CSV, DAILY_DATA_QUALITY_CSV
+        for path in (MASTER_CSV, DAILY_DATA_QUALITY_CSV):
+            if path.exists():
+                try:
+                    path.unlink()
+                except Exception:
+                    pass
 

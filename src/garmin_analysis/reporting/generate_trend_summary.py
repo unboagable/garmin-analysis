@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 import argparse
 from garmin_analysis.utils.data_loading import load_master_dataframe
-from garmin_analysis.utils_cleaning import clean_data
+from garmin_analysis.utils.cleaning import clean_data
 from garmin_analysis.utils.cli_helpers import add_24h_coverage_args, apply_24h_coverage_filter_from_args
 from garmin_analysis.config import REPORTS_DIR
 

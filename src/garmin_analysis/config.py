@@ -46,6 +46,8 @@ DB_PATHS = {
 
 MASTER_CSV = DATA_DIR / "master_daily_summary.csv"
 MODELING_CSV = DATA_DIR / "modeling_ready_dataset.csv"
+DAILY_DATA_QUALITY_CSV = DATA_DIR / "daily_data_quality.csv"
+EXPORT_DIR = DATA_DIR / "export"
 
 # ============================================================================
 # Configuration File Paths
@@ -85,7 +87,9 @@ DEFAULT_COVERAGE_ALLOWANCE_MINUTES = 0
 def ensure_directories_exist():
     """Create all necessary directories if they don't exist."""
     directories = [
+        DB_DIR,
         DATA_DIR,
+        EXPORT_DIR,
         REPORTS_DIR,
         PLOTS_DIR,
         MODELING_RESULTS_DIR,

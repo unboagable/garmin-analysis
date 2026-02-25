@@ -21,6 +21,8 @@ from .data_filtering import (
     filter_required_columns,
 )
 
+from .cleaning import clean_data
+
 __all__ = [
     'load_master_dataframe',
     'normalize_day_column', 
@@ -33,4 +35,5 @@ __all__ = [
     'filter_by_date',
     'convert_time_columns',
     'standardize_features',
+    'clean_data',
 ]

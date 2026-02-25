@@ -779,9 +779,9 @@ class TestLogAndReraiseAdversarial:
 
 
 # ---------------------------------------------------------------------------
-# 5. utils_cleaning: clean_data
+# 5. utils.cleaning: clean_data
 # ---------------------------------------------------------------------------
-from garmin_analysis.utils_cleaning import clean_data
+from garmin_analysis.utils.cleaning import clean_data
 
 
 class TestCleanDataAdversarial:

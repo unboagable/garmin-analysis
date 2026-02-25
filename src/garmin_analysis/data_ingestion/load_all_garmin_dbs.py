@@ -388,6 +388,13 @@ def summarize_and_merge(return_df: bool = False):
     merged.to_csv(OUTPUT_PATH, index=False)
     logger.info(f"Saved master dataset to {OUTPUT_PATH}")
 
+    # Compute and persist daily data quality score
+    try:
+        from garmin_analysis.features.daily_data_quality import compute_and_persist_daily_data_quality
+        compute_and_persist_daily_data_quality(master_df=merged)
+    except Exception as e:
+        logger.warning(f"Could not compute daily data quality: {e}")
+
     if return_df:
         return merged
 

@@ -14,6 +14,11 @@ from garmin_analysis.features.time_of_day_stress_analysis import (
     calculate_hourly_stress_averages,
     calculate_hourly_stress_by_weekday
 )
+from garmin_analysis.features.daily_data_quality import (
+    load_daily_data_quality,
+    compute_and_persist_daily_data_quality,
+)
+from garmin_analysis.config import DAILY_DATA_QUALITY_CSV
 
 # Get logger
 logger = get_logger(__name__)
@@ -191,6 +196,32 @@ def create_layout(df):
                         html.H4("Coverage Statistics"),
                         html.Div(id='coverage-stats')
                     ], style={'margin': '20px'})
+                ])
+            ]),
+            dcc.Tab(label='📈 Data Quality', children=[
+                html.Div([
+                    html.Div([
+                        html.H3("Daily Data Quality Score"),
+                        html.P("Composite score (0-100) combining 24h coverage and metric completeness. Higher = better data."),
+                        html.Button("Refresh", id="dq-refresh-btn", n_clicks=0),
+                    ], style={'margin': '10px'}),
+                    html.Div([
+                        html.Label("Date Range:"),
+                        dcc.DatePickerRange(
+                            id='dq-date-picker',
+                            min_date_allowed=df['day'].min(),
+                            max_date_allowed=df['day'].max(),
+                            start_date=max(df['day'].min(), df['day'].max() - pd.Timedelta(days=90)),
+                            end_date=df['day'].max(),
+                            display_format='YYYY-MM-DD'
+                        )
+                    ], style={'margin': '10px'}),
+                    html.Div([
+                        dcc.Graph(id='dq-score-timeline'),
+                        dcc.Graph(id='dq-score-distribution'),
+                        dcc.Graph(id='dq-coverage-vs-completeness')
+                    ], style={'display': 'flex', 'flex-direction': 'column', 'gap': '20px'}),
+                    html.Div(id='dq-stats', style={'margin': '20px'})
                 ])
             ]),
             dcc.Tab(label='😰 Stress by Time of Day', children=[
@@ -936,6 +967,126 @@ def update_coverage_charts(start_date, end_date):
         logger.error(f"Error updating coverage charts: {e}")
         error_fig = go.Figure()
         error_fig.update_layout(title=f"Error loading coverage data: {str(e)}", height=400)
+        return error_fig, error_fig, error_fig, html.P(f"Error: {str(e)}")
+
+@app.callback(
+    [Output('dq-score-timeline', 'figure'),
+     Output('dq-score-distribution', 'figure'),
+     Output('dq-coverage-vs-completeness', 'figure'),
+     Output('dq-stats', 'children')],
+    [Input('dq-date-picker', 'start_date'),
+     Input('dq-date-picker', 'end_date'),
+     Input('dq-refresh-btn', 'n_clicks')]
+)
+def update_data_quality_charts(start_date, end_date, n_clicks):
+    """Update Data Quality tab charts"""
+    try:
+        # On refresh click, recompute from master
+        if n_clicks and n_clicks > 0:
+            compute_and_persist_daily_data_quality()
+
+        dq_df = load_daily_data_quality()
+        if dq_df.empty:
+            empty_fig = go.Figure()
+            empty_fig.update_layout(
+                title="No data quality data. Run data ingestion to generate.",
+                height=400
+            )
+            return empty_fig, empty_fig, empty_fig, html.P(
+                f"Daily data quality CSV not found at {DAILY_DATA_QUALITY_CSV}. "
+                "Run: poetry run python -m garmin_analysis.data_ingestion.load_all_garmin_dbs"
+            )
+
+        dq_df['day'] = pd.to_datetime(dq_df['day'])
+        if start_date and end_date:
+            dq_df = dq_df[(dq_df['day'] >= start_date) & (dq_df['day'] <= end_date)]
+
+        if dq_df.empty:
+            empty_fig = go.Figure()
+            empty_fig.update_layout(title="No data in selected date range", height=400)
+            return empty_fig, empty_fig, empty_fig, html.P("No data in selected range")
+
+        # Timeline
+        timeline_fig = go.Figure()
+        timeline_fig.add_trace(go.Scatter(
+            x=dq_df['day'],
+            y=dq_df['data_quality_score'],
+            mode='lines+markers',
+            line=dict(color='#1f77b4', width=2),
+            marker=dict(size=6),
+            fill='tozeroy',
+            fillcolor='rgba(31, 119, 180, 0.2)',
+            name='Data Quality Score'
+        ))
+        timeline_fig.add_hline(y=80, line_dash="dash", line_color="green", annotation_text="80 (good)")
+        timeline_fig.add_hline(y=50, line_dash="dash", line_color="orange", annotation_text="50 (fair)")
+        timeline_fig.update_layout(
+            title='Daily Data Quality Score Over Time',
+            xaxis_title='Date',
+            yaxis_title='Score (0-100)',
+            height=400,
+            yaxis=dict(range=[0, 105])
+        )
+
+        # Distribution
+        dist_fig = px.histogram(
+            dq_df, x='data_quality_score', nbins=20,
+            title='Distribution of Daily Data Quality Scores',
+            labels={'data_quality_score': 'Score', 'count': 'Days'}
+        )
+        dist_fig.update_layout(height=400)
+
+        # Coverage vs Completeness scatter
+        scatter_fig = go.Figure()
+        scatter_fig.add_trace(go.Scatter(
+            x=dq_df['coverage_score'],
+            y=dq_df['completeness_score'],
+            mode='markers',
+            marker=dict(
+                size=8,
+                color=dq_df['data_quality_score'],
+                colorscale='RdYlGn',
+                showscale=True,
+                colorbar=dict(title='Overall')
+            ),
+            text=dq_df['day'].dt.strftime('%Y-%m-%d'),
+            hovertemplate='Date: %{text}<br>Coverage: %{x:.1f}<br>Completeness: %{y:.1f}<extra></extra>'
+        ))
+        scatter_fig.add_hline(y=80, line_dash="dash", line_color="gray", opacity=0.5)
+        scatter_fig.add_vline(x=80, line_dash="dash", line_color="gray", opacity=0.5)
+        scatter_fig.update_layout(
+            title='Coverage vs Completeness (color = overall score)',
+            xaxis_title='Coverage Score',
+            yaxis_title='Completeness Score',
+            height=400
+        )
+
+        # Stats
+        avg_score = dq_df['data_quality_score'].mean()
+        high_quality = (dq_df['data_quality_score'] >= 80).sum()
+        total = len(dq_df)
+        pct_high = (high_quality / total * 100) if total > 0 else 0
+        stats_html = html.Div([
+            html.Div([
+                html.H5(f"{avg_score:.1f}", style={'margin': '0', 'fontSize': '24px', 'color': '#1f77b4'}),
+                html.P("Average Data Quality Score", style={'margin': '0', 'fontSize': '12px'})
+            ], style={'display': 'inline-block', 'margin': '10px', 'padding': '15px', 'border': '1px solid #ddd', 'borderRadius': '5px'}),
+            html.Div([
+                html.H5(f"{high_quality} ({pct_high:.1f}%)", style={'margin': '0', 'fontSize': '24px', 'color': '#2ca02c'}),
+                html.P("Days with Score ≥ 80", style={'margin': '0', 'fontSize': '12px'})
+            ], style={'display': 'inline-block', 'margin': '10px', 'padding': '15px', 'border': '1px solid #ddd', 'borderRadius': '5px'}),
+            html.Div([
+                html.H5(f"{total}", style={'margin': '0', 'fontSize': '24px', 'color': '#888888'}),
+                html.P("Total Days", style={'margin': '0', 'fontSize': '12px'})
+            ], style={'display': 'inline-block', 'margin': '10px', 'padding': '15px', 'border': '1px solid #ddd', 'borderRadius': '5px'})
+        ])
+
+        return timeline_fig, dist_fig, scatter_fig, stats_html
+
+    except Exception as e:
+        logger.error(f"Error updating data quality charts: {e}")
+        error_fig = go.Figure()
+        error_fig.update_layout(title=f"Error: {str(e)}", height=400)
         return error_fig, error_fig, error_fig, html.P(f"Error: {str(e)}")
 
 @app.callback(

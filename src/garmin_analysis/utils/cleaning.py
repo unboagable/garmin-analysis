@@ -1,8 +1,17 @@
-import pandas as pd
-import numpy as np
+"""
+Data cleaning utilities for Garmin analysis.
+
+Replaces placeholder values, standardizes types, optionally removes outliers,
+and normalizes column names.
+"""
+
 import logging
 
+import numpy as np
+import pandas as pd
+
 logger = logging.getLogger(__name__)
+
 
 def clean_data(df: pd.DataFrame, remove_outliers: bool = False) -> pd.DataFrame:
     """
@@ -35,26 +44,29 @@ def clean_data(df: pd.DataFrame, remove_outliers: bool = False) -> pd.DataFrame:
 
     df = df.copy()
     original_shape = df.shape
-    
+
     # Handle empty DataFrame edge case
     if df.empty:
         logger.info("Empty DataFrame provided, returning as-is")
         return df
-    
-    logger.info(f"Starting data cleaning on DataFrame: {original_shape[0]} rows × {original_shape[1]} columns")
+
+    logger.info(
+        f"Starting data cleaning on DataFrame: {original_shape[0]} rows × {original_shape[1]} columns"
+    )
 
     # 1. Replace placeholder strings and invalid numeric values with NaN
     placeholders = ["", "NA", "null", "None", -1]
     placeholders_replaced = 0
     for placeholder in placeholders:
         placeholders_replaced += (df == placeholder).sum().sum()
-    
+
     # Suppress FutureWarning about downcasting - we explicitly infer types after
     import warnings
+
     with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', message='Downcasting behavior')
+        warnings.filterwarnings("ignore", message="Downcasting behavior")
         df = df.replace(placeholders, np.nan)
-    
+
     if placeholders_replaced > 0:
         logger.info(f"Replaced {placeholders_replaced} placeholder values with NaN")
 
@@ -66,32 +78,35 @@ def clean_data(df: pd.DataFrame, remove_outliers: bool = False) -> pd.DataFrame:
                 df[col] = coerced
 
     # 2. Convert all numeric columns to float32 or int64 as appropriate
-    conversions = {'int': 0, 'float': 0}
+    conversions = {"int": 0, "float": 0}
     for col in df.columns:
         if pd.api.types.is_numeric_dtype(df[col]):
             series = df[col].dropna()
             if len(series) == 0:
                 continue
-                
+
             is_integer_like = series.apply(
-                lambda x: isinstance(x, (int, np.integer)) or (isinstance(x, float) and x.is_integer())
+                lambda x: isinstance(x, (int, np.integer))
+                or (isinstance(x, float) and x.is_integer())
             ).all()
-            
+
             if is_integer_like:
-                df[col] = df[col].astype('Int64')  # nullable integer
-                conversions['int'] += 1
+                df[col] = df[col].astype("Int64")  # nullable integer
+                conversions["int"] += 1
             else:
-                df[col] = df[col].astype('float32')
-                conversions['float'] += 1
-    
-    logger.info(f"Standardized data types: {conversions['int']} int columns, {conversions['float']} float columns")
+                df[col] = df[col].astype("float32")
+                conversions["float"] += 1
+
+    logger.info(
+        f"Standardized data types: {conversions['int']} int columns, {conversions['float']} float columns"
+    )
 
     # 3. Optionally remove outliers using IQR filtering
     if remove_outliers:
-        numeric_cols = df.select_dtypes(include=['float32', 'Int64']).columns
+        numeric_cols = df.select_dtypes(include=["float32", "Int64"]).columns
         rows_before = len(df)
         outliers_by_col = {}
-        
+
         for col in numeric_cols:
             col_before = len(df)
             Q1 = df[col].quantile(0.25)
@@ -100,14 +115,16 @@ def clean_data(df: pd.DataFrame, remove_outliers: bool = False) -> pd.DataFrame:
             lower_bound = Q1 - 1.5 * IQR
             upper_bound = Q3 + 1.5 * IQR
             df = df[(df[col] >= lower_bound) & (df[col] <= upper_bound) | df[col].isna()]
-            
+
             outliers_removed = col_before - len(df)
             if outliers_removed > 0:
                 outliers_by_col[col] = outliers_removed
-        
+
         rows_removed = rows_before - len(df)
         if rows_removed > 0:
-            logger.warning(f"Outlier removal: removed {rows_removed} rows ({rows_removed/rows_before:.1%})")
+            logger.warning(
+                f"Outlier removal: removed {rows_removed} rows ({rows_removed/rows_before:.1%})"
+            )
             logger.warning(f"Outliers by column: {outliers_by_col}")
         else:
             logger.info("Outlier removal: no outliers detected")
@@ -120,7 +137,7 @@ def clean_data(df: pd.DataFrame, remove_outliers: bool = False) -> pd.DataFrame:
     renamed = sum(1 for old, new in zip(original_cols, df.columns) if old != new)
     if renamed > 0:
         logger.info(f"Normalized {renamed} column names (lowercased, stripped, underscored)")
-    
+
     logger.info(f"Data cleaning complete: {original_shape} → {df.shape}")
     return df
 
@@ -129,31 +146,31 @@ def clean_data(df: pd.DataFrame, remove_outliers: bool = False) -> pd.DataFrame:
 if __name__ == "__main__":
     from garmin_analysis.logging_config import setup_logging
     from garmin_analysis.utils.data_loading import load_master_dataframe
-    
+
     # Setup logging to see cleaning operations
     setup_logging(level=logging.INFO)
-    
+
     # Load data
     logger.info("Loading Garmin data...")
     df_raw = load_master_dataframe()
     logger.info(f"Loaded raw data: {df_raw.shape}")
-    
+
     # Clean without outlier removal (default, recommended)
-    logger.info("\n" + "="*60)
+    logger.info("\n" + "=" * 60)
     logger.info("CLEANING WITH OUTLIER PRESERVATION (default)")
-    logger.info("="*60)
+    logger.info("=" * 60)
     df_clean = clean_data(df_raw)
-    
+
     # Optional: Clean with outlier removal (aggressive)
-    logger.info("\n" + "="*60)
+    logger.info("\n" + "=" * 60)
     logger.info("CLEANING WITH OUTLIER REMOVAL (aggressive)")
-    logger.info("="*60)
+    logger.info("=" * 60)
     df_clean_no_outliers = clean_data(df_raw, remove_outliers=True)
-    
+
     # Summary
-    logger.info("\n" + "="*60)
+    logger.info("\n" + "=" * 60)
     logger.info("SUMMARY")
-    logger.info("="*60)
+    logger.info("=" * 60)
     logger.info(f"Original shape: {df_raw.shape}")
     logger.info(f"After cleaning (preserve outliers): {df_clean.shape}")
     logger.info(f"After cleaning (remove outliers): {df_clean_no_outliers.shape}")

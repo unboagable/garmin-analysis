@@ -23,7 +23,12 @@ class TestDashboardIntegration:
         tabs = layout.children[1].children
         tab_labels = [tab.label for tab in tabs]
         
-        expected_tabs = ['📅 Day of Week Analysis', '📊 30-Day Health Overview', '📈 Metric Trends']
+        expected_tabs = [
+            '📅 Day of Week Analysis',
+            '📊 30-Day Health Overview',
+            '📈 Data Quality',
+            '📈 Metric Trends',
+        ]
         for expected_tab in expected_tabs:
             assert expected_tab in tab_labels
 

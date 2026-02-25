@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import pytest
+from garmin_analysis.config import DAILY_DATA_QUALITY_CSV
 from garmin_analysis.data_ingestion.load_all_garmin_dbs import (
     summarize_and_merge,
     preprocess_sleep,
@@ -112,6 +113,18 @@ class TestSummarizeAndMerge:
         }
         missing = expected_cols.difference(df.columns)
         assert not missing, f"Missing expected columns: {missing}"
+
+    @pytest.mark.integration
+    def test_daily_data_quality_persisted(self, tmp_db):
+        """summarize_and_merge computes and persists daily data quality score."""
+        df = summarize_and_merge(return_df=True)
+        assert not df.empty
+        assert DAILY_DATA_QUALITY_CSV.exists(), "daily_data_quality.csv should be created"
+        dq = pd.read_csv(DAILY_DATA_QUALITY_CSV, parse_dates=["day"])
+        assert len(dq) == len(df)
+        assert "data_quality_score" in dq.columns
+        assert "coverage_score" in dq.columns
+        assert "completeness_score" in dq.columns
 
 
 class TestDataIngestionHelpers:

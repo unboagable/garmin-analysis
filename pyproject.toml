@@ -6,7 +6,7 @@ authors = [
     { name = "Chang-Hyun Mungai", email = "changhyunmungai@gmail.com" }
 ]
 readme = "README.md"
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.11"
 
 dependencies = [
   # pin to wheel-friendly versions to avoid numba/llvmlite compiles
@@ -59,7 +59,7 @@ description = "A comprehensive Garmin health data analysis platform with interac
 authors = ["Chang-Hyun Mungai <changhyunmungai@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.14"
+python = ">=3.11"
 numpy = ">=1.24,<1.27"
 pandas = "*"
 pyarrow = ">=14.0.0"

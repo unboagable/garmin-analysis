@@ -1,0 +1,14 @@
+---
+description: Run lint after making code changes
+globs: "**/*.py"
+alwaysApply: true
+---
+
+# Lint After Code Changes
+
+After editing Python files, run lint to ensure code quality:
+
+1. **Ruff check**: `poetry run ruff check . --fix`
+2. **Ruff format**: `poetry run ruff format .`
+
+Or use the Makefile targets: `make lint` and `make format`.

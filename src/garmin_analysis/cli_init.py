@@ -90,7 +90,16 @@ def run_init(verbose: bool = False) -> int:
 
     # 1. Create folders
     ensure_directories_exist()
-    dirs = [DB_DIR, DATA_DIR, EXPORT_DIR, REPORTS_DIR, PLOTS_DIR, MODELING_RESULTS_DIR, DATA_QUALITY_REPORTS_DIR, CONFIG_DIR]
+    dirs = [
+        DB_DIR,
+        DATA_DIR,
+        EXPORT_DIR,
+        REPORTS_DIR,
+        PLOTS_DIR,
+        MODELING_RESULTS_DIR,
+        DATA_QUALITY_REPORTS_DIR,
+        CONFIG_DIR,
+    ]
     cwd = Path.cwd()
     print("\n📁 Folders:")
     for d in dirs:

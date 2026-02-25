@@ -12,21 +12,21 @@ import sys
 from pathlib import Path
 
 from garmin_analysis.config import (
-    DB_DIR,
-    DATA_DIR,
-    DB_PATHS,
-    ensure_directories_exist,
-    EXPORT_DIR,
-    REPORTS_DIR,
-    PLOTS_DIR,
-    MODELING_RESULTS_DIR,
-    DATA_QUALITY_REPORTS_DIR,
     CONFIG_DIR,
+    DATA_DIR,
+    DATA_QUALITY_REPORTS_DIR,
+    DB_DIR,
+    DB_PATHS,
+    EXPORT_DIR,
     MASTER_CSV,
+    MODELING_RESULTS_DIR,
+    PLOTS_DIR,
+    REPORTS_DIR,
+    ensure_directories_exist,
 )
 from garmin_analysis.data_ingestion.inspect_sqlite_schema import (
-    extract_schema,
     detect_schema_drift,
+    extract_schema,
 )
 
 logger = logging.getLogger(__name__)

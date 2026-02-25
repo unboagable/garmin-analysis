@@ -788,7 +788,7 @@ description = "DuckDB in-process database"
 optional = true
 python-versions = ">=3.9.0"
 groups = ["main"]
-markers = "python_version == \"3.11\" and extra == \"export\" or python_version >= \"3.12\" and extra == \"export\""
+markers = "python_version == \"3.11\" or python_version >= \"3.12\""
 files = [
     {file = "duckdb-1.4.4-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:e870a441cb1c41d556205deb665749f26347ed13b3a247b53714f5d589596977"},
     {file = "duckdb-1.4.4-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:49123b579e4a6323e65139210cd72dddc593a72d840211556b60f9703bda8526"},
@@ -4182,4 +4182,4 @@ export = ["duckdb"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.14"
-content-hash = "917335f975b5ae4ec7a8d7ab9a00144ceeb32a054dc382e5bad4d3ae3a9d314e"
+content-hash = "bb46995d4ed3e2be299f98fb8cdf66f81223cdbd45e7ba9e2bbb5829c60c2eb7"

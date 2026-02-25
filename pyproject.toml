@@ -60,6 +60,24 @@ authors = ["Chang-Hyun Mungai <changhyunmungai@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.14"
+numpy = ">=1.24,<1.27"
+pandas = "*"
+pyarrow = ">=14.0.0"
+seaborn = "*"
+tabulate = "*"
+dash = "*"
+plotly = "*"
+notebook = ">=7.4.3"
+ipykernel = ">=6.29.5"
+matplotlib = ">=3.10.3"
+scikit-learn = ">=1.4.2"
+tsfresh = "*"
+statsmodels = "*"
+prophet = "*"
+duckdb = { version = "*", optional = true }
+
+[tool.poetry.extras]
+export = ["duckdb"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.2"

@@ -58,6 +58,9 @@ version = "0.1.0"
 description = "A comprehensive Garmin health data analysis platform with interactive dashboard, machine learning capabilities, and automated reporting."
 authors = ["Chang-Hyun Mungai <changhyunmungai@gmail.com>"]
 
+[tool.poetry.dependencies]
+python = ">=3.11,<3.14"
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.2"
 nbconvert = "^7.0.0"

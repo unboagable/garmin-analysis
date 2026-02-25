@@ -4182,4 +4182,4 @@ export = ["duckdb"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.14"
-content-hash = "4f8dd558f0c28e2d2053599a43d000838324faf53ba475afb73f63211bad14ef"
+content-hash = "917335f975b5ae4ec7a8d7ab9a00144ceeb32a054dc382e5bad4d3ae3a9d314e"

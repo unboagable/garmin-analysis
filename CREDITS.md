@@ -59,7 +59,7 @@ Inspired by the quantified self movement and the desire to understand and analyz
 
 ## License Compatibility
 
-This project is licensed under GPL-2.0, compatible with GarminDB's GPL-2.0 license. All integrated dependencies are compatible with GPL-2.0.
+This project is licensed under the MIT License. GarminDB is an optional, externally installed dependency (GPL-2.0); this project does not vendor or distribute GarminDB. See the [README Licensing section](README.md#licensing) for details.
 
 ## Special Thanks
 

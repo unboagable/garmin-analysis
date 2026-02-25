@@ -23,6 +23,7 @@ A comprehensive Garmin health data analysis platform with interactive dashboard,
 - [Dependencies](#dependencies)
 - [Contributing](#contributing)
 - [License](#license)
+- [Licensing](#licensing)
 
 ## Quick Start (in 5 minutes)
 
@@ -1352,6 +1353,13 @@ This project uses:
 ## License
 
 See the [LICENSE](LICENSE) file for details.
+
+## Licensing
+
+This project is licensed under the MIT License. For clarity on dependencies and outputs:
+
+- **GarminDB**: GarminDB is an optional, external tool licensed under GPL-2.0. This repository does not vendor or bundle GarminDB; users install it separately (e.g., from source) when they want automated Garmin Connect sync. Our integration invokes GarminDB as a subprocess; we do not link or distribute GarminDB code.
+- **Outputs**: All generated reports, plots, datasets, and analytics outputs are derived from the user's own data. They are not derivative works of GarminDB or any other dependency.
 
 ## Credits & Acknowledgments
 

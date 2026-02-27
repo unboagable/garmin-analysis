@@ -12,6 +12,7 @@ A comprehensive Garmin health data analysis platform with interactive dashboard,
 - [24-Hour Coverage Filtering](#-quick-start-with-24-hour-coverage-filtering)
 - [Dashboard](#launch-dashboard)
 - [Day-of-Week Analysis](#-day-of-week-analysis)
+- [Optimal Sleep Activity Ranges](#-optimal-sleep-activity-ranges)
 - [Time-of-Day Stress Analysis](#-time-of-day-stress-analysis)
 - [Activity Calendar](#-activity-calendar--type-mappings)
 - [Machine Learning & Modeling](#machine-learning--modeling)
@@ -164,6 +165,23 @@ Analyze sleep score, body battery, and water intake patterns by day of the week 
 - ✅ **24-hour coverage filtering** support for reliable analysis
 - ✅ **Automated summary reports** showing best/worst days
 
+### 😴 **Optimal Sleep Activity Ranges**
+
+Discover the steps and intensity minutes ranges associated with your best sleep. Output: *"Your best sleep occurs when steps are between A–B or intensity minutes are between A–B"*.
+
+- ✅ **CLI tool** for standalone analysis (`garmin-optimal-sleep`)
+- ✅ **Dashboard tab** with bar charts and summary
+- ✅ **Included in full analytics** reports (`run_all_analytics`)
+- ✅ **24-hour coverage filtering** support
+
+```bash
+# Run optimal sleep analysis
+poetry run python -m garmin_analysis.cli_optimal_sleep
+
+# With 24-hour coverage filtering
+poetry run python -m garmin_analysis.cli_optimal_sleep --filter-24h-coverage
+```
+
 **24-Hour Coverage Filtering** is available across all analysis tools! This major feature enhancement allows you to filter your analysis to only include days with complete 24-hour continuous data coverage, ensuring more reliable and accurate results.
 
 - ✅ **All visualization tools** now support `--filter-24h-coverage`
@@ -178,6 +196,7 @@ Analyze sleep score, body battery, and water intake patterns by day of the week 
 - **🌙 HR & Activity → Sleep Model**: **NEW!** Analyze how heart rate and activities affect sleep quality with 6 ML algorithms
 - **🔧 Flexible Imputation**: **NEW!** 6 strategies for handling missing data (median, mean, drop, forward/backward fill, none)
 - **📅 Day-of-Week Analysis**: Analyze sleep score, body battery, and water intake patterns by day of the week
+- **😴 Optimal Sleep Activity Ranges**: Find steps and intensity minutes ranges associated with best sleep
 - **⏰ 24-Hour Coverage Filtering**: Filter analysis to only days with complete 24-hour continuous data coverage for more reliable results
 - **📅 Activity Calendar**: Visualize activity patterns with color-coded calendar showing different activity types
 - **🏷️ Activity Type Mappings**: Customize display names and colors for unknown or poorly named activity types
@@ -287,6 +306,7 @@ garmin-export --duckdb   # Also export to DuckDB
 garmin-sync --sync --all # Sync from Garmin Connect
 garmin-weekly-report     # Generate weekly health report
 garmin-day-of-week       # Day-of-week analysis
+garmin-optimal-sleep     # Optimal sleep by steps/intensity
 garmin-stress-by-time    # Time-of-day stress analysis
 garmin-activity-calendar # Activity calendar visualization
 ```
@@ -452,6 +472,7 @@ Open `http://localhost:8050`.
 
 The dashboard now includes:
 - **📅 Day of Week Analysis**: Sleep score, body battery, and water intake by day of week
+- **😴 Optimal Sleep Ranges**: Steps and intensity minutes associated with best sleep
 - **📊 30-Day Health Overview**: Variable 30-day window for stress, HR, body battery, and sleep
 - **📈 Data Quality**: Daily data quality score timeline, distribution, and coverage vs completeness
 - **📊 24-Hour Coverage Analysis**: Watch wear time and coverage metrics
@@ -609,6 +630,49 @@ poetry run pytest tests/test_day_of_week_analysis.py -v
 
 # Run dashboard integration tests
 poetry run pytest tests/test_dashboard_integration.py -v
+```
+
+## 😴 Optimal Sleep Activity Ranges
+
+Discover the steps and intensity minutes ranges associated with your best sleep. The analysis outputs: *"Your best sleep occurs when steps are between A–B or intensity minutes are between A–B"*.
+
+### Quick Start
+
+```bash
+# Run optimal sleep analysis with visualizations
+poetry run python -m garmin_analysis.cli_optimal_sleep
+
+# With 24-hour coverage filtering
+poetry run python -m garmin_analysis.cli_optimal_sleep --filter-24h-coverage
+
+# Show plots interactively
+poetry run python -m garmin_analysis.cli_optimal_sleep --show-plots
+
+# Skip saving plots
+poetry run python -m garmin_analysis.cli_optimal_sleep --no-save
+```
+
+### Integration
+
+- **Full analytics reports**: Included automatically in `run_all_analytics` output
+- **Dashboard**: "😴 Optimal Sleep Ranges" tab with summary and bar charts
+- **CLI**: Standalone analysis with optional filtering
+
+### Data Sources
+
+- **Steps**: From `daily_summary.steps`
+- **Intensity minutes**: Uses `intensity_time`, or `moderate_activity_time + vigorous_activity_time`, or `yesterday_activity_minutes`
+- **Sleep score**: From `sleep.score`
+
+### Generated Files
+
+- `*_optimal_sleep_steps.png` – Sleep score by steps range
+- `*_optimal_sleep_intensity.png` – Sleep score by intensity minutes range
+
+### Testing
+
+```bash
+poetry run pytest tests/test_optimal_sleep_activity_ranges.py -v
 ```
 
 ## 😰 Time-of-Day Stress Analysis
@@ -1071,7 +1135,8 @@ The system analyzes the stress timeseries data to identify days where:
 | | Correlation Matrix | `plot_feature_correlation` | Create feature correlation heatmaps |
 | | Feature Trends | `plot_feature_trend` | Plot individual feature trends over time |
 | | Activity Calendar | `cli_activity_calendar` | Create calendar view of activity patterns |
-| | Day-of-Week Analysis | `cli_day_of_week` | **NEW!** Analyze sleep, body battery, water intake by day of week |
+| | Day-of-Week Analysis | `cli_day_of_week` | Analyze sleep, body battery, water intake by day of week |
+| | Optimal Sleep Ranges | `cli_optimal_sleep` | Find steps/intensity ranges for best sleep |
 | | Summary Stats | `summary_stats` | Generate statistical summaries |
 | **Modeling** | Full Pipeline | `comprehensive_modeling_pipeline` | Complete ML analysis pipeline |
 | | Anomaly Detection | `enhanced_anomaly_detection` | Advanced anomaly detection algorithms |

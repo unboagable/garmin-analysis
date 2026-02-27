@@ -1,12 +1,17 @@
-import pandas as pd
+import argparse
+import logging
 import os
 from datetime import datetime
-import logging
-import argparse
-from garmin_analysis.reporting.generate_trend_summary import generate_trend_summary
-from garmin_analysis.modeling.anomaly_detection import run_anomaly_detection
-from garmin_analysis.utils.cli_helpers import add_24h_coverage_args, apply_24h_coverage_filter_from_args
+
+import pandas as pd
+
 from garmin_analysis.config import REPORTS_DIR
+from garmin_analysis.modeling.anomaly_detection import run_anomaly_detection
+from garmin_analysis.reporting.generate_trend_summary import generate_trend_summary
+from garmin_analysis.utils.cli_helpers import (
+    add_24h_coverage_args,
+    apply_24h_coverage_filter_from_args,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +55,20 @@ def run_all_analytics(df: pd.DataFrame, date_col='day', output_dir=None, as_html
     logger.info("Running anomaly detection...")
     anomalies_df, anomaly_plot_path = run_anomaly_detection(df)
 
+    # Step 3: Optimal Sleep Activity Ranges
+    logger.info("Running optimal sleep activity ranges analysis...")
+    try:
+        from garmin_analysis.features.optimal_sleep_activity_ranges import (
+            compute_optimal_sleep_ranges,
+            plot_optimal_sleep_ranges,
+        )
+        optimal_result = compute_optimal_sleep_ranges(df)
+        optimal_plot_files = plot_optimal_sleep_ranges(df, save_plots=True, output_dir=output_dir)
+    except Exception as e:
+        logger.warning("Optimal sleep activity ranges analysis failed: %s", e)
+        optimal_result = {"message": "Analysis skipped."}
+        optimal_plot_files = {}
+
     # Build Report
     with open(report_path, 'w') as f:
         f.write(f"# {'Monthly' if monthly else 'Full'} Health Report\n\nGenerated: {timestamp}\n\n")
@@ -60,7 +79,12 @@ def run_all_analytics(df: pd.DataFrame, date_col='day', output_dir=None, as_html
         f.write("## \U0001F4CA Trend Summary\n")
         f.write(f"See: `{os.path.basename(trend_path)}`\n\n")
 
-        f.write("## \U0001F6A8 Anomaly Detection\n")
+        f.write("## \U0001F4D2 Optimal Sleep Activity Ranges\n")
+        f.write(optimal_result.get("message", "N/A") + "\n\n")
+        for name, path in optimal_plot_files.items():
+            f.write(f"- Plot: `{os.path.basename(path)}`\n")
+
+        f.write("\n## \U0001F6A8 Anomaly Detection\n")
         if anomalies_df.empty:
             f.write("No anomalies detected.\n")
         else:

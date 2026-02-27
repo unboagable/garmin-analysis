@@ -9,6 +9,7 @@ from garmin_analysis.utils.data_loading import load_master_dataframe
 from garmin_analysis.logging_config import get_logger
 from garmin_analysis.features.coverage import filter_by_24h_coverage
 from garmin_analysis.features.day_of_week_analysis import calculate_day_of_week_averages, get_day_order
+from garmin_analysis.features.optimal_sleep_activity_ranges import get_optimal_sleep_plotly_figures
 from garmin_analysis.features.time_of_day_stress_analysis import (
     load_stress_data,
     calculate_hourly_stress_averages,
@@ -222,6 +223,20 @@ def create_layout(df):
                         dcc.Graph(id='dq-coverage-vs-completeness')
                     ], style={'display': 'flex', 'flex-direction': 'column', 'gap': '20px'}),
                     html.Div(id='dq-stats', style={'margin': '20px'})
+                ])
+            ]),
+            dcc.Tab(label='😴 Optimal Sleep Ranges', children=[
+                html.Div([
+                    dcc.Store(id='optimal-sleep-trigger', data=True),
+                    html.Div([
+                        html.H3("Best Sleep by Steps & Intensity Minutes"),
+                        html.P("Your best sleep occurs when steps are between A–B or intensity minutes are between A–B."),
+                    ], style={'margin': '10px'}),
+                    html.Div(id='optimal-sleep-summary', style={'margin': '10px', 'fontWeight': 'bold'}),
+                    html.Div([
+                        dcc.Graph(id='optimal-sleep-steps'),
+                        dcc.Graph(id='optimal-sleep-intensity')
+                    ], style={'display': 'flex', 'flex-direction': 'column', 'gap': '20px'})
                 ])
             ]),
             dcc.Tab(label='😰 Stress by Time of Day', children=[
@@ -1088,6 +1103,32 @@ def update_data_quality_charts(start_date, end_date, n_clicks):
         error_fig = go.Figure()
         error_fig.update_layout(title=f"Error: {str(e)}", height=400)
         return error_fig, error_fig, error_fig, html.P(f"Error: {str(e)}")
+
+@app.callback(
+    [Output('optimal-sleep-summary', 'children'),
+     Output('optimal-sleep-steps', 'figure'),
+     Output('optimal-sleep-intensity', 'figure')],
+    Input('optimal-sleep-trigger', 'data'),
+)
+def update_optimal_sleep_charts(_trigger):
+    """Update optimal sleep activity ranges analysis."""
+    empty_fig = go.Figure()
+    empty_fig.update_layout(height=400, template="plotly_white")
+    try:
+        df = load_master_dataframe()
+        if df.empty:
+            return "No data available.", empty_fig, empty_fig
+        result, steps_fig, intensity_fig = get_optimal_sleep_plotly_figures(df)
+        summary = result.get("message", "Analysis complete.")
+        return (
+            summary,
+            steps_fig if steps_fig is not None else empty_fig,
+            intensity_fig if intensity_fig is not None else empty_fig,
+        )
+    except Exception as e:
+        logger.error("Error updating optimal sleep charts: %s", e)
+        return f"Error: {str(e)}", empty_fig, empty_fig
+
 
 @app.callback(
     [Output('stress-hourly-line', 'figure'),

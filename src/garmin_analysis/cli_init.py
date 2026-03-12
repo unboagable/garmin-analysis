@@ -129,7 +129,8 @@ def run_init(verbose: bool = False) -> int:
     master_exists = MASTER_CSV.exists()
     print("\n📊 Master dataset:")
     if master_exists:
-        rows = sum(1 for _ in open(MASTER_CSV)) - 1
+        with open(MASTER_CSV) as f:
+            rows = max(0, sum(1 for _ in f) - 1)
         print(f"   ✓ {MASTER_CSV.relative_to(Path.cwd())} ({rows} rows)")
     else:
         print(f"   ✗ {MASTER_CSV.relative_to(Path.cwd())} — not yet generated")

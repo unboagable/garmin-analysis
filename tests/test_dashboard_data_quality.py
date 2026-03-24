@@ -4,7 +4,7 @@ import pytest
 import pandas as pd
 from pathlib import Path
 
-from garmin_analysis.dashboard.app import (
+from garmin_dashboard.app import (
     create_layout,
     update_data_quality_charts,
 )
@@ -27,7 +27,7 @@ class TestUpdateDataQualityCharts:
 
     def test_empty_dq_returns_empty_figures_and_message(self, tmp_path, monkeypatch):
         monkeypatch.setattr(
-            "garmin_analysis.dashboard.app.DAILY_DATA_QUALITY_CSV",
+            "garmin_dashboard.app.DAILY_DATA_QUALITY_CSV",
             tmp_path / "nonexistent_dq.csv",
         )
         monkeypatch.setattr(
@@ -56,7 +56,7 @@ class TestUpdateDataQualityCharts:
         dq_df.to_csv(dq_path, index=False)
 
         monkeypatch.setattr(
-            "garmin_analysis.dashboard.app.DAILY_DATA_QUALITY_CSV",
+            "garmin_dashboard.app.DAILY_DATA_QUALITY_CSV",
             dq_path,
         )
         monkeypatch.setattr(
@@ -87,7 +87,7 @@ class TestUpdateDataQualityCharts:
         dq_df.to_csv(dq_path, index=False)
 
         monkeypatch.setattr(
-            "garmin_analysis.dashboard.app.DAILY_DATA_QUALITY_CSV",
+            "garmin_dashboard.app.DAILY_DATA_QUALITY_CSV",
             dq_path,
         )
         monkeypatch.setattr(

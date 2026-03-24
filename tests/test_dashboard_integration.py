@@ -1,6 +1,6 @@
 import pytest
-from src.garmin_analysis.dashboard.app import app, create_layout, update_day_of_week_charts
-from src.garmin_analysis.utils import load_master_dataframe
+from garmin_dashboard.app import app, create_layout, update_day_of_week_charts
+from garmin_analysis.utils import load_master_dataframe
 
 
 class TestDashboardIntegration:

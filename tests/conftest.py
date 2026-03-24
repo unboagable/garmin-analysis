@@ -7,10 +7,10 @@ import pytest
 # Ensure project root and src are on sys.path so `garmin_analysis` can be imported
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SRC_DIR = os.path.join(PROJECT_ROOT, "src")
-if SRC_DIR not in sys.path:
-    sys.path.insert(0, SRC_DIR)
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+APPS_DASHBOARD_DIR = os.path.join(PROJECT_ROOT, "apps", "dashboard")
+for _path in (SRC_DIR, APPS_DASHBOARD_DIR, PROJECT_ROOT):
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
 
 # Use a non-interactive backend for matplotlib in tests
 try:

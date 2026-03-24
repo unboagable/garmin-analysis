@@ -3,44 +3,17 @@
 Script to run the Garmin Health Dashboard with day-of-week analysis.
 """
 
-import logging
 import sys
 from pathlib import Path
 
-# Add the src directory to the Python path
-src_path = Path(__file__).parent / "src"
-sys.path.insert(0, str(src_path))
+# Support `python run_dashboard.py` from the repo without relying on editable layout details
+_repo = Path(__file__).resolve().parent
+for _p in (_repo / "src", _repo / "apps" / "dashboard"):
+    _s = str(_p)
+    if _s not in sys.path:
+        sys.path.insert(0, _s)
 
-
-def main():
-    """Run the dashboard."""
-    try:
-        from garmin_analysis.dashboard.app import app
-        from garmin_analysis.logging_config import setup_logging
-        from garmin_analysis.utils import load_master_dataframe
-
-        # Configure logging
-        setup_logging(level=logging.INFO)
-
-        # Load data and start dashboard
-        logging.info("Loading data for dashboard...")
-        df = load_master_dataframe()
-        logging.info(f"Loaded {len(df)} days of data")
-
-        logging.info("Starting Garmin Health Dashboard...")
-        logging.info("Dashboard will be available at: http://127.0.0.1:8050")
-        logging.info("Press Ctrl+C to stop the dashboard")
-
-        app.run(debug=True, host="127.0.0.1", port=8050)
-
-    except KeyboardInterrupt:
-        logging.info("Dashboard stopped by user")
-    except Exception as e:
-        logging.error(f"Failed to start dashboard: {e}")
-        return 1
-
-    return 0
-
+from garmin_dashboard.__main__ import main
 
 if __name__ == "__main__":
-    exit(main())
+    raise SystemExit(main())

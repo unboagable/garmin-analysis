@@ -8,7 +8,7 @@ Garmin Analysis is a pure-Python health data analytics platform (Dash dashboard,
 
 ### Running services
 
-- **Dashboard**: `MPLBACKEND=Agg poetry run python run_dashboard.py` — serves at `http://localhost:8050`
+- **Dashboard** (`apps/dashboard/garmin_dashboard`): `MPLBACKEND=Agg poetry run python run_dashboard.py` or `poetry run python -m garmin_dashboard` or `poetry run garmin-dashboard` — serves at `http://localhost:8050`
   - Set `MPLBACKEND=Agg` to avoid display-server errors in headless environments.
   - The app auto-generates synthetic data when real Garmin DBs are absent (with warnings); this is expected.
 
@@ -27,4 +27,4 @@ Garmin Analysis is a pure-Python health data analytics platform (Dash dashboard,
 - Always set `MPLBACKEND=Agg` when running tests or the dashboard in headless/CI environments to prevent matplotlib from trying to open a display.
 - `poetry` is installed via pip to `~/.local/bin`; ensure `$HOME/.local/bin` is on `PATH`.
 - One pre-existing test failure exists in `tests/test_adversarial.py::TestValidateFilePathAdversarial::test_path_traversal` — this is not caused by environment setup.
-- The `ruff` config in `pyproject.toml` uses `include` to scope checks to specific files (CLI entry points and `run_dashboard.py`). Lint-only checks on `src/` or `tests/` dirs may need `--extend-include` or running from the project root.
+- The `ruff` config in `pyproject.toml` uses `include` to scope checks to specific files (CLI entry points, `run_dashboard.py`, and app packages under `apps/`). Lint-only checks on `src/` or `tests/` dirs may need `--extend-include` or running from the project root.

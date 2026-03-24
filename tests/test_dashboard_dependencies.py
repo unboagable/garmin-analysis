@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from garmin_analysis.utils.data_loading import load_master_dataframe
 from dash import Dash
-from garmin_analysis.dashboard import app as dashboard_app
+from garmin_dashboard import app as dashboard_app
 
 
 class TestDashboardDependencies:

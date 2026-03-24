@@ -434,7 +434,7 @@ poetry run python -m garmin_analysis.modeling.comprehensive_modeling_pipeline --
 poetry run python -m garmin_analysis.reporting.run_all_analytics --filter-24h-coverage
 
 # Launch dashboard with filtering options
-poetry run python -m garmin_analysis.dashboard.app
+poetry run python -m garmin_dashboard
 # Then check the "Only days with 24-hour continuous coverage" checkbox
 # and set "Max gap (minutes)" to your preferred tolerance (default: 2)
 ```
@@ -466,7 +466,7 @@ poetry run python -m garmin_analysis.dashboard.app
 poetry run python run_dashboard.py
 
 # Or run directly
-poetry run python -m garmin_analysis.dashboard.app
+poetry run python -m garmin_dashboard
 ```
 Open `http://localhost:8050`.
 
@@ -551,7 +551,7 @@ The day-of-week analysis is also available in the interactive dashboard:
 ```bash
 # Launch the dashboard
 poetry run python run_dashboard.py
-# Or: poetry run python -m garmin_analysis.dashboard.app
+# Or: poetry run python -m garmin_dashboard
 ```
 
 Then navigate to the **"📅 Day of Week Analysis"** tab to:
@@ -1153,7 +1153,7 @@ The system analyzes the stress timeseries data to identify days where:
 | **Reporting** | Weekly Report | `cli_weekly_report` | **NEW!** Weekly sleep, HR, stress Markdown report |
 | | Full Analytics | `run_all_analytics` | Comprehensive analytics reports |
 | | Trend Summary | `generate_trend_summary` | Statistical trend summaries |
-| **Dashboard** | Web Interface | `dashboard.app` | Interactive web dashboard with day-of-week analysis |
+| **Dashboard** | Web Interface | `garmin_dashboard.app` | Interactive web dashboard with day-of-week analysis |
 | **Testing** | Unit Tests | `pytest -m "not integration"` | Fast unit tests |
 | | Integration Tests | `pytest -m integration` | Full integration tests |
 | | All Tests | `pytest` | Complete test suite |
@@ -1353,8 +1353,7 @@ poetry run jupyter notebook
 
 ### Package Structure
 ```
-src/garmin_analysis/
-├── dashboard/          # Interactive Dash web application
+src/garmin_analysis/    # Reusable core (library + CLIs)
 ├── data_ingestion/     # Database loading, export, CSV generation
 ├── features/           # Data quality and feature engineering
 ├── modeling/           # Machine learning models
@@ -1369,6 +1368,9 @@ src/garmin_analysis/
 │   └── activity_mappings.py # Activity type customization
 ├── cli_*.py            # CLI entry points (init, export, sync, weekly, etc.)
 └── ...
+
+apps/dashboard/garmin_dashboard/   # Dash web UI (depends on garmin_analysis)
+apps/api/garmin_api/               # Placeholder for a future REST API
 ```
 Configuration: `config/activity_type_mappings.json` at project root.
 
@@ -1392,8 +1394,7 @@ Configuration: `config/activity_type_mappings.json` at project root.
 
 ```
 garmin-analysis/
-├── src/garmin_analysis/           # Main package
-│   ├── dashboard/                 # Interactive web dashboard
+├── src/garmin_analysis/           # Core library and CLI entry points
 │   ├── data_ingestion/           # Data loading and preparation
 │   ├── features/                 # Data quality and feature analysis
 │   ├── modeling/                 # Machine learning algorithms
@@ -1413,6 +1414,9 @@ garmin-analysis/
 │   ├── viz/                      # Visualization tools
 │   ├── cli_*.py                  # CLI entry points (init, export, sync, weekly, etc.)
 │   └── ...
+├── apps/
+│   ├── dashboard/garmin_dashboard/  # Dash web application
+│   └── api/garmin_api/              # Future REST API (stub)
 ├── config/                       # Configuration files
 │   └── activity_type_mappings.json # Activity type mappings
 ├── docs/                         # Documentation
@@ -1503,7 +1507,7 @@ Special thanks to the Garmin developer community for their work on reverse-engin
 
 ## Notes
 
-- This repo uses the `src/garmin_analysis` package layout. Always run modules via `python -m garmin_analysis.<module>`.
+- Core library lives under `src/garmin_analysis` (`python -m garmin_analysis.<module>`). The Dash UI is package `garmin_dashboard` under `apps/dashboard` (`python -m garmin_dashboard`). A future REST layer can live in `apps/api/garmin_api`.
 - Logging is used instead of print statements throughout the codebase.
 - Test fixtures use in-memory SQLite (`mem_db`) for unit tests and file-backed DBs (`tmp_db`) for integration tests.
 - If real Garmin databases are unavailable, some commands may generate synthetic data for smoke testing (with warnings).

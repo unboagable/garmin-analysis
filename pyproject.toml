@@ -48,6 +48,7 @@ garmin-optimal-sleep = "garmin_analysis.cli_optimal_sleep:main"
 garmin-stress-by-time = "garmin_analysis.cli_time_of_day_stress:main"
 garmin-sync = "garmin_analysis.cli_garmin_sync:main"
 garmin-activity-calendar = "garmin_analysis.viz.cli_activity_calendar:main"
+garmin-dashboard = "garmin_dashboard.__main__:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -58,6 +59,11 @@ name = "garmin_analysis"
 version = "0.1.0"
 description = "A comprehensive Garmin health data analysis platform with interactive dashboard, machine learning capabilities, and automated reporting."
 authors = ["Chang-Hyun Mungai <changhyunmungai@gmail.com>"]
+packages = [
+    { include = "garmin_analysis", from = "src" },
+    { include = "garmin_dashboard", from = "apps/dashboard" },
+    { include = "garmin_api", from = "apps/api" },
+]
 
 [tool.poetry.dependencies]
 python = ">=3.11"
@@ -92,12 +98,15 @@ target-version = "py311"
 line-length = 100
 src = [
     "src",
+    "apps",
     "tests",
 ]
 include = [
     "run_dashboard.py",
     "src/garmin_analysis/cli_*.py",
     "src/garmin_analysis/viz/cli_*.py",
+    "apps/dashboard/garmin_dashboard/**/*.py",
+    "apps/api/garmin_api/**/*.py",
 ]
 extend-exclude = [
     "notebooks",

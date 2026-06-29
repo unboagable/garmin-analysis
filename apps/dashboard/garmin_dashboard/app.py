@@ -23,7 +23,7 @@ from garmin_analysis.features.time_of_day_stress_analysis import (
     load_stress_data,
 )
 from garmin_analysis.logging_config import get_logger
-from garmin_analysis.utils.data_loading import load_master_dataframe
+from garmin_analysis.utils.data_loading import coerce_nullable_boolean, load_master_dataframe
 
 # Get logger
 logger = get_logger(__name__)
@@ -1103,6 +1103,9 @@ def update_coverage_charts(start_date, end_date):
     """Update 24-hour coverage analysis charts"""
     try:
         df = load_master_dataframe()
+        if "has_24h_coverage" in df.columns:
+            df = df.copy()
+            df["has_24h_coverage"] = coerce_nullable_boolean(df["has_24h_coverage"])
 
         # Check if coverage columns exist
         coverage_cols = [
@@ -1229,7 +1232,9 @@ def update_coverage_charts(start_date, end_date):
                 "total_days",
             ]
             monthly_coverage["pct_24h"] = (
-                monthly_coverage["days_24h"] / monthly_coverage["total_days"] * 100
+                pd.to_numeric(monthly_coverage["days_24h"], errors="coerce")
+                / monthly_coverage["total_days"]
+                * 100
             ).round(1)
 
             if not monthly_coverage.empty:

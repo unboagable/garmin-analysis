@@ -1,36 +1,52 @@
+import logging
 import os
 import sqlite3
+
 import pandas as pd
-import logging
 
 from garmin_analysis.config import MASTER_CSV
 from garmin_analysis.utils.error_handling import (
+    DataLoadingError,
     handle_data_loading_errors,
     handle_database_errors,
-    DataLoadingError,
-    validate_file_path
+    validate_file_path,
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _normalize_master_dtypes(df: pd.DataFrame) -> pd.DataFrame:
+    """Coerce known columns to consistent dtypes after CSV round-trip."""
+    if "has_24h_coverage" in df.columns:
+        df["has_24h_coverage"] = coerce_nullable_boolean(df["has_24h_coverage"])
+    return df
+
+
+def coerce_nullable_boolean(series: pd.Series) -> pd.Series:
+    """Convert mixed bool/NaN CSV values to pandas nullable boolean."""
+    return series.apply(lambda value: pd.NA if pd.isna(value) else bool(value)).astype("boolean")
 
 
 @handle_database_errors(default_return={})
 def load_garmin_tables(db_path="db/garmin.db"):
     """
     Load Garmin tables from SQLite database.
-    
+
     Args:
         db_path: Path to Garmin database file
-    
+
     Returns:
         Dictionary of DataFrames containing daily, sleep, stress, and rest_hr tables
         Returns empty dict if database not found or loading fails
-    
+
     Raises:
         DatabaseError: If reraise=True in decorator (currently returns {} on error)
     """
     if not os.path.exists(db_path):
-        logger.error("Database file '%s' not found. Please run garmindb_cli.py or place it in the root directory.", db_path)
+        logger.error(
+            "Database file '%s' not found. Please run garmindb_cli.py or place it in the root directory.",
+            db_path,
+        )
         return {}
 
     conn = sqlite3.connect(db_path)
@@ -51,12 +67,12 @@ def load_garmin_tables(db_path="db/garmin.db"):
 def load_master_dataframe():
     """
     Load master daily summary DataFrame from CSV.
-    
+
     If CSV doesn't exist, attempts to auto-build it via summarize_and_merge().
-    
+
     Returns:
         DataFrame with master daily summary data
-    
+
     Raises:
         DataLoadingError: If file not found and auto-build fails
         FileNotFoundError: Wrapped in DataLoadingError
@@ -65,21 +81,30 @@ def load_master_dataframe():
     if not os.path.exists(df_path):
         logger.warning("%s not found. Attempting to build it via summarize_and_merge().", df_path)
         # Lazy import to avoid circulars at module import time
-        from garmin_analysis.data_ingestion.load_all_garmin_dbs import summarize_and_merge, USING_SYNTHETIC_DATA
-        
+        from garmin_analysis.data_ingestion.load_all_garmin_dbs import (
+            USING_SYNTHETIC_DATA,
+            summarize_and_merge,
+        )
+
         df = summarize_and_merge(return_df=True)
-        
+
         # Ensure the file is saved for subsequent calls
         os.makedirs(os.path.dirname(df_path), exist_ok=True)
         df.to_csv(df_path, index=False)
-        
-        if 'USING_SYNTHETIC_DATA' in globals() and USING_SYNTHETIC_DATA:
-            logger.warning("Master dataset built from SYNTHETIC data due to missing DBs. File: %s", df_path)
-            logger.warning("Do not rely on this dataset for real analysis. Place real DBs under `db/` and rebuild.")
-        
-        logger.info("Built and saved master dataset to %s (%d rows, %d cols)", df_path, len(df), df.shape[1])
-        return df
-    
+
+        if "USING_SYNTHETIC_DATA" in globals() and USING_SYNTHETIC_DATA:
+            logger.warning(
+                "Master dataset built from SYNTHETIC data due to missing DBs. File: %s", df_path
+            )
+            logger.warning(
+                "Do not rely on this dataset for real analysis. Place real DBs under `db/` and rebuild."
+            )
+
+        logger.info(
+            "Built and saved master dataset to %s (%d rows, %d cols)", df_path, len(df), df.shape[1]
+        )
+        return _normalize_master_dtypes(df)
+
     df = pd.read_csv(df_path, parse_dates=["day"])
     logger.info("Loaded master dataset with %d rows and %d columns", len(df), df.shape[1])
-    return df
+    return _normalize_master_dtypes(df)

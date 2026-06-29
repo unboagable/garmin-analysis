@@ -15,6 +15,7 @@ from typing import Optional
 import pandas as pd
 
 from garmin_analysis.config import DAILY_DATA_QUALITY_CSV, DATA_DIR
+from garmin_analysis.utils.data_loading import coerce_nullable_boolean
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,9 @@ def compute_daily_data_quality_score(
     if "coverage_pct" in df.columns:
         coverage_score = df["coverage_pct"].fillna(0).clip(0, 100)
     elif "has_24h_coverage" in df.columns:
-        coverage_score = df["has_24h_coverage"].map(lambda x: 100.0 if x else 0.0)
+        coverage_score = (
+            coerce_nullable_boolean(df["has_24h_coverage"]).fillna(False).astype(float) * 100.0
+        )
     else:
         coverage_score = pd.Series(50.0, index=df.index)  # neutral default
 
@@ -87,14 +90,16 @@ def compute_daily_data_quality_score(
         coverage_weight * coverage_score + completeness_weight * completeness_score
     ) / total_weight
 
-    result = pd.DataFrame({
-        "day": df["day"],
-        "data_quality_score": data_quality_score.round(1),
-        "coverage_score": coverage_score.round(1),
-        "completeness_score": completeness_score.round(1),
-        "key_metrics_count": non_null,
-        "key_metrics_total": key_total,
-    })
+    result = pd.DataFrame(
+        {
+            "day": df["day"],
+            "data_quality_score": data_quality_score.round(1),
+            "coverage_score": coverage_score.round(1),
+            "completeness_score": completeness_score.round(1),
+            "key_metrics_count": non_null,
+            "key_metrics_total": key_total,
+        }
+    )
 
     return result
 
@@ -135,6 +140,7 @@ def compute_and_persist_daily_data_quality(
     """
     if master_df is None:
         from garmin_analysis.utils.data_loading import load_master_dataframe
+
         master_df = load_master_dataframe()
     quality_df = compute_daily_data_quality_score(master_df)
     if quality_df.empty:

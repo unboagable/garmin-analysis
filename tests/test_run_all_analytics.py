@@ -97,6 +97,7 @@ class TestRunAllAnalytics:
     @pytest.mark.integration
     def test_monthly_filters_data(self, sample_health_data, tmp_path, caplog):
         """Test that monthly report filters data correctly."""
+        caplog.set_level(logging.INFO)
         with patch(
             "garmin_analysis.reporting.run_all_analytics.run_anomaly_detection"
         ) as mock_anomaly:

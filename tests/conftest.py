@@ -4,6 +4,21 @@ import sqlite3
 from pathlib import Path
 import pytest
 
+# Limit BLAS/thread pools before numpy/sklearn import (prevents Linux CI segfaults).
+for _thread_var in (
+    "OPENBLAS_NUM_THREADS",
+    "OMP_NUM_THREADS",
+    "MKL_NUM_THREADS",
+    "NUMEXPR_NUM_THREADS",
+    "VECLIB_MAXIMUM_THREADS",
+):
+    os.environ.setdefault(_thread_var, "1")
+os.environ.setdefault("MPLBACKEND", "Agg")
+os.environ.setdefault(
+    "MPLCONFIGDIR",
+    os.path.join(os.path.dirname(__file__), ".mplconfig"),
+)
+
 # Ensure project root and src are on sys.path so `garmin_analysis` can be imported
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SRC_DIR = os.path.join(PROJECT_ROOT, "src")
@@ -20,6 +35,7 @@ try:
 except Exception:
     # If matplotlib is not installed for some environments, ignore
     pass
+
 
 def _apply_schema(conn: sqlite3.Connection):
     cur = conn.cursor()
@@ -53,6 +69,7 @@ def _apply_schema(conn: sqlite3.Connection):
 def _seed_core(conn: sqlite3.Connection, num_days: int = 5):
     cur = conn.cursor()
     import datetime as _dt
+
     start = _dt.date(2024, 1, 1)
     daily_rows = []
     sleep_rows = []
@@ -66,9 +83,19 @@ def _seed_core(conn: sqlite3.Connection, num_days: int = 5):
         total_minutes = 6 * 60 + (i % 3) * 15
         deep_minutes = 60 + (i % 2) * 15
         rem_minutes = 90 + (i % 2) * 15
+
         def _hhmmss(m):
             return f"{m // 60:02d}:{m % 60:02d}:00"
-        sleep_rows.append((day_str, _hhmmss(total_minutes), _hhmmss(deep_minutes), _hhmmss(rem_minutes), 70 + (i % 10)))
+
+        sleep_rows.append(
+            (
+                day_str,
+                _hhmmss(total_minutes),
+                _hhmmss(deep_minutes),
+                _hhmmss(rem_minutes),
+                70 + (i % 10),
+            )
+        )
         # Stress 2 samples/day
         stress_rows.append((f"{day_str} 08:00:00", 20 + (i % 10)))
         stress_rows.append((f"{day_str} 17:00:00", 25 + (i % 10)))
@@ -127,8 +154,11 @@ def tmp_db(tmp_path):
             """
         )
         import datetime as _dt
+
         start = _dt.date(2024, 1, 1)
-        rows = [( (start + _dt.timedelta(days=i)).isoformat(), 1400 + (i % 3) * 10 ) for i in range(60)]
+        rows = [
+            ((start + _dt.timedelta(days=i)).isoformat(), 1400 + (i % 3) * 10) for i in range(60)
+        ]
         cur.executemany("INSERT INTO days_summary (day, calories_bmr_avg) VALUES (?, ?)", rows)
         conn.commit()
     with sqlite3.connect(activities_db) as conn:
@@ -154,17 +184,30 @@ def tmp_db(tmp_path):
             """
         )
         import datetime as _dt
+
         start = _dt.datetime(2024, 1, 1, 7, 0, 0)
         act_rows = []
         steps_rows = []
-        sports = ['running', 'cycling', 'fitness_equipment', 'walking', 'swimming']
+        sports = ["running", "cycling", "fitness_equipment", "walking", "swimming"]
         for i in range(0, 60, 2):
             act_id = f"a{i}"
             st = start + _dt.timedelta(days=i, hours=(i % 3))
             sport = sports[i % len(sports)]
             name = f"Activity {i}"
             description = f"Description for activity {i}"
-            act_rows.append((act_id, st.strftime("%Y-%m-%d %H:%M:%S"), sport, name, description, 2.0 + (i % 4) * 0.2, 0.3 + (i % 3) * 0.1, "00:30:00", 300 + (i % 3) * 25))
+            act_rows.append(
+                (
+                    act_id,
+                    st.strftime("%Y-%m-%d %H:%M:%S"),
+                    sport,
+                    name,
+                    description,
+                    2.0 + (i % 4) * 0.2,
+                    0.3 + (i % 3) * 0.1,
+                    "00:30:00",
+                    300 + (i % 3) * 25,
+                )
+            )
             steps_rows.append((act_id, "06:00" if i % 4 else "05:45", 40 + (i % 5)))
         cur.executemany(
             "INSERT INTO activities (activity_id, start_time, sport, name, description, training_effect, anaerobic_training_effect, elapsed_time, calories) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -177,6 +220,7 @@ def tmp_db(tmp_path):
         conn.commit()
 
     import garmin_analysis.data_ingestion.load_all_garmin_dbs as ladd
+
     original_paths = ladd.DB_PATHS.copy()
     ladd.DB_PATHS["garmin"] = garmin_db
     ladd.DB_PATHS["activities"] = activities_db
@@ -193,10 +237,10 @@ def tmp_db(tmp_path):
         ladd.DB_PATHS.update(original_paths)
         # Clean up any generated files from integration runs
         from garmin_analysis.config import MASTER_CSV, DAILY_DATA_QUALITY_CSV
+
         for path in (MASTER_CSV, DAILY_DATA_QUALITY_CSV):
             if path.exists():
                 try:
                     path.unlink()
                 except Exception:
                     pass
-

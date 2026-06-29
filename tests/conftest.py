@@ -11,13 +11,35 @@ for _thread_var in (
     "MKL_NUM_THREADS",
     "NUMEXPR_NUM_THREADS",
     "VECLIB_MAXIMUM_THREADS",
+    "LOKY_MAX_CPU_COUNT",
 ):
-    os.environ.setdefault(_thread_var, "1")
-os.environ.setdefault("MPLBACKEND", "Agg")
+    os.environ[_thread_var] = "1"
+os.environ["MPLBACKEND"] = "Agg"
 os.environ.setdefault(
     "MPLCONFIGDIR",
     os.path.join(os.path.dirname(__file__), ".mplconfig"),
 )
+
+
+def pytest_configure(config):
+    """Cap BLAS thread pools for the full session (OpenBLAS 0.3.28 + sklearn on Linux)."""
+    try:
+        from threadpoolctl import threadpool_limits
+
+        config._blas_thread_limit = threadpool_limits(limits=1, user_api="blas")
+        config._blas_thread_limit.__enter__()
+    except Exception:
+        config._blas_thread_limit = None
+
+
+def pytest_unconfigure(config):
+    limiter = getattr(config, "_blas_thread_limit", None)
+    if limiter is not None:
+        try:
+            limiter.__exit__(None, None, None)
+        except Exception:
+            pass
+
 
 # Ensure project root and src are on sys.path so `garmin_analysis` can be imported
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))

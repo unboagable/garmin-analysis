@@ -32,9 +32,7 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Install dependencies
-        run: |
-          poetry lock
-          poetry install --with dev
+        run: poetry install --with dev
 
       - name: Ruff check
         run: poetry run ruff check .
@@ -45,6 +43,15 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      MPLBACKEND: Agg
+      MPLCONFIGDIR: /tmp/matplotlib
+      OPENBLAS_NUM_THREADS: 1
+      OMP_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
+      NUMEXPR_NUM_THREADS: 1
+      VECLIB_MAXIMUM_THREADS: 1
+      LOKY_MAX_CPU_COUNT: 1
     strategy:
       matrix:
         python-version: [ "3.11", "3.12", "3.13" ]
@@ -66,22 +73,14 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Install dependencies
-        run: |
-          poetry lock
-          poetry install --with dev
+        run: poetry install --with dev
 
       - name: Run unit tests (excluding integration)
-        env:
-          MPLBACKEND: Agg
         run: poetry run pytest -q -m "not integration"
 
       - name: Run integration tests (excluding notebooks)
-        env:
-          MPLBACKEND: Agg
         run: poetry run pytest -q -m integration --ignore=tests/test_notebooks.py
 
       - name: Run notebook structure tests
-        env:
-          MPLBACKEND: Agg
         run: |
           poetry run pytest tests/test_notebooks.py -v -k "structure or descriptions" -m integration

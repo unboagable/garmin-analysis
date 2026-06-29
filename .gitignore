@@ -37,3 +37,6 @@ __pycache__/
 # OS clutter
 .DS_Store
 **/.DS_Store
+
+# Matplotlib cache created by tests/conftest.py
+tests/.mplconfig/

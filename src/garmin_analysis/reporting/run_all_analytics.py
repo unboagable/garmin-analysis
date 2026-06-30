@@ -6,7 +6,7 @@ from datetime import datetime
 import pandas as pd
 
 from garmin_analysis.config import REPORTS_DIR
-from garmin_analysis.modeling.anomaly_detection import run_anomaly_detection
+from garmin_analysis.modeling.enhanced_anomaly_detection import run_anomaly_detection
 from garmin_analysis.reporting.generate_trend_summary import generate_trend_summary
 from garmin_analysis.utils.cli_helpers import (
     add_24h_coverage_args,

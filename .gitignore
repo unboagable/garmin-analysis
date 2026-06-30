@@ -18,6 +18,11 @@ data_quality_reports/
 # Jupyter notebook checkpoints
 .ipynb_checkpoints/
 
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
 # Python virtual environments and dependency tools
 .env
 .venv

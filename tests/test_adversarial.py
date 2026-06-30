@@ -2284,9 +2284,9 @@ class TestPlotActivityCalendarAdversarial:
 
 
 # ---------------------------------------------------------------------------
-# 24. modeling/anomaly_detection (simple)
+# 24. modeling/enhanced_anomaly_detection (run_anomaly_detection wrapper)
 # ---------------------------------------------------------------------------
-from garmin_analysis.modeling.anomaly_detection import run_anomaly_detection
+from garmin_analysis.modeling.enhanced_anomaly_detection import run_anomaly_detection
 
 
 class TestSimpleAnomalyDetectionAdversarial:

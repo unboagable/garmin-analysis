@@ -14,16 +14,12 @@ dependencies = [
   "pandas",
   "pyarrow>=14.0.0",
   "seaborn",
-  "tabulate",
   "dash",
   "plotly",
   "notebook>=7.4.3",
   "ipykernel>=6.29.5",
   "matplotlib>=3.10.3",
   "scikit-learn>=1.4.2",
-  "tsfresh",
-  "statsmodels",
-  "prophet",
 ]
 
 [project.optional-dependencies]
@@ -62,7 +58,6 @@ authors = ["Chang-Hyun Mungai <changhyunmungai@gmail.com>"]
 packages = [
     { include = "garmin_analysis", from = "src" },
     { include = "garmin_dashboard", from = "apps/dashboard" },
-    { include = "garmin_api", from = "apps/api" },
 ]
 
 [tool.poetry.dependencies]
@@ -71,16 +66,12 @@ numpy = ">=1.24,<1.27"
 pandas = "*"
 pyarrow = ">=14.0.0"
 seaborn = "*"
-tabulate = "*"
 dash = "*"
 plotly = "*"
 notebook = ">=7.4.3"
 ipykernel = ">=6.29.5"
 matplotlib = ">=3.10.3"
 scikit-learn = ">=1.4.2"
-tsfresh = "*"
-statsmodels = "*"
-prophet = "*"
 duckdb = { version = "*", optional = true }
 
 [tool.poetry.extras]
@@ -106,7 +97,6 @@ include = [
     "src/garmin_analysis/cli_*.py",
     "src/garmin_analysis/viz/cli_*.py",
     "apps/dashboard/garmin_dashboard/**/*.py",
-    "apps/api/garmin_api/**/*.py",
 ]
 extend-exclude = [
     "notebooks",

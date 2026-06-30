@@ -306,10 +306,6 @@ class TestExportMasterDateRangeIntegration:
         master_df.to_csv(master_path, index=False)
         export_dir = tmp_path / "export"
         monkeypatch.setattr(
-            "garmin_analysis.data_ingestion.export_master.MASTER_CSV",
-            master_path,
-        )
-        monkeypatch.setattr(
             "garmin_analysis.utils.data_loading.MASTER_CSV",
             master_path,
         )

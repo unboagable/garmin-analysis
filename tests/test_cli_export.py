@@ -133,10 +133,6 @@ def test_cli_export_summary_only_end_to_end(tmp_path, monkeypatch):
     output_path = tmp_path / "export" / "subset.csv"
 
     monkeypatch.setattr(
-        "garmin_analysis.data_ingestion.export_master.MASTER_CSV",
-        master_path,
-    )
-    monkeypatch.setattr(
         "garmin_analysis.utils.data_loading.MASTER_CSV",
         master_path,
     )

@@ -16,9 +16,9 @@ import pandas as pd
 from garmin_analysis.config import (
     DAILY_DATA_QUALITY_CSV,
     EXPORT_DIR,
-    MASTER_CSV,
 )
 from garmin_analysis.utils.data_filtering import filter_by_date
+from garmin_analysis.utils.data_loading import load_master_dataframe
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +168,7 @@ def export_to_parquet(
     Export master dataset to Parquet format.
 
     Args:
-        df: Master DataFrame. If None, loads from MASTER_CSV.
+        df: Master DataFrame. If None, loads via load_master_dataframe().
         output_path: Output path. Default: data/export/master_daily_summary.parquet
         include_data_quality: If True, merge daily data quality scores into export.
 
@@ -176,8 +176,8 @@ def export_to_parquet(
         Path to written Parquet file.
     """
     if df is None:
-        df = pd.read_csv(MASTER_CSV, parse_dates=["day"])
-        logger.info("Loaded master from %s (%d rows)", MASTER_CSV, len(df))
+        df = load_master_dataframe()
+        logger.info("Loaded master dataset (%d rows)", len(df))
 
     if output_path is None:
         output_path = build_export_output_path("parquet")

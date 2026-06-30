@@ -4,7 +4,8 @@ import os
 import logging
 from datetime import datetime
 
-from garmin_analysis.config import PLOTS_DIR, MASTER_CSV
+from garmin_analysis.config import PLOTS_DIR
+from garmin_analysis.utils.data_loading import load_master_dataframe
 
 
 logger = logging.getLogger(__name__)
@@ -76,6 +77,6 @@ def plot_feature_trend(df: pd.DataFrame, feature: str,
 
 # Example usage:
 if __name__ == "__main__":
-    df = pd.read_csv(str(MASTER_CSV))
+    df = load_master_dataframe()
     anomalies = pd.read_csv("data/anomalies.csv") if os.path.exists("data/anomalies.csv") else None
     plot_feature_trend(df, feature="stress_avg", anomalies=anomalies)

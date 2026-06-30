@@ -133,6 +133,7 @@ class EnhancedAnomalyDetector:
         
         logger.info(f"Prepared {len(df_clean)} samples with {len(available_features)} features")
         logger.info(f"Feature completeness: {feature_completeness}")
+        self._df_clean = df_clean
         return X_scaled, available_features
     
     def fit_isolation_forest(self, X: np.ndarray, **kwargs) -> Dict:
@@ -421,7 +422,11 @@ class EnhancedAnomalyDetector:
                 main_model = main_model.best_estimator_
             
             labels = main_model.predict(X)
-            
+
+            df_result = self._df_clean.copy()
+            df_result["anomaly_label"] = labels
+            anomalies_df = df_result[df_result["anomaly_label"] == -1]
+
             # Evaluate ensemble
             ensemble_results = self.ensemble_detection(X)
             
@@ -439,7 +444,8 @@ class EnhancedAnomalyDetector:
                 'n_samples': len(X),
                 'n_features': len(feature_names),
                 'feature_names': feature_names,
-                'anomaly_labels': labels
+                'anomaly_labels': labels,
+                'anomalies_df': anomalies_df,
             }
             
             logger.info(f"Analysis complete. Results saved to {output_dir}")
@@ -448,6 +454,26 @@ class EnhancedAnomalyDetector:
         except Exception as e:
             logger.error(f"Error in comprehensive analysis: {e}")
             raise
+
+
+def run_anomaly_detection(df: pd.DataFrame) -> Tuple[pd.DataFrame, Optional[str]]:
+    """Run anomaly detection and return anomalies DataFrame and primary plot path."""
+    detector = EnhancedAnomalyDetector()
+    try:
+        results = detector.run_comprehensive_analysis(
+            df,
+            tune_hyperparameters=False,
+            output_dir=PLOTS_DIR,
+        )
+    except Exception as e:
+        logger.warning("Anomaly detection skipped: %s", e)
+        return pd.DataFrame(), None
+
+    anomalies_df = results.get("anomalies_df", pd.DataFrame())
+    plot_paths = results.get("plot_paths", [])
+    plot_path = plot_paths[0] if plot_paths else None
+    return anomalies_df, plot_path
+
 
 def main():
     """Main function to run enhanced anomaly detection."""

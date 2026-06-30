@@ -511,12 +511,6 @@ poetry run python -m garmin_analysis.viz.cli_activity_calendar --months 6
 poetry run python -m garmin_analysis.viz.cli_activity_calendar --start-date 2024-01-01 --end-date 2024-12-31
 ```
 
-#### Summary Statistics
-```bash
-# Generate summary statistics for all metrics
-poetry run python -m garmin_analysis.features.summary_stats
-```
-
 ## 📅 Day-of-Week Analysis
 
 **NEW FEATURE!** Analyze your sleep score, body battery, and water intake patterns by day of the week to identify weekly trends and optimize your health routines.
@@ -958,15 +952,6 @@ poetry run python -m garmin_analysis.modeling.enhanced_clustering
 
 # Predictive modeling
 poetry run python -m garmin_analysis.modeling.predictive_modeling
-
-# Activity-sleep-stress correlation
-poetry run python -m garmin_analysis.modeling.activity_sleep_stress_analysis
-
-# Basic clustering
-poetry run python -m garmin_analysis.modeling.clustering_behavior
-
-# Basic anomaly detection
-poetry run python -m garmin_analysis.modeling.anomaly_detection
 ```
 
 #### Imputation Strategies
@@ -1137,12 +1122,10 @@ The system analyzes the stress timeseries data to identify days where:
 | | Activity Calendar | `cli_activity_calendar` | Create calendar view of activity patterns |
 | | Day-of-Week Analysis | `cli_day_of_week` | Analyze sleep, body battery, water intake by day of week |
 | | Optimal Sleep Ranges | `cli_optimal_sleep` | Find steps/intensity ranges for best sleep |
-| | Summary Stats | `summary_stats` | Generate statistical summaries |
 | **Modeling** | Full Pipeline | `comprehensive_modeling_pipeline` | Complete ML analysis pipeline |
 | | Anomaly Detection | `enhanced_anomaly_detection` | Advanced anomaly detection algorithms |
 | | Clustering | `enhanced_clustering` | Multiple clustering algorithms |
 | | Predictive Modeling | `predictive_modeling` | Health outcome prediction models |
-| | Activity Analysis | `activity_sleep_stress_analysis` | Correlation analysis between metrics |
 | **Bootstrap** | Init | `garmin init` or `cli_init` | Check DBs, create folders, validate schema |
 | **Export** | Parquet/DuckDB/CSV/JSON | `cli_export` | Export all Garmin tables or master summary for a date range |
 | **Data Quality** | Quick Check | `quick_data_check` | Fast data quality assessment |
@@ -1415,7 +1398,6 @@ src/garmin_analysis/    # Reusable core (library + CLIs)
 └── ...
 
 apps/dashboard/garmin_dashboard/   # Dash web UI (depends on garmin_analysis)
-apps/api/garmin_api/               # Placeholder for a future REST API
 ```
 Configuration: `config/activity_type_mappings.json` at project root.
 
@@ -1460,8 +1442,7 @@ garmin-analysis/
 │   ├── cli_*.py                  # CLI entry points (init, export, sync, weekly, etc.)
 │   └── ...
 ├── apps/
-│   ├── dashboard/garmin_dashboard/  # Dash web application
-│   └── api/garmin_api/              # Future REST API (stub)
+│   └── dashboard/garmin_dashboard/  # Dash web application
 ├── config/                       # Configuration files
 │   └── activity_type_mappings.json # Activity type mappings
 ├── docs/                         # Documentation
@@ -1506,7 +1487,7 @@ pip install -r requirements.txt
 
 **Core Libraries**:
 - **Data**: pandas, numpy, pyarrow (Parquet export)
-- **ML**: scikit-learn, tsfresh, statsmodels, prophet  
+- **ML**: scikit-learn
 - **Visualization**: matplotlib, seaborn, plotly, dash
 - **Garmin Integration**: [GarminDB](https://github.com/tcgoetz/GarminDB) - For Garmin Connect data export (see [Credits](#credits--acknowledgments))
 - **Development**: pytest, jupyter
@@ -1552,7 +1533,7 @@ Special thanks to the Garmin developer community for their work on reverse-engin
 
 ## Notes
 
-- Core library lives under `src/garmin_analysis` (`python -m garmin_analysis.<module>`). The Dash UI is package `garmin_dashboard` under `apps/dashboard` (`python -m garmin_dashboard`). A future REST layer can live in `apps/api/garmin_api`.
+- Core library lives under `src/garmin_analysis` (`python -m garmin_analysis.<module>`). The Dash UI is package `garmin_dashboard` under `apps/dashboard` (`python -m garmin_dashboard`).
 - Logging is used instead of print statements throughout the codebase.
 - Test fixtures use in-memory SQLite (`mem_db`) for unit tests and file-backed DBs (`tmp_db`) for integration tests.
 - If real Garmin databases are unavailable, some commands may generate synthetic data for smoke testing (with warnings).

@@ -2,7 +2,8 @@ import pandas as pd
 import logging
 from pathlib import Path
 
-from garmin_analysis.config import MASTER_CSV, MODELING_CSV
+from garmin_analysis.config import MODELING_CSV
+from garmin_analysis.utils.data_loading import load_master_dataframe
 
 
 logger = logging.getLogger(__name__)
@@ -16,8 +17,6 @@ def prepare_modeling_dataset(
     min_coverage_pct: float = None,
     require_24h_coverage: bool = False
 ):
-    if input_path is None:
-        input_path = str(MASTER_CSV)
     if output_path is None:
         output_path = str(MODELING_CSV)
     if required_features is None:
@@ -28,12 +27,16 @@ def prepare_modeling_dataset(
         ]
 
     # Load dataset
-    if not Path(input_path).exists():
-        logger.error(f"Input file not found: {input_path}")
-        return
+    if input_path is None:
+        df = load_master_dataframe()
+        logger.info(f"Loaded dataset with shape: {df.shape}")
+    else:
+        if not Path(input_path).exists():
+            logger.error(f"Input file not found: {input_path}")
+            return
 
-    df = pd.read_csv(input_path, parse_dates=["day"])
-    logger.info(f"Loaded dataset with shape: {df.shape}")
+        df = pd.read_csv(input_path, parse_dates=["day"])
+        logger.info(f"Loaded dataset with shape: {df.shape}")
 
     # Filter by 24-hour coverage if requested
     if require_24h_coverage and "has_24h_coverage" in df.columns:

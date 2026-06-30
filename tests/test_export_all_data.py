@@ -78,10 +78,6 @@ class TestExportAllDataDateRange:
             "garmin_analysis.utils.data_loading.MASTER_CSV",
             master_path,
         )
-        monkeypatch.setattr(
-            "garmin_analysis.data_ingestion.export_master.MASTER_CSV",
-            master_path,
-        )
 
         result = export_all_data_date_range(
             "2024-01-02",

@@ -5,7 +5,8 @@ import os
 import logging
 from datetime import datetime
 
-from garmin_analysis.config import PLOTS_DIR, MASTER_CSV
+from garmin_analysis.config import PLOTS_DIR
+from garmin_analysis.utils.data_loading import load_master_dataframe
 
 
 logger = logging.getLogger(__name__)
@@ -56,5 +57,5 @@ def plot_feature_correlation(df: pd.DataFrame, output_path: str = None,
 
 # Example usage:
 if __name__ == "__main__":
-    sample = pd.read_csv(str(MASTER_CSV))  # adjust if needed
+    sample = load_master_dataframe()
     plot_feature_correlation(sample, exclude_cols=["timestamp", "date"])

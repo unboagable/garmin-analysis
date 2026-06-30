@@ -1144,7 +1144,7 @@ The system analyzes the stress timeseries data to identify days where:
 | | Predictive Modeling | `predictive_modeling` | Health outcome prediction models |
 | | Activity Analysis | `activity_sleep_stress_analysis` | Correlation analysis between metrics |
 | **Bootstrap** | Init | `garmin init` or `cli_init` | Check DBs, create folders, validate schema |
-| **Export** | Parquet/DuckDB | `cli_export` | Export master to Parquet (and optionally DuckDB) |
+| **Export** | Parquet/DuckDB/CSV/JSON | `cli_export` | Export all Garmin tables or master summary for a date range |
 | **Data Quality** | Quick Check | `quick_data_check` | Fast data quality assessment |
 | | Daily Score | (auto in `load_all_garmin_dbs`) | Daily data quality score → CSV + dashboard |
 | | Comprehensive Audit | `data_quality_analysis` | Detailed data quality reports |
@@ -1210,15 +1210,60 @@ A composite daily data quality score (0–100) combining 24h coverage and metric
 Export the master dataset for faster analytics and downstream use:
 
 ```bash
-# Export to Parquet (includes daily data quality)
+# Export full dataset to Parquet (includes daily data quality)
 poetry run python -m garmin_analysis.cli_export
 
 # Also export to DuckDB (requires: pip install duckdb or poetry add duckdb)
 poetry run python -m garmin_analysis.cli_export --duckdb
+
+# Export a date range (all Garmin tables + merged master)
+poetry run python -m garmin_analysis.cli_export \
+  --start-date 2024-01-01 --end-date 2024-03-31 --format csv
+
+# Merged master summary only
+poetry run python -m garmin_analysis.cli_export \
+  --start-date 2024-01-01 --end-date 2024-03-31 --format parquet --summary-only
+
+# Custom output directory
+poetry run python -m garmin_analysis.cli_export \
+  --start-date 2024-01-01 --end-date 2024-03-31 --format json \
+  --output data/export/my_jan_export
+```
+
+**Date-range export options**
+
+| Flag | Description |
+|------|-------------|
+| `--start-date YYYY-MM-DD` | Inclusive start date (required with `--end-date`) |
+| `--end-date YYYY-MM-DD` | Inclusive end date (required with `--start-date`) |
+| `--format` | Output format: `csv`, `parquet`, `json`, or `duckdb` |
+| `--output PATH` | Output directory (default: `data/export/garmin_export_<start>_<end>/`) |
+| `--summary-only` | Export only merged master daily summary (skip raw Garmin tables) |
+| `--no-data-quality` | Skip merging daily data quality columns |
+
+**All-data export layout** (default for date-range export):
+
+```
+data/export/garmin_export_2024-01-01_2024-03-31/
+  master_daily_summary.csv
+  daily_data_quality.csv          # when available
+  garmin/
+    daily_summary.csv
+    sleep.csv
+    stress.csv
+    resting_hr.csv
+  activities/
+    activities.csv
+    steps_activities.csv
+  monitoring/
+    monitoring_hr.csv
+  summary/
+    days_summary.csv
 ```
 
 Outputs:
-- `data/export/master_daily_summary.parquet` — columnar format for pandas, DuckDB, Spark
+- `data/export/master_daily_summary.parquet` — full merged dataset (default full export)
+- `data/export/garmin_export_YYYY-MM-DD_YYYY-MM-DD/` — date-range all-data bundle
 - `data/export/master.duckdb` — SQL database (optional)
 
 ### Performance Benefits

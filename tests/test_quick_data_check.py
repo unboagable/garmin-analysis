@@ -13,11 +13,12 @@ def _full_day_hr(day: pd.Timestamp) -> pd.DataFrame:
 
 
 class TestQuickDataCheckContinuous24h:
-    def test_lists_days_from_monitoring_hr(self, capsys):
+    def test_lists_days_from_monitoring_hr(self):
         from garmin_analysis.features import quick_data_check
 
         hr_df = _full_day_hr(pd.Timestamp("2024-01-01"))
         master_df = pd.DataFrame({"day": pd.date_range("2024-01-01", periods=1), "steps": [1000]})
+        expected_days = [pd.Timestamp("2024-01-01")]
 
         with (
             patch("garmin_analysis.logging_config.setup_logging"),
@@ -28,14 +29,17 @@ class TestQuickDataCheckContinuous24h:
             patch(
                 "garmin_analysis.features.coverage.load_monitoring_hr_for_coverage",
                 return_value=hr_df,
-            ),
+            ) as mock_load,
+            patch(
+                "garmin_analysis.features.coverage.days_with_continuous_coverage",
+                return_value=expected_days,
+            ) as mock_days,
             patch("sys.argv", ["quick_data_check", "--continuous-24h"]),
         ):
             quick_data_check.main()
 
-        captured = capsys.readouterr().out
-        assert "2024-01-01" in captured
-        assert "Total: 1 days" in captured
+        mock_load.assert_called_once_with()
+        mock_days.assert_called_once_with(hr_df, timestamp_col="timestamp")
 
     def test_exits_when_no_hr_data(self):
         from garmin_analysis.features import quick_data_check

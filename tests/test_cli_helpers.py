@@ -31,7 +31,7 @@ def sample_dataframe():
 
 @pytest.fixture
 def sample_stress_df():
-    """Create sample stress data with 24h coverage for one day."""
+    """Create sample timeseries with 24h coverage for one day (algorithm test data)."""
     # Create continuous coverage for 2024-01-01
     start_time = pd.Timestamp('2024-01-01 00:00:00')
     timestamps = [start_time + pd.Timedelta(minutes=i) for i in range(1440)]
@@ -216,7 +216,7 @@ class TestApply24hCoverageFilterFromArgs:
         result = apply_24h_coverage_filter_from_args(
             sample_dataframe,
             args,
-            stress_df=pd.DataFrame()  # Empty stress df
+            hr_df=pd.DataFrame()  # Empty HR df - should return original since no HR data
         )
         
         assert isinstance(result, pd.DataFrame)

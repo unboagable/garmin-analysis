@@ -32,7 +32,7 @@ def main():
     parser.add_argument(
         "--filter-24h-coverage",
         action="store_true",
-        help="Filter to only days with 24-hour continuous coverage (uses stress data)",
+        help="Filter to only days with 24-hour continuous coverage (uses monitoring_hr heart rate)",
     )
     parser.add_argument(
         "--max-gap",

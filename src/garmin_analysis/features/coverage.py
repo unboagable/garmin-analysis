@@ -262,6 +262,85 @@ def calculate_daily_coverage_metrics(
     return result_df
 
 
+def _filter_valid_hr_readings(hr_df: pd.DataFrame) -> pd.DataFrame:
+    """Keep monitoring_hr rows with valid heart_rate readings (20-250 bpm, non-null)."""
+    if hr_df is None or hr_df.empty or "heart_rate" not in hr_df.columns:
+        return hr_df
+
+    original_rows = len(hr_df)
+    filtered = hr_df[
+        (hr_df["heart_rate"].notna())
+        & (hr_df["heart_rate"] > 0)
+        & (hr_df["heart_rate"] >= 20)
+        & (hr_df["heart_rate"] <= 250)
+    ].copy()
+    filtered_rows = len(filtered)
+    if filtered_rows < original_rows:
+        logger.info(
+            "Filtered monitoring_hr: %s → %s rows with valid HR values (20-250 bpm)",
+            original_rows,
+            filtered_rows,
+        )
+    return filtered
+
+
+@handle_data_loading_errors(reraise=False)
+def load_monitoring_hr_for_coverage(
+    *,
+    hr_df: Optional[pd.DataFrame] = None,
+    db_path: Optional[str] = None,
+) -> Optional[pd.DataFrame]:
+    """
+    Load monitoring_hr timeseries for 24-hour coverage analysis.
+
+    Heart rate requires continuous skin contact, so it is the canonical indicator
+    that the watch was worn for coverage filtering and diagnostics.
+
+    Args:
+        hr_df: Optional pre-loaded monitoring_hr DataFrame.
+        db_path: Optional garmin or monitoring database path.
+
+    Returns:
+        Filtered monitoring_hr DataFrame, or None if unavailable.
+    """
+    if hr_df is not None:
+        if hr_df.empty:
+            return None
+        return _filter_valid_hr_readings(hr_df)
+
+    from garmin_analysis.config import DB_PATHS
+    from garmin_analysis.data_ingestion.load_all_garmin_dbs import load_table
+
+    try:
+        if db_path is not None:
+            from pathlib import Path
+
+            db_path_obj = Path(db_path)
+            if "monitoring" in str(db_path_obj):
+                monitoring_path = db_path_obj
+            else:
+                monitoring_path = db_path_obj.parent / "garmin_monitoring.db"
+            timeseries_df = load_table(monitoring_path, "monitoring_hr", parse_dates=["timestamp"])
+            data_source = f"monitoring_hr from {monitoring_path}"
+        else:
+            timeseries_df = load_table(
+                DB_PATHS["monitoring"], "monitoring_hr", parse_dates=["timestamp"]
+            )
+            data_source = "monitoring_hr from default database"
+
+        if timeseries_df is None or timeseries_df.empty:
+            return None
+
+        timeseries_df = _filter_valid_hr_readings(timeseries_df)
+        if timeseries_df is not None and not timeseries_df.empty:
+            logger.info("Using %s for coverage analysis", data_source)
+            return timeseries_df
+        return None
+    except Exception as e:
+        logger.warning("Could not load monitoring_hr: %s", e)
+        return None
+
+
 @handle_data_loading_errors(reraise=False)
 def filter_by_24h_coverage(
     master_df: pd.DataFrame,
@@ -271,7 +350,6 @@ def filter_by_24h_coverage(
     day_edge_tolerance: pd.Timedelta = pd.Timedelta(minutes=2),
     total_missing_allowance: pd.Timedelta = pd.Timedelta(minutes=0),
     hr_df: Optional[pd.DataFrame] = None,
-    stress_df: Optional[pd.DataFrame] = None,
     db_path: Optional[str] = None,
     use_monitoring_hr: bool = True,
 ) -> pd.DataFrame:
@@ -290,7 +368,6 @@ def filter_by_24h_coverage(
         day_edge_tolerance: Allowed tolerance at the day's edges
         total_missing_allowance: Total allowed missing time within day (default 0)
         hr_df: Optional pre-loaded monitoring_hr DataFrame. If None, will load from database.
-        stress_df: DEPRECATED - no longer used. Heart rate data is the exclusive indicator of watch wear.
         db_path: Optional custom database path. If None, uses default DB_PATHS.
         use_monitoring_hr: If True (default), use monitoring_hr for coverage analysis. If False, returns unfiltered data.
 
@@ -305,64 +382,10 @@ def filter_by_24h_coverage(
         logger.warning("filter_by_24h_coverage received empty dataframe")
         return master_df
 
-    # Use monitoring_hr (heart rate) EXCLUSIVELY as the indicator of watch wear
-    # HR data requires continuous skin contact, making it the definitive indicator that watch is worn/on
-    timeseries_df = None
-    data_source = None
+    if not use_monitoring_hr:
+        return master_df
 
-    if use_monitoring_hr:
-        if hr_df is not None:
-            timeseries_df = hr_df
-            data_source = "monitoring_hr (pre-loaded)"
-        else:
-            from garmin_analysis.config import DB_PATHS
-            from garmin_analysis.data_ingestion.load_all_garmin_dbs import load_table
-
-            try:
-                if db_path is not None:
-                    # If db_path is provided, assume it's for monitoring DB or construct path
-                    from pathlib import Path
-
-                    db_path_obj = Path(db_path)
-                    if "monitoring" in str(db_path_obj):
-                        monitoring_path = db_path_obj
-                    else:
-                        # Construct monitoring DB path from garmin DB path
-                        monitoring_path = db_path_obj.parent / "garmin_monitoring.db"
-                    timeseries_df = load_table(
-                        monitoring_path, "monitoring_hr", parse_dates=["timestamp"]
-                    )
-                    data_source = f"monitoring_hr from {monitoring_path}"
-                else:
-                    timeseries_df = load_table(
-                        DB_PATHS["monitoring"], "monitoring_hr", parse_dates=["timestamp"]
-                    )
-                    data_source = "monitoring_hr from default database"
-
-                # Filter for valid heart rate readings (20-250 bpm, non-null)
-                if (
-                    timeseries_df is not None
-                    and not timeseries_df.empty
-                    and "heart_rate" in timeseries_df.columns
-                ):
-                    original_rows = len(timeseries_df)
-                    timeseries_df = timeseries_df[
-                        (timeseries_df["heart_rate"].notna())
-                        & (timeseries_df["heart_rate"] > 0)
-                        & (timeseries_df["heart_rate"] >= 20)
-                        & (timeseries_df["heart_rate"] <= 250)
-                    ].copy()
-                    filtered_rows = len(timeseries_df)
-                    if filtered_rows < original_rows:
-                        logger.info(
-                            f"Filtered monitoring_hr: {original_rows} → {filtered_rows} rows with valid HR values (20-250 bpm)"
-                        )
-
-                if timeseries_df is not None and not timeseries_df.empty:
-                    logger.info(f"Using {data_source} for coverage analysis")
-            except Exception as e:
-                logger.warning(f"Could not load monitoring_hr: {e}")
-                timeseries_df = None
+    timeseries_df = load_monitoring_hr_for_coverage(hr_df=hr_df, db_path=db_path)
 
     # HR data is required - without it we cannot determine watch wear
     if timeseries_df is None or timeseries_df.empty:
@@ -388,7 +411,8 @@ def filter_by_24h_coverage(
         return master_df
 
     logger.info(
-        f"Found {len(qualifying_days)} days with 24-hour continuous coverage (using {data_source})"
+        "Found %s days with 24-hour continuous coverage (using monitoring_hr)",
+        len(qualifying_days),
     )
 
     # Filter master dataframe

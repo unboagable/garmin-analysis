@@ -1094,10 +1094,12 @@ Many analysis tools now support filtering to only days with complete 24-hour con
 
 ### How it works
 
-The system analyzes the stress timeseries data to identify days where:
+The system analyzes **monitoring_hr** (heart rate) timeseries data to identify days where:
 - Data coverage starts within 2 minutes of midnight
 - Data coverage ends within 2 minutes of midnight  
-- No gap between consecutive samples exceeds 2 minutes
+- No gap between consecutive valid HR samples exceeds 2 minutes
+
+Heart rate is used because it requires continuous skin contact, making it the definitive indicator that the watch was worn.
 
 ### Available Tools with 24h Coverage Filtering
 
@@ -1275,7 +1277,7 @@ poetry run python -m garmin_analysis.viz.plot_trends_range --filter-24h-coverage
 ### Troubleshooting 24-Hour Coverage Filtering
 
 **No qualifying days found?**
-- Check if you have stress data: `poetry run python -m garmin_analysis.features.quick_data_check --continuous-24h`
+- Check if you have monitoring_hr data: `poetry run python -m garmin_analysis.features.quick_data_check --continuous-24h`
 - Try relaxing the parameters: `--max-gap 10 --day-edge-tolerance 10`
 - Ensure your Garmin device was worn continuously during the day
 
